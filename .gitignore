@@ -1,0 +1,26 @@
+# Archivos y carpetas que no deben subirse al repositorio
+CLAUDE.md
+node_modules/
+dist/
+.env
+.env.*
+.DS_Store
+*.log
+*.local
+.idea/
+.vscode/
+*.sqlite
+*.bak
+*.tgz
+*.zip
+*.tar
+*.gz
+*.swp
+*.swo
+*.tmp
+*.cache
+coverage/
+frontend/dist/
+backend/dist/
+backend/node_modules/
+frontend/node_modules/

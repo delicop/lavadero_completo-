@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.nestjs.com)",
+      "Bash(npx @nestjs/cli new . --package-manager npm --skip-git)",
+      "Bash(npm install:*)",
+      "Bash(npx nest:*)",
+      "Bash(npm run:*)",
+      "Bash(psql --version)",
+      "Bash(pg_isready)",
+      "Bash(where psql:*)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Bash(docker --version)",
+      "Bash(where docker:*)",
+      "Bash(docker-compose --version)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose -f d:/lavadero/docker-compose.yml ps)",
+      "Bash(curl -s http://localhost:3000/api)",
+      "Bash(curl -s -X POST http://localhost:3000/api/usuarios -H 'Content-Type: application/json' -d '{\"nombre\":\"Carlos\",\"apellido\":\"Lopez\",\"email\":\"admin@lavadero.com\",\"password\":\"Admin1234\",\"rol\":\"admin\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@lavadero.com\",\"password\":\"Admin1234\"}')",
+      "Bash(curl -s http://localhost:3000/api/facturacion)",
+      "Bash(npm create:*)",
+      "Bash(npx create-vite@latest frontend --template vanilla-ts)",
+      "Bash(npm init:*)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
