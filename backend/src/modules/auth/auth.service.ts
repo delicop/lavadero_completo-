@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { EventsGateway } from '../events/events.gateway';
 import { LoginLog } from './entities/login-log.entity';
 import { LoginDto } from './dto/login.dto';
 import { CambiarPasswordDto } from './dto/cambiar-password.dto';
@@ -13,6 +14,7 @@ export class AuthService {
   constructor(
     private readonly usuariosService: UsuariosService,
     private readonly jwtService: JwtService,
+    private readonly eventsGateway: EventsGateway,
     @InjectRepository(LoginLog)
     private readonly loginLogRepo: Repository<LoginLog>,
   ) {}
@@ -57,6 +59,7 @@ export class AuthService {
 
   async actualizarDisponibilidad(usuarioId: string, disponible: boolean): Promise<void> {
     await this.usuariosService.actualizarDisponibilidad(usuarioId, disponible);
+    this.eventsGateway.emitirUsuarioActualizado(usuarioId, disponible);
   }
 
   async historialLogin(limit: number): Promise<LoginLog[]> {

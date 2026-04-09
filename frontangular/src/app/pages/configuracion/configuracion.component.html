@@ -1,0 +1,107 @@
+<div class="barra-acciones">
+  <h1 class="pagina-titulo" style="margin:0">Configuración — Trabajadores</h1>
+  <button class="btn btn-primario" (click)="abrirNuevo()">+ Nuevo trabajador</button>
+</div>
+
+<app-modal
+  [titulo]="editandoId ? 'Editar usuario' : 'Nuevo trabajador'"
+  [visible]="mostrarForm"
+  ancho="460px"
+  (cerrar)="cerrarForm()"
+>
+  @if (errorForm) { <div class="alerta-error">{{ errorForm }}</div> }
+  <form (ngSubmit)="guardar()">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Nombre</label>
+        <input class="form-input" [(ngModel)]="form.nombre" name="nombre" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Apellido</label>
+        <input class="form-input" [(ngModel)]="form.apellido" name="apellido" required />
+      </div>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" [(ngModel)]="form.email" name="email"
+        [required]="!editandoId" [disabled]="!!editandoId" />
+    </div>
+    @if (!editandoId) {
+      <div class="form-grupo">
+        <label class="form-label">Contraseña</label>
+        <input class="form-input" type="password" [(ngModel)]="form.password" name="password" minlength="8" required />
+      </div>
+    } @else {
+      <div class="form-grupo">
+        <label class="form-label">Nueva contraseña (opcional)</label>
+        <input class="form-input" type="password" [(ngModel)]="form.password" name="password"
+          minlength="8" placeholder="Dejar vacío para no cambiar" />
+      </div>
+    }
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Rol</label>
+        <select class="form-select" [(ngModel)]="form.rol" name="rol">
+          <option value="trabajador">Trabajador</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      @if (!esAdmin) {
+        <div class="form-grupo">
+          <label class="form-label">Comisión (%)</label>
+          <input class="form-input" type="number" [(ngModel)]="form.comisionPorcentaje"
+            name="comision" min="0" max="100" step="0.5" />
+        </div>
+      }
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primario" type="submit">Guardar</button>
+      <button class="btn btn-secundario" type="button" (click)="cerrarForm()">Cancelar</button>
+    </div>
+  </form>
+</app-modal>
+
+<div class="card" style="padding:0;overflow:hidden">
+  @if (cargando) {
+    <p style="padding:24px;color:var(--color-texto-suave)">Cargando...</p>
+  } @else if (usuarios.length === 0) {
+    <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">No hay usuarios registrados</p>
+  } @else {
+    <table class="tabla">
+      <thead>
+        <tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Comisión</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (u of usuarios; track u.id) {
+          <tr>
+            <td><strong>{{ u.apellido }}</strong>, {{ u.nombre }}</td>
+            <td style="color:var(--color-texto-suave)">{{ u.email }}</td>
+            <td>
+              <span [style.background]="u.rol === 'admin' ? '#ede9fe' : '#dbeafe'"
+                    [style.color]="u.rol === 'admin' ? '#7c3aed' : '#1d4ed8'"
+                    style="padding:2px 8px;border-radius:4px;font-size:0.72rem;font-weight:600">
+                {{ u.rol }}
+              </span>
+            </td>
+            <td>
+              @if (u.rol === 'admin') {
+                <span style="color:var(--color-texto-suave)">—</span>
+              } @else {
+                <strong>{{ u.comisionPorcentaje }}%</strong>
+              }
+            </td>
+            <td>
+              <button [class]="u.activo ? 'btn btn-sm btn-secundario' : 'btn btn-sm btn-primario'"
+                      (click)="toggleActivo(u)">
+                {{ u.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </td>
+            <td>
+              <button class="btn btn-secundario btn-sm" (click)="abrirEditar(u)">Editar</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

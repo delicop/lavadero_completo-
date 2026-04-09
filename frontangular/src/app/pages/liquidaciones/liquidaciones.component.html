@@ -1,0 +1,123 @@
+<div class="barra-acciones">
+  <h1 class="pagina-titulo" style="margin:0">Liquidaciones</h1>
+  <button class="btn btn-primario" (click)="abrirForm()">+ Nueva liquidación</button>
+</div>
+
+<app-modal
+  titulo="Generar liquidación"
+  [visible]="mostrarForm"
+  ancho="440px"
+  (cerrar)="cerrarForm()"
+>
+  @if (errorForm) { <div class="alerta-error">{{ errorForm }}</div> }
+  <form (ngSubmit)="guardar()">
+    <div class="form-grupo">
+      <label class="form-label">Trabajador</label>
+      <select class="form-select" [(ngModel)]="form.trabajadorId" name="trabajadorId" required>
+        <option value="">Seleccioná un trabajador...</option>
+        @for (u of trabajadores; track u.id) {
+          <option [value]="u.id">{{ u.apellido }}, {{ u.nombre }} ({{ u.comisionPorcentaje }}%)</option>
+        }
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Desde</label>
+        <input class="form-input" type="date" [(ngModel)]="form.fechaDesde" name="fechaDesde" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Hasta</label>
+        <input class="form-input" type="date" [(ngModel)]="form.fechaHasta" name="fechaHasta" required />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primario" type="submit">Generar</button>
+      <button class="btn btn-secundario" type="button" (click)="cerrarForm()">Cancelar</button>
+    </div>
+  </form>
+</app-modal>
+
+@if (detalle) {
+  <div class="card" style="margin-bottom:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="font-size:1rem;font-weight:600">
+        Liquidación — {{ detalle.trabajador?.apellido }}, {{ detalle.trabajador?.nombre }}
+      </h2>
+      <button class="btn btn-secundario btn-sm" (click)="cerrarDetalle()">Cerrar</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:1.5rem;font-weight:700">{{ detalle.cantidadTurnos }}</div>
+        <div style="color:var(--color-texto-suave);font-size:0.8rem">Turnos</div>
+      </div>
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:1.2rem;font-weight:700">{{ formatPrecio(detalle.totalServicios) }}</div>
+        <div style="color:var(--color-texto-suave);font-size:0.8rem">Total servicios</div>
+      </div>
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:1.5rem;font-weight:700">{{ detalle.comisionPorcentaje }}%</div>
+        <div style="color:var(--color-texto-suave);font-size:0.8rem">Comisión</div>
+      </div>
+      <div class="card" style="text-align:center;padding:14px;background:#f0fdf4;border-color:#86efac">
+        <div style="font-size:1.2rem;font-weight:700;color:#166534">{{ formatPrecio(detalle.totalPago) }}</div>
+        <div style="color:#15803d;font-size:0.8rem">A pagar</div>
+      </div>
+    </div>
+    @if (!cargandoDetalle) {
+      <table class="tabla">
+        <thead>
+          <tr><th>Fecha</th><th>Cliente</th><th>Vehículo</th><th>Servicio</th><th>Precio</th><th>Comisión</th></tr>
+        </thead>
+        <tbody>
+          @for (t of detalleTurnos; track t.id) {
+            <tr>
+              <td style="font-size:0.825rem">{{ formatFecha(t.fechaHora) }}</td>
+              <td>{{ t.cliente?.apellido }}, {{ t.cliente?.nombre }}</td>
+              <td>{{ t.vehiculo?.placa ?? '—' }}</td>
+              <td>{{ t.servicio?.nombre ?? '—' }}</td>
+              <td>{{ formatPrecio(+(t.servicio?.precio ?? 0)) }}</td>
+              <td><strong>{{ formatPrecio(comisionTurno(t, detalle.comisionPorcentaje)) }}</strong></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}
+
+<div class="card" style="padding:0;overflow:hidden">
+  @if (cargando) {
+    <p style="padding:24px;color:var(--color-texto-suave)">Cargando...</p>
+  } @else if (liquidaciones.length === 0) {
+    <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">No hay liquidaciones generadas</p>
+  } @else {
+    <table class="tabla">
+      <thead>
+        <tr><th>Trabajador</th><th>Período</th><th>Turnos</th><th>Total servicios</th><th>Comisión</th><th>A pagar</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (l of liquidaciones; track l.id) {
+          <tr>
+            <td><strong>{{ l.trabajador?.apellido }}, {{ l.trabajador?.nombre }}</strong></td>
+            <td style="font-size:0.825rem;color:var(--color-texto-suave)">{{ l.fechaDesde }} → {{ l.fechaHasta }}</td>
+            <td style="text-align:center">{{ l.cantidadTurnos }}</td>
+            <td>{{ formatPrecio(l.totalServicios) }}</td>
+            <td>{{ l.comisionPorcentaje }}%</td>
+            <td><strong>{{ formatPrecio(l.totalPago) }}</strong></td>
+            <td>
+              <span [class]="'badge ' + (l.estado === 'pagada' ? 'badge-completado' : 'badge-pendiente')">
+                {{ l.estado === 'pagada' ? 'Pagada' : 'Pendiente' }}
+              </span>
+            </td>
+            <td style="display:flex;gap:6px">
+              <button class="btn btn-secundario btn-sm" (click)="verDetalle(l)">Ver</button>
+              @if (l.estado === 'pendiente') {
+                <button class="btn btn-primario btn-sm" (click)="marcarPagada(l.id)">Marcar pagada</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

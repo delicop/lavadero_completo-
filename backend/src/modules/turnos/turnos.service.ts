@@ -13,6 +13,7 @@ import { UsuariosService } from '../usuarios/usuarios.service';
 import { CrearTurnoDto } from './dto/crear-turno.dto';
 import { ActualizarTurnoDto } from './dto/actualizar-turno.dto';
 import { ActualizarEstadoDto } from './dto/actualizar-estado.dto';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class TurnosService {
@@ -23,6 +24,7 @@ export class TurnosService {
     private readonly vehiculosService: VehiculosService,
     private readonly serviciosService: ServiciosService,
     private readonly usuariosService: UsuariosService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async crear(dto: CrearTurnoDto): Promise<Turno> {
@@ -134,7 +136,9 @@ export class TurnosService {
     }
 
     turno.estado = dto.estado;
-    return this.repo.save(turno);
+    const turnoGuardado = await this.repo.save(turno);
+    this.eventsGateway.emitirTurnoActualizado(turnoGuardado.id, turnoGuardado.estado);
+    return turnoGuardado;
   }
 
   async eliminar(id: string): Promise<void> {

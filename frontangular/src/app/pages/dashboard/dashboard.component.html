@@ -1,0 +1,309 @@
+@if (esAdmin) {
+  <!-- ── Vista Admin ───────────────────────────────────── -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 class="pagina-titulo" style="margin:0">Panel del día</h1>
+      <p style="color:var(--color-texto-suave);font-size:0.875rem;text-transform:capitalize;margin-top:3px">{{ hoy }}</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      @if (ultimoUpdate) {
+        <span style="font-size:0.78rem;color:var(--color-texto-suave)">Actualizado {{ ultimoUpdate }}</span>
+      }
+      <button class="btn btn-secundario btn-sm" (click)="cargar()">↻ Actualizar</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card">
+      <div class="stat-label">En espera</div>
+      <div class="stat-valor" style="color:#f59e0b">{{ pendientes.length }}</div>
+      <div class="stat-unidad">vehículos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">En proceso</div>
+      <div class="stat-valor" style="color:#2563eb">{{ enProceso.length }}</div>
+      <div class="stat-unidad">vehículos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Completados hoy</div>
+      <div class="stat-valor" style="color:#16a34a">{{ completadosHoy.length }}</div>
+      <div class="stat-unidad">turnos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ingresos del día</div>
+      <div class="stat-valor" style="font-size:1.4rem;color:#16a34a">{{ formatPrecio(ingresos) }}</div>
+      <div class="stat-unidad">servicios completados</div>
+    </div>
+  </div>
+
+  <!-- Tablas -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+    <div>
+      <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block"></span>
+        En proceso ahora
+      </h2>
+      <div class="card" style="padding:0;overflow:hidden">
+        @if (enProceso.length === 0) {
+          <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">Ningún vehículo en proceso</p>
+        } @else {
+          <table class="tabla">
+            <thead>
+              <tr><th>Vehículo</th><th>Servicio</th><th>Trabajador</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (t of enProceso; track t.id) {
+                <tr>
+                  <td>
+                    <strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                    <small style="color:var(--color-texto-suave)">{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</small>
+                  </td>
+                  <td>{{ t.servicio?.nombre ?? '—' }}</td>
+                  <td>{{ t.trabajador?.nombre }} {{ t.trabajador?.apellido }}</td>
+                  <td>
+                    <button class="btn btn-primario btn-sm" (click)="completarTurno(t)">✓ Completar</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+
+    <div>
+      <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+        En espera
+      </h2>
+      <div class="card" style="padding:0;overflow:hidden">
+        @if (pendientes.length === 0) {
+          <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">No hay vehículos en espera</p>
+        } @else {
+          <table class="tabla">
+            <thead>
+              <tr><th>Hora</th><th>Vehículo</th><th>Servicio</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (t of pendientes; track t.id) {
+                <tr>
+                  <td style="font-weight:600;white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
+                  <td>
+                    <strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                    <small style="color:var(--color-texto-suave)">{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</small>
+                  </td>
+                  <td>{{ t.servicio?.nombre ?? '—' }}</td>
+                  <td>
+                    <button class="btn btn-secundario btn-sm" (click)="iniciarTurno(t.id)">→ Iniciar</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Completados hoy -->
+  <div style="margin-bottom:20px">
+    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+      Completados hoy
+    </h2>
+    <div class="card" style="padding:0;overflow:hidden">
+      @if (completadosHoy.length === 0) {
+        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">Ningún turno completado hoy todavía</p>
+      } @else {
+        <table class="tabla">
+          <thead>
+            <tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Trabajador</th><th>Precio</th></tr>
+          </thead>
+          <tbody>
+            @for (t of completadosHoy; track t.id) {
+              <tr>
+                <td style="font-weight:600;white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
+                <td><strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                  <small style="color:var(--color-texto-suave)">{{ t.vehiculo?.marca }} {{ t.vehiculo?.modelo }}</small>
+                </td>
+                <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+                <td>
+                  @if (t.cliente?.telefono) {
+                    <a [href]="'tel:' + t.cliente!.telefono" style="color:var(--color-primario);font-weight:600;text-decoration:none">
+                      {{ t.cliente!.telefono }}
+                    </a>
+                  } @else { — }
+                </td>
+                <td>{{ t.servicio?.nombre ?? '—' }}</td>
+                <td>{{ t.trabajador?.nombre }} {{ t.trabajador?.apellido }}</td>
+                <td style="font-weight:700;color:#16a34a">{{ formatPrecio(+(t.servicio?.precio ?? 0)) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+
+  <!-- Trabajadores -->
+  <div>
+    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>
+      Trabajadores hoy
+    </h2>
+    <div class="card">
+      @if (trabajadores.length === 0) {
+        <p style="color:var(--color-texto-suave);text-align:center;font-size:0.875rem">No hay trabajadores registrados</p>
+      } @else {
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          @for (u of trabajadores; track u.id) {
+            <div [style.background]="u.disponible ? '#f0fdf4' : '#f8fafc'"
+                 [style.border]="'1px solid ' + (u.disponible ? '#86efac' : '#e2e8f0')"
+                 style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px">
+              <span [style.background]="u.disponible ? '#22c55e' : '#d1d5db'"
+                    style="width:9px;height:9px;border-radius:50%;flex-shrink:0"></span>
+              <div>
+                <div style="font-size:0.85rem;font-weight:600">{{ u.nombre }} {{ u.apellido }}</div>
+                <div [style.color]="u.disponible ? '#15803d' : 'var(--color-texto-suave)'"
+                     style="font-size:0.75rem">
+                  {{ u.disponible ? 'Disponible' : 'No disponible' }}
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+} @else {
+  <!-- ── Vista Trabajador ──────────────────────────────── -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 class="pagina-titulo" style="margin:0">Mi panel</h1>
+      <p style="color:var(--color-texto-suave);font-size:0.875rem;text-transform:capitalize;margin-top:3px">{{ hoy }}</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      @if (usuario) {
+        <div [style.background]="usuario.disponible ? '#dcfce7' : '#fee2e2'"
+             [style.color]="usuario.disponible ? '#15803d' : '#dc2626'"
+             style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:0.8rem;font-weight:700">
+          <span [style.background]="usuario.disponible ? '#16a34a' : '#dc2626'"
+                style="width:7px;height:7px;border-radius:50%"></span>
+          {{ usuario.disponible ? 'Disponible' : 'No disponible' }}
+        </div>
+        <button [class]="usuario.disponible ? 'btn btn-secundario btn-sm' : 'btn btn-primario btn-sm'"
+                (click)="toggleDisponibilidad()">
+          {{ usuario.disponible ? 'Salir' : 'Entrar' }}
+        </button>
+      }
+      <button class="btn btn-secundario btn-sm" (click)="cargar()">↻</button>
+    </div>
+  </div>
+
+  <!-- Stats trabajador -->
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px">
+    <div class="stat-card" style="text-align:center">
+      <div class="stat-label">En espera</div>
+      <div class="stat-valor" style="color:#f59e0b">{{ misPendientes.length }}</div>
+    </div>
+    <div class="stat-card" style="text-align:center">
+      <div class="stat-label">Completados hoy</div>
+      <div class="stat-valor" style="color:#16a34a">{{ misCompletadosHoy.length }}</div>
+    </div>
+    <div class="stat-card" style="text-align:center">
+      <div class="stat-label">Ganado hoy</div>
+      <div class="stat-valor" style="font-size:1.3rem;color:#16a34a">{{ formatPrecio(gananciaHoy) }}</div>
+    </div>
+  </div>
+
+  <!-- En proceso -->
+  <div style="margin-bottom:20px">
+    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block"></span>
+      En proceso ahora
+    </h2>
+    <div class="card" style="padding:0;overflow:hidden">
+      @if (misEnProceso.length === 0) {
+        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">Ningún vehículo en proceso</p>
+      } @else {
+        <table class="tabla">
+          <thead><tr><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th></th></tr></thead>
+          <tbody>
+            @for (t of misEnProceso; track t.id) {
+              <tr>
+                <td><strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                  <small style="color:var(--color-texto-suave)">{{ t.vehiculo?.marca }} {{ t.vehiculo?.modelo }}</small>
+                </td>
+                <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+                <td>{{ t.servicio?.nombre ?? '—' }}</td>
+                <td><button class="btn btn-primario btn-sm" (click)="completarTurno(t)">✓ Completar</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+
+  <!-- Pendientes trabajador -->
+  <div style="margin-bottom:20px">
+    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+      Turnos en espera
+    </h2>
+    <div class="card" style="padding:0;overflow:hidden">
+      @if (misPendientes.length === 0) {
+        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">No tenés turnos en espera</p>
+      } @else {
+        <table class="tabla">
+          <thead><tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th></th></tr></thead>
+          <tbody>
+            @for (t of misPendientes; track t.id) {
+              <tr>
+                <td style="font-weight:600;white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
+                <td><strong>{{ t.vehiculo?.placa ?? '—' }}</strong></td>
+                <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+                <td>{{ t.servicio?.nombre ?? '—' }}</td>
+                <td><button class="btn btn-secundario btn-sm" (click)="iniciarTurno(t.id)">→ Iniciar</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+
+  <!-- Completados trabajador -->
+  <div>
+    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+      Completados hoy
+    </h2>
+    <div class="card" style="padding:0;overflow:hidden">
+      @if (misCompletadosHoy.length === 0) {
+        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">Todavía no completaste ningún turno hoy</p>
+      } @else {
+        <table class="tabla">
+          <thead><tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th>Tu ganancia</th></tr></thead>
+          <tbody>
+            @for (t of misCompletadosHoy; track t.id) {
+              <tr>
+                <td style="white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
+                <td><strong>{{ t.vehiculo?.placa ?? '—' }}</strong></td>
+                <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+                <td>{{ t.servicio?.nombre ?? '—' }}</td>
+                <td>
+                  <strong style="color:#16a34a">
+                    {{ formatPrecio(+(t.servicio?.precio ?? 0) * ((usuario?.comisionPorcentaje ?? 0) / 100)) }}
+                  </strong>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+}

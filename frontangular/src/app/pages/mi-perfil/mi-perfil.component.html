@@ -1,0 +1,89 @@
+<div style="max-width:600px">
+  <!-- Header usuario -->
+  @if (usuario) {
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:28px">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--color-primario);
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:1.2rem;font-weight:700;color:white;flex-shrink:0">
+        {{ iniciales }}
+      </div>
+      <div>
+        <h1 style="font-size:1.3rem;font-weight:700;margin:0">{{ usuario.nombre }} {{ usuario.apellido }}</h1>
+        <p style="color:var(--color-texto-suave);font-size:0.875rem;margin:2px 0 0;text-transform:capitalize">
+          {{ usuario.rol }} · {{ usuario.comisionPorcentaje }}% comisión
+        </p>
+        <p style="color:var(--color-texto-suave);font-size:0.825rem;margin:0">{{ usuario.email }}</p>
+      </div>
+    </div>
+  }
+
+  <!-- Cambiar contraseña -->
+  <div class="card" style="margin-bottom:24px">
+    <h2 style="font-size:1rem;font-weight:700;margin:0 0 16px">Cambiar contraseña</h2>
+    @if (msgPwd) {
+      <div [class]="msgPwdTipo === 'ok' ? 'alerta-ok' : 'alerta-error'">{{ msgPwd }}</div>
+    }
+    <form (ngSubmit)="cambiarPassword()" style="display:flex;flex-direction:column;gap:12px">
+      <div class="form-grupo" style="margin:0">
+        <label class="form-label">Contraseña actual</label>
+        <input type="password" class="form-input" [(ngModel)]="pwdActual" name="actual" placeholder="••••••••" required />
+      </div>
+      <div class="form-grupo" style="margin:0">
+        <label class="form-label">Nueva contraseña</label>
+        <input type="password" class="form-input" [(ngModel)]="pwdNueva" name="nueva" placeholder="Mínimo 8 caracteres" required minlength="8" />
+      </div>
+      <div class="form-grupo" style="margin:0">
+        <label class="form-label">Confirmar nueva contraseña</label>
+        <input type="password" class="form-input" [(ngModel)]="pwdConfirmar" name="confirmar" placeholder="Repetir nueva contraseña" required minlength="8" />
+      </div>
+      <div>
+        <button class="btn btn-primario" type="submit" [disabled]="guardandoPwd">
+          {{ guardandoPwd ? 'Guardando...' : 'Cambiar contraseña' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Mis liquidaciones -->
+  <div>
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:12px">Mis liquidaciones</h2>
+    @if (liquidaciones.length === 0) {
+      <div class="card">
+        <p style="text-align:center;color:var(--color-texto-suave);font-size:0.875rem;padding:8px 0">
+          Todavía no tenés liquidaciones registradas
+        </p>
+      </div>
+    } @else {
+      <div style="display:flex;flex-direction:column;gap:10px">
+        @for (l of liquidaciones; track l.id) {
+          <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:16px">
+            <div>
+              <div style="font-weight:600;font-size:0.95rem">
+                {{ fechaCorta(l.fechaDesde) }} — {{ fechaCorta(l.fechaHasta) }}
+              </div>
+              <div style="font-size:0.8rem;color:var(--color-texto-suave);margin-top:2px">
+                {{ l.cantidadTurnos }} turno{{ l.cantidadTurnos !== 1 ? 's' : '' }} · {{ l.comisionPorcentaje }}% comisión
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="text-align:right">
+                <div [style.color]="l.estado === 'pagada' ? '#16a34a' : '#d97706'"
+                     style="font-size:1.2rem;font-weight:800">
+                  {{ formatPrecio(l.totalPago) }}
+                </div>
+                <div style="font-size:0.75rem;color:var(--color-texto-suave)">
+                  de {{ formatPrecio(l.totalServicios) }}
+                </div>
+              </div>
+              <span [style.background]="l.estado === 'pagada' ? '#dcfce7' : '#fef3c7'"
+                    [style.color]="l.estado === 'pagada' ? '#15803d' : '#92400e'"
+                    style="padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700">
+                {{ l.estado === 'pagada' ? '✓ Pagada' : 'Pendiente' }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

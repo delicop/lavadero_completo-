@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { LoginLog } from './entities/login-log.entity';
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { EventsModule } from '../events/events.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -23,6 +24,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
     TypeOrmModule.forFeature([Usuario, LoginLog]),
     UsuariosModule,
+    EventsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

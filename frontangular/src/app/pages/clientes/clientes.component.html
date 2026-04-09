@@ -1,0 +1,64 @@
+<div class="barra-acciones">
+  <h1 class="pagina-titulo" style="margin:0">Clientes</h1>
+  <button class="btn btn-primario" (click)="abrirNuevo()">+ Nuevo cliente</button>
+</div>
+
+<app-modal
+  [titulo]="editandoId ? 'Editar cliente' : 'Nuevo cliente'"
+  [visible]="mostrarForm"
+  (cerrar)="cerrarForm()"
+>
+  @if (errorForm) { <div class="alerta-error">{{ errorForm }}</div> }
+  <form (ngSubmit)="guardar()">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Nombre</label>
+        <input class="form-input" [(ngModel)]="form.nombre" name="nombre" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Apellido</label>
+        <input class="form-input" [(ngModel)]="form.apellido" name="apellido" required />
+      </div>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Teléfono</label>
+      <input class="form-input" [(ngModel)]="form.telefono" name="telefono" required />
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Email (opcional)</label>
+      <input class="form-input" type="email" [(ngModel)]="form.email" name="email" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primario" type="submit">Guardar</button>
+      <button class="btn btn-secundario" type="button" (click)="cerrarForm()">Cancelar</button>
+    </div>
+  </form>
+</app-modal>
+
+<div class="card" style="padding:0;overflow:hidden">
+  @if (cargando) {
+    <p style="padding:24px;color:var(--color-texto-suave)">Cargando...</p>
+  } @else if (clientes.length === 0) {
+    <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">No hay clientes registrados</p>
+  } @else {
+    <table class="tabla">
+      <thead>
+        <tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Registro</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (c of clientes; track c.id) {
+          <tr>
+            <td><strong>{{ c.apellido }}</strong>, {{ c.nombre }}</td>
+            <td>{{ c.telefono }}</td>
+            <td>{{ c.email ?? '—' }}</td>
+            <td style="color:var(--color-texto-suave);font-size:0.825rem">{{ formatFecha(c.fechaRegistro) }}</td>
+            <td style="display:flex;gap:6px">
+              <button class="btn btn-secundario btn-sm" (click)="abrirEditar(c)">Editar</button>
+              <button class="btn btn-peligro btn-sm" (click)="eliminar(c.id)">Eliminar</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

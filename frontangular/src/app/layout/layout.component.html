@@ -1,0 +1,39 @@
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-marca">
+      <div class="sidebar-marca-icono">🚗</div>
+      <span class="sidebar-marca-texto">Lavadero</span>
+    </div>
+
+    @for (item of items; track item.ruta) {
+      <a
+        class="sidebar-link"
+        [routerLink]="item.ruta"
+        routerLinkActive="activo"
+      >
+        <span class="icono">{{ item.icono }}</span>
+        {{ item.label }}
+      </a>
+    }
+
+    <div class="sidebar-footer">
+      @if (usuario) {
+        <div class="sidebar-usuario">
+          <div class="sidebar-avatar">{{ iniciales }}</div>
+          <div class="sidebar-usuario-info">
+            <div class="sidebar-usuario-nombre">{{ usuario.nombre }} {{ usuario.apellido }}</div>
+            <div class="sidebar-usuario-rol">{{ usuario.rol }}</div>
+          </div>
+        </div>
+      }
+      <button class="sidebar-link sidebar-logout" (click)="logout()">
+        <span class="icono">→</span>
+        Cerrar sesión
+      </button>
+    </div>
+  </nav>
+
+  <main class="contenido">
+    <router-outlet />
+  </main>
+</div>

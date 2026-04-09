@@ -1,0 +1,116 @@
+<div class="barra-acciones">
+  <h1 class="pagina-titulo" style="margin:0">Turnos</h1>
+  <div style="display:flex;gap:8px;align-items:center">
+    <select class="form-select" [(ngModel)]="filtroEstado" (change)="cargar()" style="width:160px">
+      <option value="">Todos los estados</option>
+      @for (e of ESTADOS; track e) {
+        <option [value]="e">{{ ESTADO_LABEL[e] }}</option>
+      }
+    </select>
+    <button class="btn btn-primario" (click)="abrirForm()">+ Nuevo turno</button>
+  </div>
+</div>
+
+<app-modal
+  titulo="Nuevo turno"
+  [visible]="mostrarForm"
+  ancho="540px"
+  (cerrar)="cerrarForm()"
+>
+  @if (errorForm) { <div class="alerta-error">{{ errorForm }}</div> }
+  <form (ngSubmit)="guardar()">
+    <div class="form-grupo">
+      <label class="form-label">Cliente</label>
+      <select class="form-select" [(ngModel)]="form.clienteId" name="clienteId" (change)="onClienteChange()" required>
+        <option value="">Seleccioná un cliente...</option>
+        @for (c of clientes; track c.id) {
+          <option [value]="c.id">{{ c.apellido }}, {{ c.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Vehículo</label>
+      <select class="form-select" [(ngModel)]="form.vehiculoId" name="vehiculoId" required>
+        @if (!form.clienteId) {
+          <option value="">Seleccioná primero un cliente</option>
+        } @else if (vehiculosCliente.length === 0) {
+          <option value="">Este cliente no tiene vehículos</option>
+        } @else {
+          @for (v of vehiculosCliente; track v.id) {
+            <option [value]="v.id">{{ v.placa }} — {{ v.marca }} {{ v.modelo }}</option>
+          }
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Servicio</label>
+      <select class="form-select" [(ngModel)]="form.servicioId" name="servicioId" required>
+        <option value="">Seleccioná un servicio...</option>
+        @for (s of servicios; track s.id) {
+          <option [value]="s.id">{{ s.nombre }} — {{ formatPrecio(s.precio) }} ({{ s.duracionMinutos }} min)</option>
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Trabajador</label>
+      <select class="form-select" [(ngModel)]="form.trabajadorId" name="trabajadorId" required>
+        <option value="">Seleccioná un trabajador...</option>
+        @if (trabajadores.length === 0) {
+          <option disabled>— No hay trabajadores disponibles —</option>
+        }
+        @for (u of trabajadores; track u.id) {
+          <option [value]="u.id">{{ u.apellido }}, {{ u.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Fecha y hora</label>
+      <input class="form-input" type="datetime-local" [(ngModel)]="form.fechaHora" name="fechaHora" required />
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Observaciones (opcional)</label>
+      <input class="form-input" [(ngModel)]="form.observaciones" name="observaciones" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primario" type="submit">Guardar</button>
+      <button class="btn btn-secundario" type="button" (click)="cerrarForm()">Cancelar</button>
+    </div>
+  </form>
+</app-modal>
+
+<div class="card" style="padding:0;overflow:hidden">
+  @if (cargando) {
+    <p style="padding:24px;color:var(--color-texto-suave)">Cargando...</p>
+  } @else if (turnos.length === 0) {
+    <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">No hay turnos registrados</p>
+  } @else {
+    <table class="tabla">
+      <thead>
+        <tr><th>Fecha</th><th>Cliente / Vehículo</th><th>Servicio</th><th>Trabajador</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (t of turnos; track t.id) {
+          <tr>
+            <td style="white-space:nowrap;font-size:0.825rem">{{ formatFecha(t.fechaHora) }}</td>
+            <td>
+              <strong>{{ t.cliente?.apellido }}, {{ t.cliente?.nombre }}</strong><br>
+              <small style="color:var(--color-texto-suave)">{{ t.vehiculo?.placa }} · {{ t.vehiculo?.marca }}</small>
+            </td>
+            <td>{{ t.servicio?.nombre ?? '—' }}</td>
+            <td>{{ t.trabajador?.nombre }} {{ t.trabajador?.apellido }}</td>
+            <td><span [class]="'badge badge-' + t.estado">{{ ESTADO_LABEL[t.estado] }}</span></td>
+            <td>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                @for (sig of transiciones(t); track sig) {
+                  <button class="btn btn-secundario btn-sm" (click)="cambiarEstado(t, sig)">
+                    → {{ ESTADO_LABEL[sig] }}
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

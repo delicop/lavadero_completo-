@@ -1,0 +1,85 @@
+<div class="barra-acciones">
+  <h1 class="pagina-titulo" style="margin:0">Vehículos</h1>
+  <button class="btn btn-primario" (click)="abrirNuevo()">+ Nuevo vehículo</button>
+</div>
+
+<app-modal
+  [titulo]="editandoId ? 'Editar vehículo' : 'Nuevo vehículo'"
+  [visible]="mostrarForm"
+  ancho="500px"
+  (cerrar)="cerrarForm()"
+>
+  @if (errorForm) { <div class="alerta-error">{{ errorForm }}</div> }
+  <form (ngSubmit)="guardar()">
+    <div class="form-grupo">
+      <label class="form-label">Cliente</label>
+      <select class="form-select" [(ngModel)]="form.clienteId" name="clienteId" required>
+        <option value="">Seleccioná un cliente...</option>
+        @for (c of clientes; track c.id) {
+          <option [value]="c.id">{{ c.apellido }}, {{ c.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Patente</label>
+      <input class="form-input" [(ngModel)]="form.placa" name="placa" placeholder="ABC-1234" required />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Marca</label>
+        <input class="form-input" [(ngModel)]="form.marca" name="marca" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Modelo</label>
+        <input class="form-input" [(ngModel)]="form.modelo" name="modelo" required />
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Color</label>
+        <input class="form-input" [(ngModel)]="form.color" name="color" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" [(ngModel)]="form.tipo" name="tipo" required>
+          <option value="auto">Auto</option>
+          <option value="moto">Moto</option>
+          <option value="camioneta">Camioneta</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primario" type="submit">Guardar</button>
+      <button class="btn btn-secundario" type="button" (click)="cerrarForm()">Cancelar</button>
+    </div>
+  </form>
+</app-modal>
+
+<div class="card" style="padding:0;overflow:hidden">
+  @if (cargando) {
+    <p style="padding:24px;color:var(--color-texto-suave)">Cargando...</p>
+  } @else if (vehiculos.length === 0) {
+    <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">No hay vehículos registrados</p>
+  } @else {
+    <table class="tabla">
+      <thead>
+        <tr><th>Patente</th><th>Vehículo</th><th>Color / Tipo</th><th>Cliente</th><th>Registro</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (v of vehiculos; track v.id) {
+          <tr>
+            <td><strong>{{ v.placa }}</strong></td>
+            <td>{{ v.marca }} {{ v.modelo }}</td>
+            <td>{{ v.color }} · {{ tipoLabel[v.tipo] }}</td>
+            <td>{{ v.cliente ? v.cliente.apellido + ', ' + v.cliente.nombre : '—' }}</td>
+            <td style="color:var(--color-texto-suave);font-size:0.825rem">{{ formatFecha(v.fechaRegistro) }}</td>
+            <td style="display:flex;gap:6px">
+              <button class="btn btn-secundario btn-sm" (click)="abrirEditar(v)">Editar</button>
+              <button class="btn btn-peligro btn-sm" (click)="eliminar(v.id)">Eliminar</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

@@ -7,6 +7,7 @@ import { ClientesModule } from '../clientes/clientes.module';
 import { VehiculosModule } from '../vehiculos/vehiculos.module';
 import { ServiciosModule } from '../servicios/servicios.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UsuariosModule } from '../usuarios/usuarios.module';
     VehiculosModule,
     ServiciosModule,
     UsuariosModule,
+    EventsModule,
   ],
   controllers: [TurnosController],
   providers: [TurnosService],
