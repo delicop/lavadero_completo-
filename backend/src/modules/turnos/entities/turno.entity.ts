@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Cliente } from '../../clientes/entities/cliente.entity';
 import { Vehiculo } from '../../vehiculos/entities/vehiculo.entity';
@@ -27,6 +28,7 @@ export const TRANSICIONES_VALIDAS: Record<EstadoTurno, EstadoTurno[]> = {
 };
 
 @Entity('turnos')
+@Index(['estado', 'fechaHora'])
 export class Turno {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

@@ -1,14 +1,18 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SesionService } from '../../core/services/sesion.service';
 import { TurnoService } from '../../core/services/turno.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UsuarioService } from '../../core/services/usuario.service';
+import { CajaService } from '../../core/services/caja.service';
 import { RealtimeService, UsuarioActualizadoEvent } from '../../core/services/realtime.service';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { FormsModule } from '@angular/forms';
 import { formatPrecio } from '../../shared/utils/formatters';
 import { mostrarToastWhatsApp, mensajeTurnoCompletado } from '../../shared/utils/whatsapp';
-import type { Turno, Usuario } from '../../shared/types';
+import type { CajaDia, Turno, Usuario } from '../../shared/types';
 
 function esHoy(fechaIso: string): boolean {
   const hoy = new Date();
@@ -25,7 +29,7 @@ function horaStr(fechaIso: string): string {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, ModalComponent, FormsModule],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -56,7 +60,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   misCompletadosHoy: Turno[] = [];
   gananciaHoy = 0;
 
+  private readonly cajaService = inject(CajaService);
   private readonly realtime = inject(RealtimeService);
+  // Caja
+  cajaHoy: CajaDia | null = null;
+  cajaSinCerrar: CajaDia | null = null;
+  modalAbrirCaja = false;
+  montoInicialCaja = 0;
+  guardandoCaja = false;
+
   private intervalo: ReturnType<typeof setInterval> | null = null;
   private sub: Subscription | null = null;
   private subUsuario: Subscription | null = null;
@@ -70,7 +82,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.usuario = this.sesion.obtener();
     this.esAdmin = this.sesion.esAdmin();
-    await this.cargar();
+    await Promise.all([this.cargar(), this.esAdmin ? this.cargarEstadoCaja() : Promise.resolve()]);
 
     // Auto-refresh cada 60s como respaldo
     this.intervalo = setInterval(() => this.cargar(), 60_000);
@@ -105,16 +117,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private async cargarAdmin(): Promise<void> {
+    const cajaCerrada = this.cajaHoy?.estado === 'cerrada';
+
     const [ep, pe, co, usuarios] = await Promise.all([
       this.turnoSvc.listar('en_proceso'),
       this.turnoSvc.listar('pendiente'),
-      this.turnoSvc.listar('completado'),
+      cajaCerrada ? Promise.resolve([]) : this.turnoSvc.listar('completado'), // no consultar si el día cerró
       this.usuarioSvc.listar(),
     ]);
     this.enProceso = ep;
     this.pendientes = pe;
-    this.completadosHoy = co.filter(t => esHoy(t.fechaHora));
-    this.ingresos = this.completadosHoy.reduce((s, t) => s + Number(t.servicio?.precio ?? 0), 0);
+    this.completadosHoy = cajaCerrada ? [] : co.filter(t => esHoy(t.fechaHora));
+    this.ingresos = cajaCerrada ? 0 : this.completadosHoy.reduce((s, t) => s + Number(t.servicio?.precio ?? 0), 0);
     this.trabajadores = usuarios.filter(u => u.rol === 'trabajador' && u.activo);
     this.ultimoUpdate = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
   }
@@ -158,5 +172,50 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!this.usuario) return;
     await this.authSvc.toggleDisponibilidad(!this.usuario.disponible);
     this.usuario = this.sesion.obtener();
+  }
+
+  // ── Caja ────────────────────────────────────────────────────────────────────
+
+  async cargarEstadoCaja(): Promise<void> {
+    try {
+      const estado = await this.cajaService.obtenerEstado();
+      this.cajaHoy = estado.cajaHoy;
+      this.cajaSinCerrar = estado.cajaSinCerrar;
+    } catch { /* silencioso */ }
+  }
+
+  async abrirCaja(): Promise<void> {
+    this.guardandoCaja = true;
+    try {
+      this.cajaHoy = await this.cajaService.abrir(this.montoInicialCaja);
+      this.cajaSinCerrar = null;
+      this.modalAbrirCaja = false;
+      this.montoInicialCaja = 0;
+    } finally {
+      this.guardandoCaja = false;
+    }
+  }
+
+  async cerrarCaja(): Promise<void> {
+    if (!this.cajaHoy) return;
+    if (!confirm('¿Confirmar cierre de caja del día?')) return;
+    this.guardandoCaja = true;
+    try {
+      this.cajaHoy = await this.cajaService.cerrar(this.cajaHoy.id);
+    } finally {
+      this.guardandoCaja = false;
+    }
+  }
+
+  async cerrarCajaAnterior(): Promise<void> {
+    if (!this.cajaSinCerrar) return;
+    if (!confirm(`¿Cerrar la caja del ${this.cajaSinCerrar.fecha}?`)) return;
+    this.guardandoCaja = true;
+    try {
+      await this.cajaService.cerrar(this.cajaSinCerrar.id);
+      this.cajaSinCerrar = null;
+    } finally {
+      this.guardandoCaja = false;
+    }
   }
 }

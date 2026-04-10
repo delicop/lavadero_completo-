@@ -13,6 +13,41 @@
     </div>
   </div>
 
+  <!-- Widget caja -->
+  <div class="caja-widget" style="margin-bottom:20px">
+    @if (cajaSinCerrar) {
+      <div class="caja-widget-alerta">
+        <span>⚠️ Caja del {{ cajaSinCerrar.fecha }} pendiente de cierre</span>
+        <div style="display:flex;gap:8px">
+          <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
+          <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCajaAnterior()">
+            Cerrar caja anterior
+          </button>
+        </div>
+      </div>
+    } @else if (!cajaHoy) {
+      <div class="caja-widget-neutral">
+        <span>Caja del día no abierta</span>
+        <button class="btn btn-primario btn-sm" (click)="modalAbrirCaja = true">Abrir caja</button>
+      </div>
+    } @else if (cajaHoy.estado === 'abierta') {
+      <div class="caja-widget-ok">
+        <span>Caja abierta · inicio {{ cajaHoy.fechaApertura | date:'h:mm a' }}</span>
+        <div style="display:flex;gap:8px">
+          <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
+          <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCaja()">
+            Cerrar caja
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="caja-widget-cerrada">
+        <span>Caja cerrada · {{ cajaHoy.fechaCierre | date:'h:mm a' }}</span>
+        <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver resumen</a>
+      </div>
+    }
+  </div>
+
   <!-- Stats -->
   <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
     <div class="stat-card">
@@ -307,3 +342,18 @@
     </div>
   </div>
 }
+
+<!-- Modal abrir caja -->
+<app-modal [visible]="modalAbrirCaja" titulo="Abrir caja del día" ancho="400px" (cerrar)="modalAbrirCaja = false">
+  <div class="form-group">
+    <label class="form-label">Monto inicial en caja ($)</label>
+    <input class="form-input" type="number" min="0" [(ngModel)]="montoInicialCaja" placeholder="0" />
+    <small style="color:var(--color-texto-suave)">No cuenta en el total del mes, es solo de referencia.</small>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem">
+    <button class="btn btn-secundario" (click)="modalAbrirCaja = false">Cancelar</button>
+    <button class="btn btn-primario" [disabled]="guardandoCaja || montoInicialCaja < 0" (click)="abrirCaja()">
+      {{ guardandoCaja ? 'Abriendo...' : 'Abrir caja' }}
+    </button>
+  </div>
+</app-modal>

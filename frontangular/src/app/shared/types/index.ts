@@ -156,6 +156,79 @@ export interface CrearLiquidacionPayload {
   fechaHasta: string;
 }
 
+// ── Caja ──────────────────────────────────────────────────────────────────────
+
+export type EstadoCajaDia = 'abierta' | 'cerrada';
+export type TipoPagoCaja = 'efectivo' | 'transferencia';
+
+export interface CajaDia {
+  id: string;
+  fecha: string;
+  montoInicial: number;
+  estado: EstadoCajaDia;
+  usuarioAperturaId: string;
+  usuarioCierreId: string | null;
+  fechaApertura: string;
+  fechaCierre: string | null;
+  observaciones: string | null;
+}
+
+export interface GastoCaja {
+  id: string;
+  cajaDiaId: string;
+  concepto: string;
+  monto: number;
+  tipoPago: TipoPagoCaja;
+  fechaRegistro: string;
+}
+
+export interface IngresoManualCaja {
+  id: string;
+  cajaDiaId: string;
+  concepto: string;
+  monto: number;
+  tipoPago: TipoPagoCaja;
+  fechaRegistro: string;
+}
+
+export interface GananciaTrabajador {
+  trabajadorId: string;
+  nombre: string;
+  apellido: string;
+  comisionPorcentaje: number;
+  totalServicios: number;
+  ganancia: number;
+}
+
+export interface ResumenCaja {
+  cajaDia: CajaDia;
+  ingresos: {
+    montoInicial: number;
+    ventasEfectivo: number;
+    ventasTransferencia: number;
+    ingresosManual: number;
+    total: number;
+  };
+  gastos: {
+    efectivo: number;
+    transferencia: number;
+    total: number;
+    lista: GastoCaja[];
+  };
+  ganancias: {
+    trabajadores: GananciaTrabajador[];
+    totalEmpleados: number;
+    lavadero: number;
+    totalDia: number;
+  };
+  ingresosManualLista: IngresoManualCaja[];
+}
+
+export interface EstadoCaja {
+  cajaHoy: CajaDia | null;
+  cajaSinCerrar: CajaDia | null;
+}
+
 // ── Errores de la API ─────────────────────────────────────────────────────────
 
 export interface ApiError {

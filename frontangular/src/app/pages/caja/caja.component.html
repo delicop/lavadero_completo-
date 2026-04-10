@@ -1,0 +1,338 @@
+<div class="page">
+
+  <!-- Cargando -->
+  @if (vista === 'cargando') {
+    <div class="estado-vacio">Cargando caja...</div>
+  }
+
+  <!-- Error global -->
+  @if (error) {
+    <div class="alert alert-error" style="margin-bottom:1rem">{{ error }}</div>
+  }
+
+  <!-- ── CERRAR CAJA ANTERIOR (bloqueante) ───────────────────────────────── -->
+  @if (vista === 'cerrar_anterior' && cajaSinCerrar && resumenAnterior) {
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Caja pendiente de cierre</h1>
+        <p class="page-subtitle">
+          La caja del <strong>{{ formatFecha(cajaSinCerrar.fecha) }}</strong>
+          no fue cerrada. Debe cerrarla antes de continuar.
+        </p>
+      </div>
+    </div>
+
+    <div class="caja-bloqueo">
+      <div class="alert" style="background:var(--warning-bg,#fff3cd);border:1px solid #f0ad4e;color:#856404;padding:1rem;border-radius:8px;margin-bottom:1.5rem">
+        ⚠️ No se puede operar hasta cerrar la caja del día anterior.
+      </div>
+
+      <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumenAnterior }"></ng-container>
+
+      <div style="margin-top:1.5rem;text-align:right">
+        <button class="btn btn-primary" [disabled]="guardando" (click)="cerrarAnterior()">
+          {{ guardando ? 'Cerrando...' : 'Confirmar cierre del día anterior' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ── ABRIR CAJA ──────────────────────────────────────────────────────── -->
+  @if (vista === 'abrir') {
+    <div class="page-header">
+      <h1 class="page-title">Apertura de caja</h1>
+      <p class="page-subtitle">Ingrese el dinero con el que inicia el día</p>
+    </div>
+
+    <div class="card" style="max-width:480px">
+      <div class="form-group">
+        <label class="form-label">Monto inicial en caja ($)</label>
+        <input
+          class="form-input"
+          type="number"
+          min="0"
+          [(ngModel)]="montoInicial"
+          placeholder="0"
+        />
+        <small style="color:var(--text-muted)">
+          Este monto no cuenta en el total del mes, es solo de referencia.
+        </small>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observaciones (opcional)</label>
+        <input
+          class="form-input"
+          type="text"
+          [(ngModel)]="observacionesApertura"
+          placeholder="Ej: se dejaron $200.000 del día anterior"
+        />
+      </div>
+      <button
+        class="btn btn-primary"
+        style="width:100%"
+        [disabled]="guardando || montoInicial < 0"
+        (click)="abrirCaja()"
+      >
+        {{ guardando ? 'Abriendo...' : 'Abrir caja del día' }}
+      </button>
+    </div>
+  }
+
+  <!-- ── CAJA ABIERTA ────────────────────────────────────────────────────── -->
+  @if (vista === 'abierta' && cajaHoy) {
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Caja — {{ formatFecha(cajaHoy.fecha) }}</h1>
+        <p class="page-subtitle">Caja abierta · inicio {{ cajaHoy.fechaApertura | date:'h:mm a' }}</p>
+      </div>
+      <button class="btn btn-primary" [disabled]="!resumen" (click)="abrirModalCierre()">Cerrar caja</button>
+    </div>
+
+    @if (!resumen) {
+      <div class="estado-vacio" style="padding:2rem">Calculando resumen...</div>
+    } @else {
+      <div class="caja-grid">
+
+        <!-- Resumen en vivo -->
+        <div>
+          <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumen }"></ng-container>
+        </div>
+
+        <!-- Columna derecha: gastos + ingresos manuales -->
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+
+          <!-- Gastos -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Gastos del día</h3>
+              <button class="btn btn-secondary btn-sm" (click)="modalGasto = true">+ Agregar</button>
+            </div>
+            @if (resumen.gastos.lista.length === 0) {
+              <p class="estado-vacio" style="padding:1rem 0">Sin gastos registrados</p>
+            }
+            @for (g of resumen.gastos.lista; track g.id) {
+              <div class="lista-item">
+                <div>
+                  <div class="lista-item-titulo">{{ g.concepto }}</div>
+                  <div class="lista-item-sub">{{ g.tipoPago }}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                  <span class="badge badge-neutral">{{ formatPrecio(g.monto) }}</span>
+                  <button class="btn-icon" title="Eliminar" (click)="eliminarGasto(g)">✕</button>
+                </div>
+              </div>
+            }
+            <div class="lista-total">
+              <span>Total gastos</span>
+              <strong>{{ formatPrecio(resumen.gastos.total) }}</strong>
+            </div>
+          </div>
+
+          <!-- Ingresos manuales -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Ingresos manuales</h3>
+              <button class="btn btn-secondary btn-sm" (click)="modalIngreso = true">+ Agregar</button>
+            </div>
+            @if (resumen.ingresosManualLista.length === 0) {
+              <p class="estado-vacio" style="padding:1rem 0">Sin ingresos manuales</p>
+            }
+            @for (i of resumen.ingresosManualLista; track i.id) {
+              <div class="lista-item">
+                <div>
+                  <div class="lista-item-titulo">{{ i.concepto }}</div>
+                  <div class="lista-item-sub">{{ i.tipoPago }}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                  <span class="badge badge-success">{{ formatPrecio(i.monto) }}</span>
+                  <button class="btn-icon" title="Eliminar" (click)="eliminarIngreso(i)">✕</button>
+                </div>
+              </div>
+            }
+            @if (resumen.ingresos.ingresosManual > 0) {
+              <div class="lista-total">
+                <span>Total ingresos manuales</span>
+                <strong>{{ formatPrecio(resumen.ingresos.ingresosManual) }}</strong>
+              </div>
+            }
+          </div>
+
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ── CAJA CERRADA HOY ────────────────────────────────────────────────── -->
+  @if (vista === 'cerrada_hoy') {
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Caja cerrada{{ resumen ? ' — ' + formatFecha(resumen.cajaDia.fecha) : '' }}</h1>
+        <p class="page-subtitle">La caja de hoy ya fue cerrada</p>
+      </div>
+    </div>
+    @if (!resumen) {
+      <div class="estado-vacio">Calculando resumen...</div>
+    } @else {
+      <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumen }"></ng-container>
+    }
+  }
+
+</div>
+
+<!-- ══ TEMPLATE: RESUMEN DE CAJA ═════════════════════════════════════════════ -->
+<ng-template #tplResumen let-r>
+  <div class="caja-resumen">
+
+    <!-- Ingresos en efectivo -->
+    <div class="card resumen-card">
+      <h3 class="resumen-titulo">Ingresos en caja</h3>
+      <div class="resumen-fila">
+        <span>Total al inicio</span>
+        <span>{{ formatPrecio(r.ingresos.montoInicial) }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span>Venta en efectivo</span>
+        <span>{{ formatPrecio(r.ingresos.ventasEfectivo) }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span>Venta en transferencia</span>
+        <span>{{ formatPrecio(r.ingresos.ventasTransferencia) }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span>Ingreso manual</span>
+        <span>{{ formatPrecio(r.ingresos.ingresosManual) }}</span>
+      </div>
+      <div class="resumen-fila resumen-total">
+        <span>TOTAL</span>
+        <strong>{{ formatPrecio(r.ingresos.total) }}</strong>
+      </div>
+    </div>
+
+    <!-- Gastos -->
+    <div class="card resumen-card">
+      <h3 class="resumen-titulo">Gastos</h3>
+      <div class="resumen-fila">
+        <span>Por transferencia</span>
+        <span>{{ formatPrecio(r.gastos.transferencia) }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span>En efectivo</span>
+        <span>{{ formatPrecio(r.gastos.efectivo) }}</span>
+      </div>
+      <div class="resumen-fila resumen-total">
+        <span>TOTAL GASTOS</span>
+        <strong>{{ formatPrecio(r.gastos.total) }}</strong>
+      </div>
+    </div>
+
+    <!-- Ganancias -->
+    <div class="card resumen-card">
+      <h3 class="resumen-titulo">Ganancias del día</h3>
+      @for (t of r.ganancias.trabajadores; track t.trabajadorId) {
+        <div class="resumen-fila">
+          <span>{{ t.nombre }} {{ t.apellido }} ({{ t.comisionPorcentaje }}%)</span>
+          <span>{{ formatPrecio(t.ganancia) }}</span>
+        </div>
+      }
+      <div class="resumen-fila resumen-subtotal">
+        <span>Total empleados</span>
+        <span>{{ formatPrecio(r.ganancias.totalEmpleados) }}</span>
+      </div>
+      <div class="resumen-fila resumen-subtotal">
+        <span>Lavadero</span>
+        <span>{{ formatPrecio(r.ganancias.lavadero) }}</span>
+      </div>
+      <div class="resumen-fila resumen-total">
+        <span>TOTAL DEL DÍA</span>
+        <strong>{{ formatPrecio(r.ganancias.totalDia) }}</strong>
+      </div>
+    </div>
+
+  </div>
+</ng-template>
+
+<!-- ══ MODAL: CONFIRMAR CIERRE ═══════════════════════════════════════════════ -->
+<app-modal
+  [visible]="modalCierre"
+  titulo="Confirmar cierre de caja"
+  ancho="700px"
+  (cerrar)="modalCierre = false"
+>
+  @if (resumen) {
+    <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumen }"></ng-container>
+    <div style="margin-top:1.5rem;display:flex;justify-content:flex-end;gap:0.75rem">
+      <button class="btn btn-secondary" (click)="modalCierre = false">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="guardando" (click)="confirmarCierre()">
+        {{ guardando ? 'Cerrando...' : 'Confirmar cierre' }}
+      </button>
+    </div>
+  }
+</app-modal>
+
+<!-- ══ MODAL: NUEVO GASTO ════════════════════════════════════════════════════ -->
+<app-modal
+  [visible]="modalGasto"
+  titulo="Registrar gasto"
+  ancho="420px"
+  (cerrar)="modalGasto = false"
+>
+  <div class="form-group">
+    <label class="form-label">Concepto</label>
+    <input class="form-input" type="text" [(ngModel)]="gastoConcepto" placeholder="Ej: Combustible" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Monto ($)</label>
+    <input class="form-input" type="number" min="0" [(ngModel)]="gastoMonto" placeholder="0" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Tipo de pago</label>
+    <select class="form-input" [(ngModel)]="gastoTipo">
+      <option value="efectivo">Efectivo</option>
+      <option value="transferencia">Transferencia</option>
+    </select>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:0.75rem">
+    <button class="btn btn-secondary" (click)="modalGasto = false">Cancelar</button>
+    <button
+      class="btn btn-primary"
+      [disabled]="guardando || !gastoConcepto || !gastoMonto"
+      (click)="guardarGasto()"
+    >
+      {{ guardando ? 'Guardando...' : 'Guardar gasto' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- ══ MODAL: NUEVO INGRESO MANUAL ══════════════════════════════════════════ -->
+<app-modal
+  [visible]="modalIngreso"
+  titulo="Registrar ingreso manual"
+  ancho="420px"
+  (cerrar)="modalIngreso = false"
+>
+  <div class="form-group">
+    <label class="form-label">Concepto</label>
+    <input class="form-input" type="text" [(ngModel)]="ingresoConcepto" placeholder="Ej: Venta de producto" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Monto ($)</label>
+    <input class="form-input" type="number" min="0" [(ngModel)]="ingresoMonto" placeholder="0" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Tipo de pago</label>
+    <select class="form-input" [(ngModel)]="ingresoTipo">
+      <option value="efectivo">Efectivo</option>
+      <option value="transferencia">Transferencia</option>
+    </select>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:0.75rem">
+    <button class="btn btn-secondary" (click)="modalIngreso = false">Cancelar</button>
+    <button
+      class="btn btn-primary"
+      [disabled]="guardando || !ingresoConcepto || !ingresoMonto"
+      (click)="guardarIngreso()"
+    >
+      {{ guardando ? 'Guardando...' : 'Guardar ingreso' }}
+    </button>
+  </div>
+</app-modal>

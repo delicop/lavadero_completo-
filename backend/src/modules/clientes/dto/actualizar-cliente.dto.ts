@@ -19,4 +19,9 @@ export class ActualizarClienteDto {
   @IsEmail()
   @IsOptional()
   email?: string;
+
+  @IsString()
+  @IsOptional()
+  @Length(1, 20)
+  cedula?: string;
 }

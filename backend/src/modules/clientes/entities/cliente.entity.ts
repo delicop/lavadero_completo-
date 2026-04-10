@@ -17,6 +17,9 @@ export class Cliente {
   @Column({ type: 'varchar', unique: true, length: 150, nullable: true })
   email!: string | null;
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  cedula!: string | null;
+
   @CreateDateColumn()
   fechaRegistro!: Date;
 }

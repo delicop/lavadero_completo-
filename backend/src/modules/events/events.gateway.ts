@@ -7,7 +7,7 @@ import { Server } from 'socket.io';
 })
 export class EventsGateway {
   @WebSocketServer()
-  private readonly server: Server;
+  private readonly server!: Server;
 
   emitirTurnoActualizado(turnoId: string, estado: string): void {
     this.server.emit('turno:actualizado', { turnoId, estado });

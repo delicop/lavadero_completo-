@@ -60,6 +60,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/configuracion/configuracion.component').then(m => m.ConfiguracionComponent),
       },
+      {
+        path: 'caja',
+        loadComponent: () =>
+          import('./pages/caja/caja.component').then(m => m.CajaComponent),
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

@@ -23,6 +23,7 @@ const MENU_ITEMS: ItemMenu[] = [
   { ruta: '/liquidaciones', label: 'Liquidaciones',   icono: '◎', soloAdmin: true },
   { ruta: '/asistencia',    label: 'Asistencia',      icono: '◑', soloAdmin: true },
   { ruta: '/configuracion', label: 'Configuración',   icono: '◐', soloAdmin: true },
+  { ruta: '/caja',          label: 'Caja',             icono: '◫', soloAdmin: true },
 ];
 
 @Component({
