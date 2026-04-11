@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Factura } from './entities/factura.entity';
 import { TurnosService } from '../turnos/turnos.service';
 import { EstadoTurno } from '../turnos/entities/turno.entity';
@@ -35,8 +35,17 @@ export class FacturacionService {
     return this.repo.save(factura);
   }
 
-  async buscarTodas(): Promise<Factura[]> {
+  async buscarTodas(fechaDesde?: string, fechaHasta?: string): Promise<Factura[]> {
+    const where: Record<string, unknown> = {};
+    if (fechaDesde && fechaHasta) {
+      // Usar offset Colombia (UTC-5) para que el rango corresponda al día local
+      where['fechaEmision'] = Between(
+        new Date(`${fechaDesde}T00:00:00-05:00`),
+        new Date(`${fechaHasta}T23:59:59-05:00`),
+      );
+    }
     return this.repo.find({
+      where,
       relations: ['turno', 'turno.cliente', 'turno.vehiculo', 'turno.servicio'],
       order: { fechaEmision: 'DESC' },
     });
