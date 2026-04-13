@@ -17,24 +17,30 @@ const ITEMS_DIRECTOS: ItemMenu[] = [
   { ruta: '/dashboard', label: 'Panel', icono: '⊞' },
 ];
 
-// Links directos solo para admin (fuera del grupo Administración)
-const ITEMS_OPERACION: ItemMenu[] = [
-  { ruta: '/turnos',        label: 'Turnos',       icono: '◷' },
-  { ruta: '/caja',          label: 'Caja',          icono: '◫' },
-  { ruta: '/liquidaciones', label: 'Liquidaciones', icono: '◎' },
-  { ruta: '/asistencia',    label: 'Asistencia',    icono: '◑' },
-];
-
 // Subitems del grupo Administración
 const ITEMS_ADMIN: ItemMenu[] = [
-  { ruta: '/clientes',      label: 'Clientes',  icono: '◻' },
-  { ruta: '/vehiculos',     label: 'Vehículos', icono: '◈' },
-  { ruta: '/servicios',     label: 'Servicios', icono: '◆' },
-  { ruta: '/configuracion', label: 'Personal',  icono: '◉' },
-  { ruta: '/mi-perfil',     label: 'Mi perfil', icono: '◯' },
+  { ruta: '/facturacion',    label: 'Facturación',    icono: '🧾' },
+  { ruta: '/historial-caja', label: 'Historial Caja', icono: '📅' },
+  { ruta: '/clientes',       label: 'Clientes',       icono: '◻' },
+  { ruta: '/vehiculos',     label: 'Vehículos',   icono: '◈' },
+  { ruta: '/servicios',     label: 'Servicios',   icono: '◆' },
+  { ruta: '/configuracion', label: 'Personal',    icono: '◉' },
+  { ruta: '/mi-perfil',     label: 'Mi perfil',   icono: '◯' },
+];
+
+// Subitems del grupo Operación
+const ITEMS_OPERACION: ItemMenu[] = [
+  { ruta: '/turnos',         label: 'Turnos',         icono: '◷' },
+  { ruta: '/caja',           label: 'Caja',            icono: '◫' },
+  { ruta: '/gastos',         label: 'Gastos',          icono: '📤' },
+  { ruta: '/otros-ingresos', label: 'Otros Ingresos',  icono: '📥' },
+  { ruta: '/cotizaciones',   label: 'Cotizaciones',    icono: '📄' },
+  { ruta: '/liquidaciones',  label: 'Liquidaciones',   icono: '◎' },
+  { ruta: '/asistencia',     label: 'Asistencia',      icono: '◑' },
 ];
 
 const RUTAS_GRUPO_ADMIN = new Set(ITEMS_ADMIN.map(i => i.ruta));
+const RUTAS_GRUPO_OPERACION = new Set(ITEMS_OPERACION.map(i => i.ruta));
 
 @Component({
   selector: 'app-layout',
@@ -51,20 +57,21 @@ export class LayoutComponent implements OnInit, OnDestroy {
   usuario: Usuario | null = null;
   esAdmin = false;
   itemsDirectos: ItemMenu[] = [];
-  itemsOperacion: ItemMenu[] = [];
   itemsAdmin: ItemMenu[] = [];
+  itemsOperacion: ItemMenu[] = [];
   adminAbierto = false;
+  operacionAbierto = false;
 
   ngOnInit(): void {
     this.usuario = this.sesion.obtener();
     this.esAdmin = this.sesion.esAdmin();
     this.itemsDirectos = ITEMS_DIRECTOS;
     if (this.esAdmin) {
-      this.itemsOperacion = ITEMS_OPERACION;
       this.itemsAdmin = ITEMS_ADMIN;
-      // Auto-abrir si la ruta actual es de administración
+      this.itemsOperacion = ITEMS_OPERACION;
       const rutaActual = this.router.url.split('?')[0];
       this.adminAbierto = RUTAS_GRUPO_ADMIN.has(rutaActual);
+      this.operacionAbierto = RUTAS_GRUPO_OPERACION.has(rutaActual);
     }
     this.realtime.conectar();
   }
@@ -75,6 +82,10 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   toggleAdmin(): void {
     this.adminAbierto = !this.adminAbierto;
+  }
+
+  toggleOperacion(): void {
+    this.operacionAbierto = !this.operacionAbierto;
   }
 
   logout(): void {

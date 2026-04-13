@@ -4,13 +4,14 @@ import { firstValueFrom } from 'rxjs';
 import type {
   CajaDia,
   EstadoCaja,
+  Factura,
   GastoCaja,
   IngresoManualCaja,
   ResumenCaja,
   TipoPagoCaja,
 } from '../../shared/types';
 
-const BASE = 'http://localhost:3000/api/caja';
+const BASE = '/api/caja';
 
 @Injectable({ providedIn: 'root' })
 export class CajaService {
@@ -64,5 +65,9 @@ export class CajaService {
 
   historial(): Promise<CajaDia[]> {
     return firstValueFrom(this.http.get<CajaDia[]>(`${BASE}/historial`));
+  }
+
+  listarFacturasDia(cajaDiaId: string): Promise<Factura[]> {
+    return firstValueFrom(this.http.get<Factura[]>(`${BASE}/facturas/${cajaDiaId}`));
   }
 }

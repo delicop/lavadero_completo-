@@ -20,6 +20,19 @@ export function calcularPeriodo(dias: number): { fechaDesde: string; fechaHasta:
   const hoy = new Date();
   const desde = new Date();
   desde.setDate(hoy.getDate() - dias + 1);
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  return { fechaDesde: fmt(desde), fechaHasta: fmt(hoy) };
+  return { fechaDesde: fechaLocal(desde), fechaHasta: fechaLocal(hoy) };
+}
+
+/** Devuelve la fecha local (YYYY-MM-DD) sin conversión UTC — evita salto de día en Colombia */
+export function fechaLocal(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Primer día del mes actual en fecha local */
+export function primerDiaMesLocal(): string {
+  const hoy = new Date();
+  return fechaLocal(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
 }

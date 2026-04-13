@@ -47,6 +47,7 @@ export interface ResumenCaja {
     totalDia: number;
   };
   ingresosManualLista: IngresoManualCaja[];
+  facturasList: Factura[];
 }
 
 @Injectable()
@@ -65,11 +66,12 @@ export class CajaService {
   ) {}
 
   private fechaHoy(): string {
-    // Fecha local en Colombia (UTC-5), pero en local dev usamos la fecha del servidor
-    return new Date().toISOString().slice(0, 10);
+    // Fecha en hora Colombia (UTC-5) como 'YYYY-MM-DD'
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
   }
 
   async obtenerEstado(): Promise<{ cajaHoy: CajaDia | null; cajaSinCerrar: CajaDia | null }> {
+    const t = Date.now();
     const hoy = this.fechaHoy();
     const [cajaHoy, cajaSinCerrar] = await Promise.all([
       this.cajaDiaRepo.findOne({ where: { fecha: hoy } }),
@@ -78,6 +80,7 @@ export class CajaService {
         order: { fecha: 'DESC' },
       }),
     ]);
+    console.log(`[PERF] obtenerEstado: ${Date.now() - t}ms`);
     return { cajaHoy, cajaSinCerrar };
   }
 
@@ -108,47 +111,69 @@ export class CajaService {
   }
 
   async calcularResumen(cajaDiaId: string): Promise<ResumenCaja> {
+    const tTotal = Date.now();
+
+    const tFindOne = Date.now();
     const cajaDia = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId } });
+    console.log(`[PERF] calcularResumen findOne cajaDia: ${Date.now() - tFindOne}ms`);
     if (!cajaDia) throw new NotFoundException('Caja no encontrada');
 
     const fecha = cajaDia.fecha; // 'YYYY-MM-DD'
 
-    // Todas las queries en paralelo para reducir latencia
-    const [turnos, facturas, gastos, ingManuales] = await Promise.all([
-      this.turnoRepo
-        .createQueryBuilder('t')
-        .select(['t.id', 't.trabajadorId', 't.servicioId'])
-        .addSelect(['u.id', 'u.nombre', 'u.apellido', 'u.comisionPorcentaje'])
-        .addSelect(['s.precio'])
-        .innerJoin('t.trabajador', 'u')
-        .innerJoin('t.servicio', 's')
-        .where('t.estado = :estado', { estado: EstadoTurno.COMPLETADO })
-        .andWhere(`t.fechaHora >= :fecha::date AND t.fechaHora < (:fecha::date + INTERVAL '1 day')`, { fecha })
-        .getMany(),
-      this.facturaRepo
-        .createQueryBuilder('f')
-        .where(`DATE(f."fechaEmision") = :fecha`, { fecha })
-        .getMany(),
-      this.gastoCajaRepo.find({ where: { cajaDiaId } }),
-      this.ingresoManualRepo.find({ where: { cajaDiaId } }),
+    // Ventas por método leídas desde columnas pre-computadas (sin JOIN a facturas)
+    const ventasEfectivo = Number(cajaDia.ventasEfectivo);
+    const ventasTransferencia = Number(cajaDia.ventasTransferencia);
+
+    // Queries en paralelo con timings individuales para diagnóstico
+    const t0 = Date.now();
+    const [turnos, gastos, ingManuales, facturas] = await Promise.all([
+      (async () => {
+        const t = Date.now();
+        const r = await this.turnoRepo
+          .createQueryBuilder('t')
+          .select(['t.id', 't.trabajadorId', 't.servicioId'])
+          .addSelect(['u.id', 'u.nombre', 'u.apellido', 'u.comisionPorcentaje'])
+          .addSelect(['s.precio'])
+          .innerJoin('t.trabajador', 'u')
+          .innerJoin('t.servicio', 's')
+          .where('t.estado = :estado', { estado: EstadoTurno.COMPLETADO })
+          .andWhere(`t.fechaHora >= :fecha::date AND t.fechaHora < (:fecha::date + INTERVAL '1 day')`, { fecha })
+          .getMany();
+        console.log(`[PERF] turnos:          ${Date.now() - t}ms (${r.length} filas)`);
+        return r;
+      })(),
+      (async () => {
+        const t = Date.now();
+        const r = await this.gastoCajaRepo.find({ where: { cajaDiaId } });
+        console.log(`[PERF] gastos:          ${Date.now() - t}ms (${r.length} filas)`);
+        return r;
+      })(),
+      (async () => {
+        const t = Date.now();
+        const r = await this.ingresoManualRepo.find({ where: { cajaDiaId } });
+        console.log(`[PERF] ingresos manual: ${Date.now() - t}ms (${r.length} filas)`);
+        return r;
+      })(),
+      (async () => {
+        const t = Date.now();
+        const r = await this.facturaRepo
+          .createQueryBuilder('f')
+          .leftJoinAndSelect('f.turno', 't')
+          .leftJoinAndSelect('t.cliente', 'c')
+          .leftJoinAndSelect('t.vehiculo', 'v')
+          .leftJoinAndSelect('t.servicio', 's')
+          .leftJoinAndSelect('t.trabajador', 'u')
+          .where('f.fechaEmision >= :desde AND f.fechaEmision <= :hasta', {
+            desde: new Date(`${fecha}T00:00:00-05:00`),
+            hasta: new Date(`${fecha}T23:59:59-05:00`),
+          })
+          .orderBy('f.fechaEmision', 'ASC')
+          .getMany();
+        console.log(`[PERF] facturas:        ${Date.now() - t}ms (${r.length} filas)`);
+        return r;
+      })(),
     ]);
-
-    // Mapa turnoId → metodoPago (de facturas cuando existen)
-    const metodoPorTurno = new Map(facturas.map(f => [f.turnoId, f.metodoPago]));
-
-    // Clasificar ventas por método de pago
-    // Si el turno tiene factura usamos su método; si no, cuenta como efectivo (default lavadero)
-    let ventasEfectivo = 0;
-    let ventasTransferencia = 0;
-    for (const t of turnos) {
-      const precio = Number(t.servicio.precio);
-      const metodo = metodoPorTurno.get(t.id);
-      if (!metodo || metodo === 'efectivo') {
-        ventasEfectivo += precio;
-      } else {
-        ventasTransferencia += precio;
-      }
-    }
+    console.log(`[PERF] Promise.all total: ${Date.now() - t0}ms`);
 
     // Gastos
     const gastosEfectivo = gastos
@@ -188,16 +213,18 @@ export class CajaService {
     const totalGananciaEmpleados = gananciasEmpleados.reduce((s, e) => s + e.ganancia, 0);
     const totalVentas = ventasEfectivo + ventasTransferencia + totalIngresosManual;
     const totalGastos = gastosEfectivo + gastosTransferencia;
-    const gananciaLavadero = totalVentas - totalGananciaEmpleados - totalGastos;
+    const montoInicial = Number(cajaDia.montoInicial);
+    const gananciaLavadero = totalVentas - totalGananciaEmpleados;
+    const totalDia = montoInicial + gananciaLavadero - totalGastos;
 
-    return {
+    const result: ResumenCaja = {
       cajaDia,
       ingresos: {
         montoInicial: Number(cajaDia.montoInicial),
         ventasEfectivo,
         ventasTransferencia,
         ingresosManual: totalIngresosManual,
-        total: Number(cajaDia.montoInicial) + totalVentas,
+        total: montoInicial + totalVentas,
       },
       gastos: {
         efectivo: gastosEfectivo,
@@ -209,10 +236,32 @@ export class CajaService {
         trabajadores: gananciasEmpleados,
         totalEmpleados: totalGananciaEmpleados,
         lavadero: gananciaLavadero,
-        totalDia: totalVentas,
+        totalDia,
       },
       ingresosManualLista: ingManuales,
+      facturasList: facturas,
     };
+    console.log(`[PERF] calcularResumen TOTAL: ${Date.now() - tTotal}ms`);
+    return result;
+  }
+
+  async listarFacturasDia(cajaDiaId: string): Promise<Factura[]> {
+    const cajaDia = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId } });
+    if (!cajaDia) throw new NotFoundException('Caja no encontrada');
+
+    return this.facturaRepo
+      .createQueryBuilder('f')
+      .leftJoinAndSelect('f.turno', 't')
+      .leftJoinAndSelect('t.cliente', 'c')
+      .leftJoinAndSelect('t.vehiculo', 'v')
+      .leftJoinAndSelect('t.servicio', 's')
+      .leftJoinAndSelect('t.trabajador', 'u')
+      .where('f.fechaEmision >= :desde AND f.fechaEmision <= :hasta', {
+        desde: new Date(`${cajaDia.fecha}T00:00:00-05:00`),
+        hasta: new Date(`${cajaDia.fecha}T23:59:59-05:00`),
+      })
+      .orderBy('f.fechaEmision', 'ASC')
+      .getMany();
   }
 
   async cerrar(cajaDiaId: string, usuarioId: string): Promise<CajaDia> {

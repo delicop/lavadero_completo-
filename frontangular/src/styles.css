@@ -118,7 +118,7 @@ body {
 }
 
 .sidebar-subgrupo.visible {
-  max-height: 200px;
+  max-height: 320px;
 }
 
 .sidebar-sublink {
@@ -319,6 +319,12 @@ body {
   border: 1px solid var(--color-borde);
 }
 .btn-sm { padding: 4px 10px; font-size: 0.775rem; }
+.btn-cobrar {
+  background: #16a34a;
+  color: white;
+  font-weight: 600;
+}
+.btn-cobrar:hover { background: #15803d; opacity: 1; }
 
 /* ── Formularios ────────────────────────────────────────────────── */
 
@@ -407,6 +413,44 @@ body {
   font-size: 0.825rem;
 }
 
+/* ── Barra de filtros ───────────────────────────────────────────── */
+
+.filtros-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--sombra);
+}
+
+.filtros-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filtros-busqueda {
+  flex: 1;
+  min-width: 160px;
+}
+
+.filtros-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filtros-acciones {
+  justify-content: flex-end;
+}
+
 /* ── Barra de acciones ──────────────────────────────────────────── */
 
 .barra-acciones {
@@ -455,6 +499,119 @@ body {
   font-size: 0.75rem;
   color: var(--color-texto-suave);
   margin-top: 2px;
+}
+
+/* ── Métodos de pago ────────────────────────────────────────────── */
+
+.metodos-pago-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.metodo-pago-btn {
+  padding: 10px;
+  border: 2px solid var(--color-borde);
+  border-radius: 8px;
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  color: var(--color-texto-suave);
+}
+
+.metodo-pago-btn:hover {
+  border-color: var(--color-primario);
+  color: var(--color-primario);
+}
+
+.metodo-pago-btn.seleccionado {
+  border-color: var(--color-primario);
+  background: #eff6ff;
+  color: var(--color-primario);
+  font-weight: 600;
+}
+
+/* ── Factura impresión ──────────────────────────────────────────── */
+
+.factura-print {
+  display: none;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .sidebar  { display: none !important; }
+  .contenido { margin-left: 0 !important; padding: 0 !important; }
+
+  .factura-print {
+    display: block;
+    padding: 32px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #000;
+  }
+
+  .factura-print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #000;
+  }
+
+  .factura-print-logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+  }
+
+  .factura-print-titulo {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .factura-print-fecha {
+    font-size: 0.8rem;
+    color: #555;
+    text-align: right;
+  }
+
+  .factura-print-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+  }
+
+  .factura-print-tabla tr td {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+
+  .factura-print-lbl {
+    color: #666;
+    width: 38%;
+    font-size: 0.8rem;
+  }
+
+  .factura-print-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-weight: 800;
+    padding-top: 16px;
+    border-top: 2px solid #000;
+    margin-bottom: 24px;
+  }
+
+  .factura-print-footer {
+    text-align: center;
+    color: #888;
+    font-size: 0.8rem;
+  }
 }
 
 /* ── Helpers ────────────────────────────────────────────────────── */

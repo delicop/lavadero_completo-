@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CajaService } from '../../core/services/caja.service';
@@ -6,6 +6,7 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { formatPrecio } from '../../shared/utils/formatters';
 import type {
   CajaDia,
+  Factura,
   GastoCaja,
   IngresoManualCaja,
   ResumenCaja,
@@ -27,6 +28,7 @@ type Vista =
 })
 export class CajaComponent implements OnInit {
   private readonly cajaService = inject(CajaService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   vista: Vista = 'cargando';
   error = '';
@@ -58,37 +60,50 @@ export class CajaComponent implements OnInit {
   // Modal cierre
   modalCierre = false;
 
+  // Modal detalle de factura
+  facturaDetalle: Factura | null = null;
+
   readonly formatPrecio = formatPrecio;
 
   async ngOnInit(): Promise<void> {
+    console.log('[CAJA] ngOnInit START', Date.now());
     await this.verificarEstado();
+    console.log('[CAJA] ngOnInit END', Date.now());
   }
 
   async verificarEstado(): Promise<void> {
+    console.log('[CAJA] verificarEstado START', Date.now());
     this.vista = 'cargando';
     this.error = '';
     try {
       const estado = await this.cajaService.obtenerEstado();
+      console.log('[CAJA] obtenerEstado respondió', Date.now(), estado);
       this.cajaHoy = estado.cajaHoy;
       this.cajaSinCerrar = estado.cajaSinCerrar;
 
       if (estado.cajaSinCerrar) {
-        // Cargar resumen del día anterior para mostrarlo antes de cerrar
+        console.log('[CAJA] hay caja sin cerrar — cargando resumen anterior', Date.now());
         this.resumenAnterior = await this.cajaService.obtenerResumen(estado.cajaSinCerrar.id);
+        console.log('[CAJA] resumen anterior cargado', Date.now());
         this.vista = 'cerrar_anterior';
       } else if (!estado.cajaHoy) {
         this.vista = 'abrir';
       } else if (estado.cajaHoy.estado === 'abierta') {
         this.vista = 'abierta';
-        void this.cargarResumenHoy(); // sin await — UI muestra la caja de inmediato
+        console.log('[CAJA] vista=abierta, lanzando cargarResumenHoy en background', Date.now());
+        void this.cargarResumenHoy();
       } else {
         this.vista = 'cerrada_hoy';
-        void this.cargarResumenHoy(); // sin await
+        console.log('[CAJA] vista=cerrada_hoy, lanzando cargarResumenHoy en background', Date.now());
+        void this.cargarResumenHoy();
       }
-    } catch {
+    } catch (e) {
+      console.error('[CAJA] ERROR en verificarEstado', Date.now(), e);
       this.error = 'No se pudo cargar el estado de la caja.';
       this.vista = 'abrir';
     }
+    this.cdr.detectChanges();
+    console.log('[CAJA] verificarEstado END', Date.now());
   }
 
   private async cargarResumenHoy(): Promise<void> {
@@ -96,7 +111,10 @@ export class CajaComponent implements OnInit {
     const version = ++this.resumenVersion;
     try {
       const resumen = await this.cajaService.obtenerResumen(this.cajaHoy.id);
-      if (version === this.resumenVersion) this.resumen = resumen; // ignorar respuestas antiguas
+      if (version === this.resumenVersion) {
+        this.resumen = resumen;
+        this.cdr.detectChanges();
+      }
     } catch {
       if (version === this.resumenVersion) this.error = 'No se pudo cargar el resumen. Intente de nuevo.';
     }
@@ -253,12 +271,19 @@ export class CajaComponent implements OnInit {
     }
   }
 
+  efectivoEnCaja(r: ResumenCaja): number {
+    const ingManualEfectivo = r.ingresosManualLista
+      .filter(i => i.tipoPago === 'efectivo')
+      .reduce((s, i) => s + Number(i.monto), 0);
+    return Number(r.ingresos.montoInicial) + Number(r.ingresos.ventasEfectivo) + ingManualEfectivo - Number(r.gastos.efectivo);
+  }
+
   formatFecha(fecha: string): string {
-    return new Date(fecha + 'T12:00:00').toLocaleDateString('es-CO', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return new Date(fecha + 'T12:00:00-05:00').toLocaleDateString('es-CO', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
   }
+
+  verFactura(f: Factura): void  { this.facturaDetalle = f; }
+  cerrarFactura(): void         { this.facturaDetalle = null; }
 }

@@ -26,7 +26,10 @@
       "Bash(curl -s http://localhost:5173)",
       "Bash(npx tsc:*)",
       "Bash(npx @angular/cli@latest new frontangular --routing=true --style=css --standalone --skip-git --skip-tests --package-manager=npm)",
-      "Bash(npx ng:*)"
+      "Bash(npx ng:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker volume:*)",
+      "Bash(ls d:/lavadero/*.md)"
     ]
   }
 }

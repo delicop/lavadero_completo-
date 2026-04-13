@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Factura } from './entities/factura.entity';
+import { CajaDia, EstadoCajaDia } from '../caja/entities/caja-dia.entity';
 import { TurnosService } from '../turnos/turnos.service';
 import { EstadoTurno } from '../turnos/entities/turno.entity';
 import { CrearFacturaDto } from './dto/crear-factura.dto';
@@ -11,6 +12,8 @@ export class FacturacionService {
   constructor(
     @InjectRepository(Factura)
     private readonly repo: Repository<Factura>,
+    @InjectRepository(CajaDia)
+    private readonly cajaDiaRepo: Repository<CajaDia>,
     private readonly turnosService: TurnosService,
   ) {}
 
@@ -32,7 +35,16 @@ export class FacturacionService {
       ...dto,
       observaciones: dto.observaciones ?? null,
     });
-    return this.repo.save(factura);
+    const saved = await this.repo.save(factura);
+
+    // Actualizar columna pre-computada en la caja abierta del día
+    const cajaAbierta = await this.cajaDiaRepo.findOne({ where: { estado: EstadoCajaDia.ABIERTA } });
+    if (cajaAbierta) {
+      const campo = dto.metodoPago === 'efectivo' ? 'ventasEfectivo' : 'ventasTransferencia';
+      await this.cajaDiaRepo.increment({ id: cajaAbierta.id }, campo, Number(dto.total));
+    }
+
+    return saved;
   }
 
   async buscarTodas(fechaDesde?: string, fechaHasta?: string): Promise<Factura[]> {

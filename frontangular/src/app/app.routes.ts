@@ -65,6 +65,31 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/caja/caja.component').then(m => m.CajaComponent),
       },
+      {
+        path: 'facturacion',
+        loadComponent: () =>
+          import('./pages/facturacion/facturacion.component').then(m => m.FacturacionComponent),
+      },
+      {
+        path: 'historial-caja',
+        loadComponent: () =>
+          import('./pages/historial-caja/historial-caja.component').then(m => m.HistorialCajaComponent),
+      },
+      {
+        path: 'gastos',
+        loadComponent: () =>
+          import('./pages/gastos/gastos.component').then(m => m.GastosComponent),
+      },
+      {
+        path: 'otros-ingresos',
+        loadComponent: () =>
+          import('./pages/otros-ingresos/otros-ingresos.component').then(m => m.OtrosIngresosComponent),
+      },
+      {
+        path: 'cotizaciones',
+        loadComponent: () =>
+          import('./pages/cotizaciones/cotizaciones.component').then(m => m.CotizacionesComponent),
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

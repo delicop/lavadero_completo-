@@ -50,6 +50,13 @@ export class CajaDia {
   @Column({ type: 'text', nullable: true })
   observaciones!: string | null;
 
+  // Columnas pre-computadas: se incrementan al crear facturas, evitan JOINs pesados en el resumen
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  ventasEfectivo!: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  ventasTransferencia!: number;
+
   @CreateDateColumn()
   fechaCreacion!: Date;
 }

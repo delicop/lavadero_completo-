@@ -67,8 +67,8 @@ export class TurnosService {
     if (estado) where['estado'] = estado;
     if (fechaDesde && fechaHasta) {
       where['fechaHora'] = Between(
-        new Date(`${fechaDesde}T00:00:00`),
-        new Date(`${fechaHasta}T23:59:59`),
+        new Date(`${fechaDesde}T00:00:00-05:00`),
+        new Date(`${fechaHasta}T23:59:59-05:00`),
       );
     }
     return this.repo.find({
@@ -93,8 +93,8 @@ export class TurnosService {
     const where: Record<string, unknown> = { trabajadorId };
     if (fechaDesde && fechaHasta) {
       where['fechaHora'] = Between(
-        new Date(`${fechaDesde}T00:00:00`),
-        new Date(`${fechaHasta}T23:59:59`),
+        new Date(`${fechaDesde}T00:00:00-05:00`),
+        new Date(`${fechaHasta}T23:59:59-05:00`),
       );
     }
     return this.repo.find({

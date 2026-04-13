@@ -1,0 +1,215 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historial de Caja</h1>
+      <p class="page-subtitle">Resumen por día de cajas cerradas</p>
+    </div>
+  </div>
+
+  @if (cargando) {
+    <div class="estado-vacio">Cargando historial...</div>
+  } @else if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  } @else if (dias.length === 0) {
+    <div class="estado-vacio">No hay cajas cerradas registradas.</div>
+  } @else {
+    <div style="display:flex;flex-direction:column;gap:12px">
+      @for (dia of dias; track dia.cajaDia.id) {
+        <div class="card" style="padding:0;overflow:hidden">
+
+          <!-- Cabecera del día (siempre visible) -->
+          <button
+            style="width:100%;background:none;border:none;cursor:pointer;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left"
+            (click)="toggle(dia)"
+          >
+            <div style="font-weight:700;font-size:0.95rem;min-width:200px;text-transform:capitalize">
+              {{ formatFecha(dia.cajaDia.fecha) }}
+            </div>
+
+            @if (dia.resumen) {
+              <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:0.85rem">
+                <span>
+                  <span style="color:var(--color-texto-suave)">Órdenes </span>
+                  <strong>{{ dia.resumen.facturasList?.length ?? 0 }}</strong>
+                </span>
+                <span>
+                  <span style="color:var(--color-texto-suave)">Ventas </span>
+                  <strong style="color:#16a34a">{{ formatPrecio(dia.resumen.ingresos.total) }}</strong>
+                </span>
+                <span>
+                  <span style="color:var(--color-texto-suave)">Gastos </span>
+                  <strong style="color:#dc2626">{{ formatPrecio(dia.resumen.gastos.total) }}</strong>
+                </span>
+                <span>
+                  <span style="color:var(--color-texto-suave)">Neto lavadero </span>
+                  <strong style="color:#2563eb">{{ formatPrecio(dia.resumen.ganancias.lavadero) }}</strong>
+                </span>
+              </div>
+            } @else if (dia.cargando) {
+              <span style="font-size:0.85rem;color:var(--color-texto-suave)">Cargando...</span>
+            } @else {
+              <span style="font-size:0.85rem;color:var(--color-texto-suave)">Click para ver detalle</span>
+            }
+
+            <span style="font-size:0.8rem;color:var(--color-texto-suave);flex-shrink:0">
+              {{ dia.abierto ? '▲' : '▼' }}
+            </span>
+          </button>
+
+          <!-- Detalle expandible -->
+          @if (dia.abierto) {
+            <div style="border-top:1px solid var(--color-borde);padding:20px">
+              @if (dia.cargando) {
+                <div style="text-align:center;padding:20px;color:var(--color-texto-suave)">Calculando resumen...</div>
+              } @else if (!dia.resumen) {
+                <div style="text-align:center;padding:12px;color:var(--color-texto-suave)">No se pudo cargar el resumen.</div>
+              } @else {
+                <!-- Tarjetas de resumen -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px">
+
+                  <!-- Ingresos -->
+                  <div style="background:var(--color-fondo);border-radius:8px;padding:14px">
+                    <div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em">Ingresos</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;font-size:0.85rem">
+                      <div style="display:flex;justify-content:space-between">
+                        <span>Inicio de caja</span>
+                        <span style="color:var(--color-texto-suave)">{{ formatPrecio(dia.resumen.ingresos.montoInicial) }} (ref.)</span>
+                      </div>
+                      <div style="display:flex;justify-content:space-between">
+                        <span>Efectivo</span><span>{{ formatPrecio(dia.resumen.ingresos.ventasEfectivo) }}</span>
+                      </div>
+                      <div style="display:flex;justify-content:space-between">
+                        <span>Transferencia</span><span>{{ formatPrecio(dia.resumen.ingresos.ventasTransferencia) }}</span>
+                      </div>
+                      @if (dia.resumen.ingresos.ingresosManual > 0) {
+                        <div style="display:flex;justify-content:space-between">
+                          <span>Ingreso manual</span><span>{{ formatPrecio(dia.resumen.ingresos.ingresosManual) }}</span>
+                        </div>
+                      }
+                      <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--color-borde);padding-top:6px;margin-top:2px">
+                        <span>TOTAL</span><span style="color:#16a34a">{{ formatPrecio(dia.resumen.ingresos.total) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Gastos -->
+                  <div style="background:var(--color-fondo);border-radius:8px;padding:14px">
+                    <div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em">Gastos</div>
+                    @if (dia.resumen.gastos.lista.length === 0) {
+                      <div style="font-size:0.85rem;color:var(--color-texto-suave)">Sin gastos</div>
+                    } @else {
+                      <div style="display:flex;flex-direction:column;gap:6px;font-size:0.85rem">
+                        @for (g of dia.resumen.gastos.lista; track g.id) {
+                          <div style="display:flex;justify-content:space-between">
+                            <span>{{ g.concepto }}</span>
+                            <span style="color:#dc2626">{{ formatPrecio(g.monto) }}</span>
+                          </div>
+                        }
+                        <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--color-borde);padding-top:6px;margin-top:2px">
+                          <span>TOTAL</span><span style="color:#dc2626">{{ formatPrecio(dia.resumen.gastos.total) }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Ganancias -->
+                  <div style="background:var(--color-fondo);border-radius:8px;padding:14px">
+                    <div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em">Ganancias</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;font-size:0.85rem">
+                      @if (dia.resumen.ganancias.trabajadores.length === 0) {
+                        <div style="color:var(--color-texto-suave);font-style:italic">Sin turnos completados</div>
+                      }
+                      @for (t of dia.resumen.ganancias.trabajadores; track t.trabajadorId) {
+                        <div style="display:flex;justify-content:space-between">
+                          <span>{{ t.nombre }} {{ t.apellido }} ({{ t.comisionPorcentaje }}%)</span>
+                          <span>{{ formatPrecio(t.ganancia) }}</span>
+                        </div>
+                      }
+                      <div style="display:flex;justify-content:space-between;border-top:1px solid var(--color-borde);padding-top:6px;margin-top:2px">
+                        <span>Total empleados</span><span>{{ formatPrecio(dia.resumen.ganancias.totalEmpleados) }}</span>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;font-weight:700">
+                        <span>Ganancia lavadero</span><span style="color:#2563eb">{{ formatPrecio(dia.resumen.ganancias.lavadero) }}</span>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;color:#dc2626">
+                        <span>Gastos del día</span><span>− {{ formatPrecio(dia.resumen.gastos.total) }}</span>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--color-borde);padding-top:6px;margin-top:2px">
+                        <span>Total del día</span><span>{{ formatPrecio(dia.resumen.ganancias.totalDia) }}</span>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;font-weight:700;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:5px 8px;margin-top:2px">
+                        <span>Efectivo en caja</span><span style="color:#1d4ed8">{{ formatPrecio(efectivoEnCaja(dia.resumen)) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tabla de órdenes -->
+                @if (dia.resumen.facturasList?.length) {
+                  <div>
+                    <div style="font-weight:700;font-size:0.85rem;margin-bottom:8px">Órdenes del día ({{ dia.resumen.facturasList!.length }})</div>
+                    <table class="tabla" style="font-size:0.82rem">
+                      <thead>
+                        <tr><th>Hora</th><th>Placa</th><th>Cliente</th><th>Servicio</th><th>Trabajador</th><th>Método</th><th>Total</th><th></th></tr>
+                      </thead>
+                      <tbody>
+                        @for (f of dia.resumen.facturasList!; track f.id) {
+                          <tr>
+                            <td style="white-space:nowrap">{{ f.fechaEmision | date:'h:mm a' }}</td>
+                            <td><strong>{{ f.turno?.vehiculo?.placa ?? '—' }}</strong></td>
+                            <td>{{ f.turno?.cliente?.nombre }} {{ f.turno?.cliente?.apellido }}</td>
+                            <td>{{ f.turno?.servicio?.nombre ?? '—' }}</td>
+                            <td>{{ f.turno?.trabajador?.nombre }} {{ f.turno?.trabajador?.apellido }}</td>
+                            <td><span style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:0.75rem">{{ f.metodoPago }}</span></td>
+                            <td style="font-weight:700;color:#16a34a">{{ formatPrecio(f.total) }}</td>
+                            <td><button class="btn btn-secundario btn-sm" (click)="verFactura(f)">Ver</button></td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <div style="font-size:0.85rem;color:var(--color-texto-suave);text-align:center;padding:8px">Sin órdenes cobradas este día</div>
+                }
+              }
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Modal detalle de factura -->
+@if (facturaDetalle) {
+  <app-modal titulo="Detalle de orden" [visible]="true" ancho="440px" (cerrar)="cerrarFactura()">
+    <div style="font-size:0.875rem">
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin-bottom:16px">
+        <span style="color:var(--color-texto-suave)">Factura</span>
+        <span style="font-family:monospace;font-size:0.75rem;word-break:break-all">{{ facturaDetalle.id }}</span>
+        <span style="color:var(--color-texto-suave)">Hora</span>
+        <span>{{ facturaDetalle.fechaEmision | date:'dd/MM/yyyy h:mm a' }}</span>
+        <span style="color:var(--color-texto-suave)">Placa</span>
+        <strong>{{ facturaDetalle.turno?.vehiculo?.placa ?? '—' }}</strong>
+        <span style="color:var(--color-texto-suave)">Vehículo</span>
+        <span>{{ facturaDetalle.turno?.vehiculo?.marca }} {{ facturaDetalle.turno?.vehiculo?.modelo }} · {{ facturaDetalle.turno?.vehiculo?.color }}</span>
+        <span style="color:var(--color-texto-suave)">Cliente</span>
+        <span>{{ facturaDetalle.turno?.cliente?.nombre }} {{ facturaDetalle.turno?.cliente?.apellido }}</span>
+        <span style="color:var(--color-texto-suave)">Servicio</span>
+        <span>{{ facturaDetalle.turno?.servicio?.nombre ?? '—' }}</span>
+        <span style="color:var(--color-texto-suave)">Trabajador</span>
+        <span>{{ facturaDetalle.turno?.trabajador?.nombre }} {{ facturaDetalle.turno?.trabajador?.apellido }}</span>
+        <span style="color:var(--color-texto-suave)">Método</span>
+        <span style="text-transform:capitalize">{{ facturaDetalle.metodoPago }}</span>
+      </div>
+      <div style="border-top:2px solid var(--color-texto);padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700">TOTAL</span>
+        <span style="font-weight:800;font-size:1.3rem;color:#16a34a">{{ formatPrecio(facturaDetalle.total) }}</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn btn-secundario" (click)="cerrarFactura()">Cerrar</button>
+    </div>
+  </app-modal>
+}

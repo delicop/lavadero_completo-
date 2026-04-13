@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -18,8 +18,11 @@ export class FacturacionController {
   }
 
   @Get()
-  buscarTodas() {
-    return this.facturacionService.buscarTodas();
+  buscarTodas(
+    @Query('fechaDesde') fechaDesde?: string,
+    @Query('fechaHasta') fechaHasta?: string,
+  ) {
+    return this.facturacionService.buscarTodas(fechaDesde, fechaHasta);
   }
 
   @Get(':id')

@@ -228,6 +228,11 @@
     <!-- Ganancias -->
     <div class="card resumen-card">
       <h3 class="resumen-titulo">Ganancias del día</h3>
+      @if (r.ganancias.trabajadores.length === 0) {
+        <div class="resumen-fila" style="color:var(--color-texto-suave);font-style:italic">
+          <span>Sin turnos completados</span><span>—</span>
+        </div>
+      }
       @for (t of r.ganancias.trabajadores; track t.trabajadorId) {
         <div class="resumen-fila">
           <span>{{ t.nombre }} {{ t.apellido }} ({{ t.comisionPorcentaje }}%)</span>
@@ -239,17 +244,92 @@
         <span>{{ formatPrecio(r.ganancias.totalEmpleados) }}</span>
       </div>
       <div class="resumen-fila resumen-subtotal">
-        <span>Lavadero</span>
+        <span>Ganancia lavadero</span>
         <span>{{ formatPrecio(r.ganancias.lavadero) }}</span>
+      </div>
+      <div class="resumen-fila" style="color:#dc2626">
+        <span>Gastos del día</span>
+        <span>− {{ formatPrecio(r.gastos.total) }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span>Inicio del día</span>
+        <span>{{ formatPrecio(r.ingresos.montoInicial) }}</span>
       </div>
       <div class="resumen-fila resumen-total">
         <span>TOTAL DEL DÍA</span>
         <strong>{{ formatPrecio(r.ganancias.totalDia) }}</strong>
       </div>
+      <div class="resumen-fila" style="background:#eff6ff;border-radius:6px;padding:6px 8px;margin-top:6px;font-weight:700;border:1px solid #bfdbfe">
+        <span>Efectivo en caja</span>
+        <span style="color:#1d4ed8">{{ formatPrecio(efectivoEnCaja(r)) }}</span>
+      </div>
+      <div class="resumen-fila" style="background:#f0fdf4;border-radius:6px;padding:6px 8px;margin-top:4px;font-weight:700;border:1px solid #bbf7d0">
+        <span>En transferencia</span>
+        <span style="color:#15803d">{{ formatPrecio(r.ganancias.totalDia - efectivoEnCaja(r)) }}</span>
+      </div>
     </div>
+
+    <!-- Facturas del día -->
+    @if (r.facturasList && r.facturasList.length > 0) {
+      <div class="card resumen-card" style="grid-column:1/-1">
+        <h3 class="resumen-titulo">Órdenes cobradas ({{ r.facturasList.length }})</h3>
+        <table class="tabla" style="margin:0">
+          <thead>
+            <tr><th>Hora</th><th>Placa</th><th>Cliente</th><th>Servicio</th><th>Trabajador</th><th>Método</th><th>Total</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (f of r.facturasList; track f.id) {
+              <tr>
+                <td style="white-space:nowrap;font-size:0.8rem">{{ f.fechaEmision | date:'h:mm a' }}</td>
+                <td><strong>{{ f.turno?.vehiculo?.placa ?? '—' }}</strong></td>
+                <td>{{ f.turno?.cliente?.nombre }} {{ f.turno?.cliente?.apellido }}</td>
+                <td>{{ f.turno?.servicio?.nombre ?? '—' }}</td>
+                <td>{{ f.turno?.trabajador?.nombre }} {{ f.turno?.trabajador?.apellido }}</td>
+                <td><span style="font-size:0.78rem;background:#f1f5f9;padding:2px 6px;border-radius:4px">{{ f.metodoPago }}</span></td>
+                <td style="font-weight:700;color:#16a34a">{{ formatPrecio(f.total) }}</td>
+                <td><button class="btn btn-secundario btn-sm" (click)="verFactura(f)">Ver</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
 
   </div>
 </ng-template>
+
+<!-- ══ MODAL: DETALLE DE FACTURA ════════════════════════════════════════════ -->
+@if (facturaDetalle) {
+  <app-modal titulo="Detalle de orden" [visible]="true" ancho="440px" (cerrar)="cerrarFactura()">
+    <div style="font-size:0.875rem">
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin-bottom:16px">
+        <span style="color:var(--color-texto-suave)">Factura</span>
+        <span style="font-family:monospace;font-size:0.78rem">{{ facturaDetalle.id }}</span>
+        <span style="color:var(--color-texto-suave)">Hora</span>
+        <span>{{ facturaDetalle.fechaEmision | date:'dd/MM/yyyy h:mm a' }}</span>
+        <span style="color:var(--color-texto-suave)">Placa</span>
+        <strong>{{ facturaDetalle.turno?.vehiculo?.placa ?? '—' }}</strong>
+        <span style="color:var(--color-texto-suave)">Vehículo</span>
+        <span>{{ facturaDetalle.turno?.vehiculo?.marca }} {{ facturaDetalle.turno?.vehiculo?.modelo }} · {{ facturaDetalle.turno?.vehiculo?.color }}</span>
+        <span style="color:var(--color-texto-suave)">Cliente</span>
+        <span>{{ facturaDetalle.turno?.cliente?.nombre }} {{ facturaDetalle.turno?.cliente?.apellido }}</span>
+        <span style="color:var(--color-texto-suave)">Servicio</span>
+        <span>{{ facturaDetalle.turno?.servicio?.nombre ?? '—' }}</span>
+        <span style="color:var(--color-texto-suave)">Trabajador</span>
+        <span>{{ facturaDetalle.turno?.trabajador?.nombre }} {{ facturaDetalle.turno?.trabajador?.apellido }}</span>
+        <span style="color:var(--color-texto-suave)">Método</span>
+        <span style="text-transform:capitalize">{{ facturaDetalle.metodoPago }}</span>
+      </div>
+      <div style="border-top:2px solid var(--color-texto);padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700">TOTAL</span>
+        <span style="font-weight:800;font-size:1.3rem;color:#16a34a">{{ formatPrecio(facturaDetalle.total) }}</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn btn-secundario" (click)="cerrarFactura()">Cerrar</button>
+    </div>
+  </app-modal>
+}
 
 <!-- ══ MODAL: CONFIRMAR CIERRE ═══════════════════════════════════════════════ -->
 <app-modal

@@ -1,0 +1,185 @@
+<!-- Zona de impresión: solo visible al imprimir -->
+@if (facturaSeleccionada) {
+  <div class="factura-print">
+    <div class="factura-print-header">
+      <div class="factura-print-logo">🚗 Lavadero</div>
+      <div>
+        <div class="factura-print-titulo">FACTURA</div>
+        <div class="factura-print-fecha">{{ formatFecha(facturaSeleccionada.fechaEmision) }}</div>
+      </div>
+    </div>
+    <table class="factura-print-tabla">
+      <tr><td class="factura-print-lbl">Cliente</td>
+          <td>{{ facturaSeleccionada.turno?.cliente?.apellido }}, {{ facturaSeleccionada.turno?.cliente?.nombre }}</td></tr>
+      <tr><td class="factura-print-lbl">Vehículo</td>
+          <td>{{ facturaSeleccionada.turno?.vehiculo?.placa }} · {{ facturaSeleccionada.turno?.vehiculo?.marca }} {{ facturaSeleccionada.turno?.vehiculo?.modelo }} · {{ facturaSeleccionada.turno?.vehiculo?.color }}</td></tr>
+      <tr><td class="factura-print-lbl">Servicio</td>
+          <td>{{ facturaSeleccionada.turno?.servicio?.nombre }}</td></tr>
+      <tr><td class="factura-print-lbl">Método de pago</td>
+          <td>{{ METODO_LABEL[facturaSeleccionada.metodoPago] }}</td></tr>
+    </table>
+    <div class="factura-print-total">
+      <span>TOTAL</span>
+      <span>{{ formatPrecio(facturaSeleccionada.total) }}</span>
+    </div>
+    <div class="factura-print-footer">¡Gracias por su visita!</div>
+  </div>
+}
+
+<!-- Contenido normal (oculto al imprimir) -->
+<div class="no-print">
+
+  <div class="barra-acciones">
+    <h1 class="pagina-titulo" style="margin:0">Facturación</h1>
+  </div>
+
+  <!-- Filtro de fechas -->
+  <div class="filtros-bar" style="margin-bottom:20px">
+    <div class="filtros-grupo">
+      <label class="filtros-label">Desde</label>
+      <input class="form-input" type="date" [(ngModel)]="filtroDesde" (change)="cargar()" />
+    </div>
+    <div class="filtros-grupo">
+      <label class="filtros-label">Hasta</label>
+      <input class="form-input" type="date" [(ngModel)]="filtroHasta" (change)="cargar()" />
+    </div>
+  </div>
+
+  <!-- Stats -->
+  @if (!cargando) {
+    <div class="stats-grid" style="margin-bottom:20px">
+      <div class="stat-card">
+        <div class="stat-label">Total ingresos</div>
+        <div class="stat-valor" style="color:var(--color-exito)">{{ formatPrecio(totalIngresos) }}</div>
+        <div class="stat-unidad">{{ facturas.length }} {{ facturas.length === 1 ? 'orden' : 'órdenes' }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Promedio por orden</div>
+        <div class="stat-valor">{{ formatPrecio(promedioPorOrden) }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Efectivo</div>
+        <div class="stat-valor" style="font-size:1.4rem">{{ formatPrecio(totalPorMetodo['efectivo']) }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Transferencia</div>
+        <div class="stat-valor" style="font-size:1.4rem">{{ formatPrecio(totalPorMetodo['transferencia']) }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Débito / Crédito</div>
+        <div class="stat-valor" style="font-size:1.4rem">
+          {{ formatPrecio(totalPorMetodo['debito'] + totalPorMetodo['credito']) }}
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Tabla de facturas -->
+  <div class="card" style="padding:0;overflow:hidden">
+    @if (cargando) {
+      <p style="padding:24px;color:var(--color-texto-suave)">Cargando...</p>
+    } @else if (facturas.length === 0) {
+      <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">
+        No hay facturas en el período seleccionado
+      </p>
+    } @else {
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Vehículo</th>
+            <th>Servicio</th>
+            <th>Método</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of facturas; track f.id) {
+            <tr>
+              <td style="white-space:nowrap;font-size:0.825rem">{{ formatFecha(f.fechaEmision) }}</td>
+              <td>
+                <strong>{{ f.turno?.cliente?.apellido }}, {{ f.turno?.cliente?.nombre }}</strong>
+              </td>
+              <td>
+                <span>{{ f.turno?.vehiculo?.placa }}</span><br>
+                <small style="color:var(--color-texto-suave)">{{ f.turno?.vehiculo?.marca }} {{ f.turno?.vehiculo?.modelo }}</small>
+              </td>
+              <td>{{ f.turno?.servicio?.nombre ?? '—' }}</td>
+              <td>
+                <span class="badge badge-neutral">{{ METODO_LABEL[f.metodoPago] }}</span>
+              </td>
+              <td><strong>{{ formatPrecio(f.total) }}</strong></td>
+              <td>
+                <button class="btn btn-secundario btn-sm" (click)="verFactura(f)">
+                  🖨 Imprimir
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+</div>
+
+<!-- Modal de impresión (solo visible al imprimir cuando está seleccionada) -->
+@if (facturaSeleccionada) {
+  <div class="modal-backdrop no-print" style="z-index:1100" (click)="cerrarFactura()">
+    <div class="modal-contenedor" style="max-width:460px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-titulo">Vista previa de factura</span>
+        <button class="modal-cerrar" (click)="cerrarFactura()">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:1.5rem">🚗</div>
+          <div style="font-weight:800;font-size:1.1rem">Lavadero</div>
+          <div style="font-size:0.75rem;color:var(--color-texto-suave)">{{ formatFecha(facturaSeleccionada.fechaEmision) }}</div>
+        </div>
+
+        <table style="width:100%;font-size:0.875rem;margin-bottom:16px">
+          <tr>
+            <td style="color:var(--color-texto-suave);padding:4px 0;width:40%">Cliente</td>
+            <td style="font-weight:500">{{ facturaSeleccionada.turno?.cliente?.apellido }}, {{ facturaSeleccionada.turno?.cliente?.nombre }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-texto-suave);padding:4px 0">Vehículo</td>
+            <td>{{ facturaSeleccionada.turno?.vehiculo?.placa }} · {{ facturaSeleccionada.turno?.vehiculo?.marca }} {{ facturaSeleccionada.turno?.vehiculo?.modelo }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-texto-suave);padding:4px 0">Color</td>
+            <td>{{ facturaSeleccionada.turno?.vehiculo?.color }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-texto-suave);padding:4px 0">Servicio</td>
+            <td>{{ facturaSeleccionada.turno?.servicio?.nombre }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-texto-suave);padding:4px 0">Método de pago</td>
+            <td>{{ METODO_LABEL[facturaSeleccionada.metodoPago] }}</td>
+          </tr>
+        </table>
+
+        <div style="border-top:2px solid var(--color-texto);padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:700;font-size:1rem">TOTAL</span>
+          <span style="font-weight:800;font-size:1.3rem;color:var(--color-primario)">
+            {{ formatPrecio(facturaSeleccionada.total) }}
+          </span>
+        </div>
+
+        <div style="text-align:center;margin-top:16px;color:var(--color-texto-suave);font-size:0.8rem">
+          ¡Gracias por su visita!
+        </div>
+
+        <div class="modal-footer" style="margin-top:20px">
+          <button class="btn btn-primario" (click)="imprimir()">🖨 Imprimir</button>
+          <button class="btn btn-secundario" (click)="cerrarFactura()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

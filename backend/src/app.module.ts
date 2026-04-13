@@ -10,6 +10,7 @@ import { TurnosModule } from './modules/turnos/turnos.module';
 import { FacturacionModule } from './modules/facturacion/facturacion.module';
 import { LiquidacionesModule } from './modules/liquidaciones/liquidaciones.module';
 import { CajaModule } from './modules/caja/caja.module';
+import { EventsModule } from './modules/events/events.module';
 
 @Module({
   imports: [
@@ -19,13 +20,16 @@ import { CajaModule } from './modules/caja/caja.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get<string>('DB_HOST', 'localhost'),
+        host: config.get<string>('DB_HOST', '127.0.0.1'),  // 127.0.0.1 evita resolución DNS en Windows+Docker
         port: config.get<number>('DB_PORT', 5432),
         database: config.get<string>('DB_NAME', 'lavadero'),
         username: config.get<string>('DB_USER', 'postgres'),
         password: config.get<string>('DB_PASSWORD', ''),
         autoLoadEntities: true,
         synchronize: config.get<string>('NODE_ENV') !== 'production',
+        logging: ['error'],
+        logger: 'advanced-console',
+        extra: { max: 10, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000 },
       }),
     }),
     AuthModule,
@@ -37,6 +41,7 @@ import { CajaModule } from './modules/caja/caja.module';
     FacturacionModule,
     LiquidacionesModule,
     CajaModule,
+    EventsModule,
   ],
 })
 export class AppModule {}

@@ -13,9 +13,9 @@ export class ServiciosService {
   ) {}
 
   async crear(dto: CrearServicioDto): Promise<Servicio> {
-    const existe = await this.repo.findOne({ where: { nombre: dto.nombre } });
+    const existe = await this.repo.findOne({ where: { tipoVehiculo: dto.tipoVehiculo, nombre: dto.nombre } });
     if (existe) {
-      throw new ConflictException(`Ya existe un servicio con el nombre "${dto.nombre}"`);
+      throw new ConflictException(`Ya existe "${dto.nombre}" para el tipo "${dto.tipoVehiculo}"`);
     }
 
     const servicio = this.repo.create({
@@ -27,7 +27,7 @@ export class ServiciosService {
 
   async buscarTodos(soloActivos = false): Promise<Servicio[]> {
     const where = soloActivos ? { activo: true } : {};
-    return this.repo.find({ where, order: { nombre: 'ASC' } });
+    return this.repo.find({ where, order: { tipoVehiculo: 'ASC', nombre: 'ASC' } });
   }
 
   async buscarPorId(id: string): Promise<Servicio> {
@@ -41,10 +41,12 @@ export class ServiciosService {
   async actualizar(id: string, dto: ActualizarServicioDto): Promise<Servicio> {
     const servicio = await this.buscarPorId(id);
 
-    if (dto.nombre && dto.nombre !== servicio.nombre) {
-      const existe = await this.repo.findOne({ where: { nombre: dto.nombre } });
+    const nuevoTipo   = dto.tipoVehiculo ?? servicio.tipoVehiculo;
+    const nuevoNombre = dto.nombre ?? servicio.nombre;
+    if (nuevoTipo !== servicio.tipoVehiculo || nuevoNombre !== servicio.nombre) {
+      const existe = await this.repo.findOne({ where: { tipoVehiculo: nuevoTipo, nombre: nuevoNombre } });
       if (existe) {
-        throw new ConflictException(`Ya existe un servicio con el nombre "${dto.nombre}"`);
+        throw new ConflictException(`Ya existe "${nuevoNombre}" para el tipo "${nuevoTipo}"`);
       }
     }
 

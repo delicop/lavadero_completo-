@@ -81,6 +81,7 @@ export interface CrearVehiculoPayload {
 
 export interface Servicio {
   id: string;
+  tipoVehiculo: string;
   nombre: string;
   descripcion: string | null;
   duracionMinutos: number;
@@ -222,6 +223,7 @@ export interface ResumenCaja {
     totalDia: number;
   };
   ingresosManualLista: IngresoManualCaja[];
+  facturasList?: Factura[];
 }
 
 export interface EstadoCaja {

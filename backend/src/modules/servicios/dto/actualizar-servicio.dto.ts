@@ -3,6 +3,11 @@ import { IsBoolean, IsInt, IsNumber, IsOptional, IsPositive, IsString, Length, M
 export class ActualizarServicioDto {
   @IsString()
   @IsOptional()
+  @Length(1, 50)
+  tipoVehiculo?: string;
+
+  @IsString()
+  @IsOptional()
   @Length(1, 100)
   nombre?: string;
 

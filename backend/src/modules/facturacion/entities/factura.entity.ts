@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   OneToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Turno } from '../../turnos/entities/turno.entity';
 
@@ -16,6 +17,7 @@ export enum MetodoPago {
 }
 
 @Entity('facturas')
+@Index(['fechaEmision'])
 export class Factura {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

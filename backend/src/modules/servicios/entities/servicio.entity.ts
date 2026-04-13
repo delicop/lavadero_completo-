@@ -1,11 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique } from 'typeorm';
 
+@Unique(['tipoVehiculo', 'nombre'])
 @Entity('servicios')
 export class Servicio {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ length: 100, unique: true })
+  @Column({ length: 50, default: '' })
+  tipoVehiculo!: string;
+
+  @Column({ length: 100 })
   nombre!: string;
 
   @Column({ type: 'text', nullable: true })

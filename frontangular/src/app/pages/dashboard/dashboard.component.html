@@ -13,43 +13,51 @@
     </div>
   </div>
 
-  <!-- Widget caja -->
-  <div class="caja-widget" style="margin-bottom:20px">
-    @if (cajaSinCerrar) {
-      <div class="caja-widget-alerta">
-        <span>⚠️ Caja del {{ cajaSinCerrar.fecha }} pendiente de cierre</span>
-        <div style="display:flex;gap:8px">
-          <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
-          <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCajaAnterior()">
-            Cerrar caja anterior
-          </button>
+  <!-- Widget caja + botón nueva orden -->
+  <div style="display:flex;align-items:stretch;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <div class="caja-widget" style="flex:1;margin:0">
+      @if (cajaSinCerrar) {
+        <div class="caja-widget-alerta">
+          <span>⚠️ Caja del {{ cajaSinCerrar.fecha }} pendiente de cierre</span>
+          <div style="display:flex;gap:8px">
+            <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
+            <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCajaAnterior()">
+              Cerrar caja anterior
+            </button>
+          </div>
         </div>
-      </div>
-    } @else if (!cajaHoy) {
-      <div class="caja-widget-neutral">
-        <span>Caja del día no abierta</span>
-        <button class="btn btn-primario btn-sm" (click)="modalAbrirCaja = true">Abrir caja</button>
-      </div>
-    } @else if (cajaHoy.estado === 'abierta') {
-      <div class="caja-widget-ok">
-        <span>Caja abierta · inicio {{ cajaHoy.fechaApertura | date:'h:mm a' }}</span>
-        <div style="display:flex;gap:8px">
-          <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
-          <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCaja()">
-            Cerrar caja
-          </button>
+      } @else if (!cajaHoy) {
+        <div class="caja-widget-neutral">
+          <span>Caja del día no abierta</span>
+          <button class="btn btn-primario btn-sm" (click)="modalAbrirCaja = true">Abrir caja</button>
         </div>
-      </div>
-    } @else {
-      <div class="caja-widget-cerrada">
-        <span>Caja cerrada · {{ cajaHoy.fechaCierre | date:'h:mm a' }}</span>
-        <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver resumen</a>
-      </div>
-    }
+      } @else if (cajaHoy.estado === 'abierta') {
+        <div class="caja-widget-ok">
+          <span>Caja abierta · inicio {{ cajaHoy.fechaApertura | date:'h:mm a' }}</span>
+          <div style="display:flex;gap:8px">
+            <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
+            <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCaja()">
+              Cerrar caja
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="caja-widget-cerrada">
+          <span>Caja cerrada · {{ cajaHoy.fechaCierre | date:'h:mm a' }}</span>
+          <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver resumen</a>
+        </div>
+      }
+    </div>
+    <button class="btn btn-primario" style="white-space:nowrap;align-self:stretch;padding:0 20px;font-size:0.9rem"
+            [disabled]="cajaHoy?.estado !== 'abierta'"
+            [title]="cajaHoy?.estado !== 'abierta' ? 'Abrí la caja para crear órdenes' : ''"
+            (click)="abrirFormOrden()">
+      + Nueva orden
+    </button>
   </div>
 
   <!-- Stats -->
-  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
     <div class="stat-card">
       <div class="stat-label">En espera</div>
       <div class="stat-valor" style="color:#f59e0b">{{ pendientes.length }}</div>
@@ -62,17 +70,17 @@
     </div>
     <div class="stat-card">
       <div class="stat-label">Completados hoy</div>
-      <div class="stat-valor" style="color:#16a34a">{{ completadosHoy.length }}</div>
-      <div class="stat-unidad">turnos</div>
+      <div class="stat-valor" style="color:#8b5cf6">{{ completadosHoy.length }}</div>
+      <div class="stat-unidad">{{ facturasHoy.length }} cobrados</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Ingresos del día</div>
       <div class="stat-valor" style="font-size:1.4rem;color:#16a34a">{{ formatPrecio(ingresos) }}</div>
-      <div class="stat-unidad">servicios completados</div>
+      <div class="stat-unidad">cobrado en facturas</div>
     </div>
   </div>
 
-  <!-- Tablas -->
+  <!-- En proceso + En espera -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
     <div>
       <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
@@ -97,7 +105,7 @@
                   <td>{{ t.servicio?.nombre ?? '—' }}</td>
                   <td>{{ t.trabajador?.nombre }} {{ t.trabajador?.apellido }}</td>
                   <td>
-                    <button class="btn btn-primario btn-sm" (click)="completarTurno(t)">✓ Completar</button>
+                    <button class="btn btn-primario btn-sm" (click)="finalizarTurno(t)">✓ Finalizar</button>
                   </td>
                 </tr>
               }
@@ -141,25 +149,28 @@
     </div>
   </div>
 
-  <!-- Completados hoy -->
+  <!-- Completados hoy: pendientes de cobro y ya pagados en una sola tabla -->
   <div style="margin-bottom:20px">
     <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-      <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+      <span style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>
       Completados hoy
     </h2>
     <div class="card" style="padding:0;overflow:hidden">
       @if (completadosHoy.length === 0) {
-        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">Ningún turno completado hoy todavía</p>
+        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">
+          Ningún vehículo completado todavía
+        </p>
       } @else {
         <table class="tabla">
           <thead>
-            <tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Trabajador</th><th>Precio</th></tr>
+            <tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Trabajador</th><th>Total</th><th></th></tr>
           </thead>
           <tbody>
             @for (t of completadosHoy; track t.id) {
-              <tr>
+              <tr [style.background]="turnosFacturadosSet.has(t.id) ? '#f0fdf4' : '#fff7ed'">
                 <td style="font-weight:600;white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
-                <td><strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                <td>
+                  <strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
                   <small style="color:var(--color-texto-suave)">{{ t.vehiculo?.marca }} {{ t.vehiculo?.modelo }}</small>
                 </td>
                 <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
@@ -172,7 +183,20 @@
                 </td>
                 <td>{{ t.servicio?.nombre ?? '—' }}</td>
                 <td>{{ t.trabajador?.nombre }} {{ t.trabajador?.apellido }}</td>
-                <td style="font-weight:700;color:#16a34a">{{ formatPrecio(+(t.servicio?.precio ?? 0)) }}</td>
+                <td style="font-weight:700" [style.color]="turnosFacturadosSet.has(t.id) ? '#16a34a' : 'var(--color-texto-suave)'">
+                  @if (turnosFacturadosSet.has(t.id)) {
+                    {{ formatPrecio(totalFacturadoPorTurno(t.id)) }}
+                  } @else {
+                    {{ formatPrecio(t.servicio?.precio ?? 0) }}
+                  }
+                </td>
+                <td>
+                  @if (turnosFacturadosSet.has(t.id)) {
+                    <span style="font-size:0.75rem;color:#16a34a;font-weight:700;white-space:nowrap">✓ Facturado</span>
+                  } @else {
+                    <button class="btn btn-cobrar btn-sm" (click)="iniciarCobro(t)">💰 Pagar</button>
+                  }
+                </td>
               </tr>
             }
           </tbody>
@@ -273,7 +297,7 @@
                 </td>
                 <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
                 <td>{{ t.servicio?.nombre ?? '—' }}</td>
-                <td><button class="btn btn-primario btn-sm" (click)="completarTurno(t)">✓ Completar</button></td>
+                <td><button class="btn btn-primario btn-sm" (click)="finalizarTurno(t)">✓ Finalizar</button></td>
               </tr>
             }
           </tbody>
@@ -339,6 +363,168 @@
           </tbody>
         </table>
       }
+    </div>
+  </div>
+}
+
+<!-- Modal nueva orden -->
+<app-modal titulo="Nueva orden" [visible]="mostrarFormOrden" ancho="540px" (cerrar)="cerrarFormOrden()">
+  @if (errorFormOrden) { <div class="alerta-error">{{ errorFormOrden }}</div> }
+  <form (ngSubmit)="guardarOrden()">
+    <div class="form-grupo">
+      <label class="form-label">Cliente</label>
+      <select class="form-select" [(ngModel)]="formOrden.clienteId" name="clienteId" (change)="onClienteOrdenChange()" required>
+        <option value="">Seleccioná un cliente...</option>
+        @for (c of clientesOrden; track c.id) {
+          <option [value]="c.id">{{ c.apellido }}, {{ c.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Vehículo</label>
+      <select class="form-select" [(ngModel)]="formOrden.vehiculoId" name="vehiculoId" required>
+        @if (!formOrden.clienteId) {
+          <option value="">Seleccioná primero un cliente</option>
+        } @else if (vehiculosOrden.length === 0) {
+          <option value="">Este cliente no tiene vehículos</option>
+        } @else {
+          @for (v of vehiculosOrden; track v.id) {
+            <option [value]="v.id">{{ v.placa }} — {{ v.marca }} {{ v.modelo }}</option>
+          }
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Servicio</label>
+      <select class="form-select" [(ngModel)]="formOrden.servicioId" name="servicioId" required>
+        <option value="">Seleccioná un servicio...</option>
+        @for (s of serviciosOrden; track s.id) {
+          <option [value]="s.id">{{ s.nombre }} — {{ formatPrecio(s.precio) }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Trabajador</label>
+      <select class="form-select" [(ngModel)]="formOrden.trabajadorId" name="trabajadorId" required>
+        <option value="">Seleccioná un trabajador...</option>
+        @if (trabajadores.length === 0) {
+          <option disabled>— No hay trabajadores disponibles —</option>
+        }
+        @for (u of trabajadores; track u.id) {
+          <option [value]="u.id">{{ u.apellido }}, {{ u.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Fecha y hora</label>
+      <input class="form-input" type="datetime-local" [(ngModel)]="formOrden.fechaHora" name="fechaHora" required />
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Observaciones (opcional)</label>
+      <input class="form-input" [(ngModel)]="formOrden.observaciones" name="observaciones" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primario" type="submit" [disabled]="guardandoFormOrden">
+        {{ guardandoFormOrden ? 'Guardando...' : 'Crear orden' }}
+      </button>
+      <button class="btn btn-secundario" type="button" (click)="cerrarFormOrden()">Cancelar</button>
+    </div>
+  </form>
+</app-modal>
+
+<!-- Modal cobro desde el panel -->
+<app-modal titulo="Registrar cobro" [visible]="mostrarModalCobro" ancho="420px" (cerrar)="cerrarModalCobro()">
+  @if (ordenACobrar) {
+    <div style="margin-bottom:16px;padding:12px;background:var(--color-fondo);border-radius:8px;font-size:0.875rem">
+      <div><strong>{{ ordenACobrar.cliente?.apellido }}, {{ ordenACobrar.cliente?.nombre }}</strong></div>
+      <div style="color:var(--color-texto-suave)">
+        {{ ordenACobrar.vehiculo?.placa }} · {{ ordenACobrar.vehiculo?.marca }} {{ ordenACobrar.vehiculo?.modelo }}
+      </div>
+      <div style="margin-top:4px">{{ ordenACobrar.servicio?.nombre }}</div>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Total a cobrar</label>
+      <input class="form-input" type="number" [(ngModel)]="totalFactura" min="0" step="100"
+             style="font-size:1.1rem;font-weight:600" />
+      <small style="color:var(--color-texto-suave)">
+        Precio del servicio: {{ formatPrecio(ordenACobrar.servicio?.precio ?? 0) }}
+      </small>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Método de pago</label>
+      <div class="metodos-pago-grid">
+        @for (m of METODOS; track m) {
+          <button type="button" class="metodo-pago-btn" [class.seleccionado]="metodoPago === m" (click)="metodoPago = m">
+            {{ METODO_LABEL[m] }}
+          </button>
+        }
+      </div>
+    </div>
+    @if (errorCobro) { <div class="alerta-error">{{ errorCobro }}</div> }
+    <div class="modal-footer">
+      <button class="btn btn-primario" (click)="confirmarCobro()" [disabled]="guardandoCobro">
+        {{ guardandoCobro ? 'Guardando...' : 'Confirmar cobro y generar factura' }}
+      </button>
+      <button class="btn btn-secundario" (click)="cerrarModalCobro()">Cancelar</button>
+    </div>
+  }
+</app-modal>
+
+<!-- Factura generada desde el panel -->
+@if (facturaGenerada) {
+  <div class="factura-print">
+    <div class="factura-print-header">
+      <div class="factura-print-logo">🚗 Lavadero</div>
+      <div>
+        <div class="factura-print-titulo">FACTURA</div>
+        <div class="factura-print-fecha">{{ facturaGenerada.fechaEmision | date:'dd/MM/yyyy HH:mm' }}</div>
+      </div>
+    </div>
+    <table class="factura-print-tabla">
+      <tr><td class="factura-print-lbl">Cliente</td>
+          <td>{{ facturaGenerada.turno?.cliente?.apellido }}, {{ facturaGenerada.turno?.cliente?.nombre }}</td></tr>
+      <tr><td class="factura-print-lbl">Vehículo</td>
+          <td>{{ facturaGenerada.turno?.vehiculo?.placa }} · {{ facturaGenerada.turno?.vehiculo?.marca }} {{ facturaGenerada.turno?.vehiculo?.modelo }}</td></tr>
+      <tr><td class="factura-print-lbl">Servicio</td>
+          <td>{{ facturaGenerada.turno?.servicio?.nombre }}</td></tr>
+      <tr><td class="factura-print-lbl">Método de pago</td>
+          <td>{{ METODO_LABEL[facturaGenerada.metodoPago] }}</td></tr>
+    </table>
+    <div class="factura-print-total"><span>TOTAL</span><span>{{ formatPrecio(facturaGenerada.total) }}</span></div>
+    <div class="factura-print-footer">¡Gracias por su visita!</div>
+  </div>
+
+  <div class="modal-backdrop" style="z-index:1100" (click)="cerrarFacturaGenerada()">
+    <div class="modal-contenedor" style="max-width:460px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-titulo">✅ Cobro registrado</span>
+        <button class="modal-cerrar" (click)="cerrarFacturaGenerada()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:1.5rem">🚗</div>
+          <div style="font-weight:800;font-size:1.1rem">Lavadero</div>
+        </div>
+        <table style="width:100%;font-size:0.875rem;margin-bottom:16px">
+          <tr><td style="color:var(--color-texto-suave);padding:4px 0;width:40%">Cliente</td>
+              <td style="font-weight:500">{{ facturaGenerada.turno?.cliente?.apellido }}, {{ facturaGenerada.turno?.cliente?.nombre }}</td></tr>
+          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Vehículo</td>
+              <td>{{ facturaGenerada.turno?.vehiculo?.placa }} · {{ facturaGenerada.turno?.vehiculo?.marca }}</td></tr>
+          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Servicio</td>
+              <td>{{ facturaGenerada.turno?.servicio?.nombre }}</td></tr>
+          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Método de pago</td>
+              <td>{{ METODO_LABEL[facturaGenerada.metodoPago] }}</td></tr>
+        </table>
+        <div style="border-top:2px solid var(--color-texto);padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:700">TOTAL</span>
+          <span style="font-weight:800;font-size:1.3rem;color:var(--color-primario)">{{ formatPrecio(facturaGenerada.total) }}</span>
+        </div>
+        <div style="text-align:center;margin-top:16px;color:var(--color-texto-suave);font-size:0.8rem">¡Gracias por su visita!</div>
+        <div class="modal-footer" style="margin-top:20px">
+          <button class="btn btn-primario" (click)="imprimirFactura()">🖨 Imprimir</button>
+          <button class="btn btn-secundario" (click)="cerrarFacturaGenerada()">Cerrar</button>
+        </div>
+      </div>
     </div>
   </div>
 }

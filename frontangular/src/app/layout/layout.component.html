@@ -20,6 +20,30 @@
     <!-- Sección solo admin -->
     @if (esAdmin) {
 
+      <!-- Grupo colapsable: Operación -->
+      <button
+        class="sidebar-link sidebar-grupo-toggle"
+        [class.activo]="operacionAbierto"
+        (click)="toggleOperacion()"
+      >
+        <span class="icono">◈</span>
+        Operación
+        <span class="sidebar-chevron" [class.abierto]="operacionAbierto">›</span>
+      </button>
+
+      <div class="sidebar-subgrupo" [class.visible]="operacionAbierto">
+        @for (item of itemsOperacion; track item.ruta) {
+          <a
+            class="sidebar-link sidebar-sublink"
+            [routerLink]="item.ruta"
+            routerLinkActive="activo"
+          >
+            <span class="icono">{{ item.icono }}</span>
+            {{ item.label }}
+          </a>
+        }
+      </div>
+
       <!-- Grupo colapsable: Administración -->
       <button
         class="sidebar-link sidebar-grupo-toggle"
@@ -44,17 +68,6 @@
         }
       </div>
 
-      <!-- Links de operación -->
-      @for (item of itemsOperacion; track item.ruta) {
-        <a
-          class="sidebar-link"
-          [routerLink]="item.ruta"
-          routerLinkActive="activo"
-        >
-          <span class="icono">{{ item.icono }}</span>
-          {{ item.label }}
-        </a>
-      }
     }
 
     <div class="sidebar-footer">

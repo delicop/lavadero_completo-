@@ -67,4 +67,9 @@ export class CajaController {
   historial() {
     return this.cajaService.historial();
   }
+
+  @Get('facturas/:cajaDiaId')
+  listarFacturasDia(@Param('cajaDiaId') cajaDiaId: string) {
+    return this.cajaService.listarFacturasDia(cajaDiaId);
+  }
 }

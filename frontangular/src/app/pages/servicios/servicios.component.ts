@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { FormsModule } from '@angular/forms';
@@ -14,6 +14,7 @@ import type { Servicio } from '../../shared/types';
 })
 export class ServiciosComponent implements OnInit {
   private readonly svc = inject(ServicioService);
+  private readonly cdr = inject(ChangeDetectorRef);
   readonly formatPrecio = formatPrecio;
 
   servicios: Servicio[] = [];
@@ -22,7 +23,7 @@ export class ServiciosComponent implements OnInit {
   editandoId: string | null = null;
   errorForm = '';
 
-  form = { nombre: '', descripcion: '', duracionMinutos: 30, precio: 0 };
+  form = { tipoVehiculo: '', nombre: '', descripcion: '', duracionMinutos: 30, precio: 0 };
 
   async ngOnInit(): Promise<void> {
     await this.cargar();
@@ -31,11 +32,12 @@ export class ServiciosComponent implements OnInit {
   async cargar(): Promise<void> {
     this.servicios = await this.svc.listarTodos();
     this.cargando = false;
+    this.cdr.detectChanges();
   }
 
   abrirNuevo(): void {
     this.editandoId = null;
-    this.form = { nombre: '', descripcion: '', duracionMinutos: 30, precio: 0 };
+    this.form = { tipoVehiculo: '', nombre: '', descripcion: '', duracionMinutos: 30, precio: 0 };
     this.errorForm = '';
     this.mostrarForm = true;
   }
@@ -43,6 +45,7 @@ export class ServiciosComponent implements OnInit {
   abrirEditar(s: Servicio): void {
     this.editandoId = s.id;
     this.form = {
+      tipoVehiculo: s.tipoVehiculo,
       nombre: s.nombre,
       descripcion: s.descripcion ?? '',
       duracionMinutos: s.duracionMinutos,
@@ -60,6 +63,7 @@ export class ServiciosComponent implements OnInit {
   async guardar(): Promise<void> {
     this.errorForm = '';
     const payload = {
+      tipoVehiculo: this.form.tipoVehiculo,
       nombre: this.form.nombre,
       descripcion: this.form.descripcion || null,
       duracionMinutos: this.form.duracionMinutos,

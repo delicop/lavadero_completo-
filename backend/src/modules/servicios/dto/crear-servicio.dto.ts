@@ -3,6 +3,11 @@ import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Length, 
 export class CrearServicioDto {
   @IsString()
   @IsNotEmpty()
+  @Length(1, 50)
+  tipoVehiculo!: string;
+
+  @IsString()
+  @IsNotEmpty()
   @Length(1, 100)
   nombre!: string;
 
