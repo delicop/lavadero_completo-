@@ -1,6 +1,7 @@
 # 📊 Estado actual del proyecto
 
 > Última actualización: abril 2026
+> El proyecto está commiteado y subido a git.
 
 ---
 
@@ -38,44 +39,115 @@
 
 ---
 
-## 🔲 Qué falta implementar
+## 🔲 Próximos pasos — corto plazo (completar el producto base)
 
 ### Páginas placeholder (solo tienen el archivo `.ts`, sin template)
 
 | Página | Ruta | Qué debería hacer |
 |--------|------|-------------------|
-| **Gastos** | `/gastos` | Historial y gestión de gastos del negocio |
-| **Otros Ingresos** | `/otros-ingresos` | Historial de ingresos manuales |
-| **Cotizaciones** | `/cotizaciones` | Generar presupuestos antes de cobrar |
+| **Gastos** | `/gastos` | Historial de todos los gastos registrados en cajas pasadas, filtrable por fecha |
+| **Otros Ingresos** | `/otros-ingresos` | Historial de ingresos manuales de todas las cajas |
+| **Cotizaciones** | `/cotizaciones` | Generar un presupuesto para un cliente antes de cobrar |
+
+### Deuda técnica
+
+- Quitar los `console.log` de performance del backend (`[PERF] ...`) antes de producción
+- Quitar los `console.log` de debug en `caja.component.ts` (`[CAJA] ngOnInit START`)
 
 ---
 
-## 📁 Archivos no commiteados
+## 🚀 Roadmap — convertir esto en un SaaS
 
-Hay ~1400 líneas de cambios sin subir al repositorio. Los cambios más grandes:
+El objetivo a futuro es vender este sistema a **múltiples lavaderos** como un servicio (SaaS).
+Cada lavadero es un cliente que paga una suscripción mensual.
 
-| Archivo | Qué cambió |
-|---------|-----------|
-| `dashboard.component.ts/html` | Gestión completa del día + facturación inline |
-| `turnos.component.ts/html` | Refactor completo con filtros y acciones |
-| `styles.css` | Nuevas clases de UI |
-| `caja.service.ts` (backend) | Resumen optimizado, historial |
-| `facturacion.service.ts` (backend) | Integración con caja al crear factura |
+Para llegar ahí hay que construir varias cosas en capas:
 
 ---
 
-## 🔧 Deuda técnica conocida
+### Capa 1 — Multi-tenancy (el más importante, todo lo demás depende de esto)
 
-- Los `console.log` de performance en el backend (`[PERF] ...`) son temporales y deberían quitarse antes de producción
-- Los `console.log` de debug en `caja.component.ts` (`[CAJA] ngOnInit START`) también son temporales
-- Las páginas placeholder (gastos, otros-ingresos, cotizaciones) tienen rutas registradas pero no tienen UI
+**¿Qué es?** Que una sola instalación del sistema sirva a muchos lavaderos al mismo tiempo, y que cada uno vea **solo sus propios datos**.
+
+**¿Qué hay que cambiar?**
+
+1. Agregar tabla `tenant` (el "lavadero"):
+   ```
+   tenant: id, nombre, slug, plan, activo, fechaCreacion
+   ```
+
+2. Agregar `tenantId` a **todas** las tablas del sistema (usuarios, clientes, vehículos, servicios, turnos, facturas, caja, etc.)
+
+3. Crear un `TenantGuard` que lea el `tenantId` del JWT y lo agregue automáticamente a **todos** los queries de TypeORM, para que sea imposible que un lavadero vea datos de otro.
+
+4. El JWT pasa a tener: `{ userId, rol, tenantId }`
+
+5. Agregar una pantalla de **registro de nuevo lavadero** (onboarding) donde el dueño crea su cuenta y elige su subdominio (ej: `milavadero.tuapp.com`)
+
+> ⚠️ Este cambio es estructural. Conviene hacerlo antes de tener datos reales en producción porque requiere migrar todas las tablas.
 
 ---
 
-## 📌 Próximos pasos sugeridos
+### Capa 2 — Configuración por lavadero
 
-1. Commitear todos los cambios actuales
-2. Implementar la página de **Gastos** (historial de gastos de todas las cajas)
-3. Implementar la página de **Otros Ingresos** (similar a Gastos)
-4. Decidir si **Cotizaciones** va o se saca del sidebar
-5. Limpiar los `console.log` de debug del backend y frontend
+Cada lavadero debe poder personalizar su propia instancia:
+
+- [ ] Nombre del negocio y logo (para que aparezca en facturas)
+- [ ] Zona horaria propia (hoy está hardcodeada a UTC-5 Colombia)
+- [ ] Moneda (hoy está hardcodeada a COP)
+- [ ] Datos de contacto para WhatsApp
+- [ ] Configurar qué módulos tiene habilitados según su plan
+
+---
+
+### Capa 3 — Planes y facturación del SaaS
+
+El sistema necesita saber qué plan tiene cada lavadero y cobrarle:
+
+- [ ] Tabla `plan`: nombre (básico, profesional, etc.), precio, límites (ej: máx 5 empleados, máx 200 turnos/mes)
+- [ ] Tabla `suscripcion`: tenantId, plan, estado (activa, vencida, cancelada), fechaVencimiento
+- [ ] Integración con pasarela de pago (ej: Wompi para Colombia, Stripe para internacional)
+- [ ] Página de admin del SaaS para ver todos los tenants, suscripciones y estado de pagos
+- [ ] Bloqueo automático si la suscripción vence
+
+---
+
+### Capa 4 — Superadmin del SaaS
+
+Una interfaz separada (o una sección protegida) para el dueño del SaaS:
+
+- [ ] Ver todos los lavaderos registrados
+- [ ] Ver métricas globales (cuántos turnos se procesaron hoy en total, etc.)
+- [ ] Activar / suspender un tenant manualmente
+- [ ] Ver logs de errores por tenant
+
+---
+
+### Capa 5 — Mejoras de producto para retener clientes
+
+Funcionalidades que hacen el sistema más valioso para cada lavadero:
+
+| Funcionalidad | Descripción |
+|---------------|-------------|
+| **Notificaciones WhatsApp** | Avisar al cliente cuando su auto está listo (ya hay utilidades para esto en el código) |
+| **Recordatorios de turno** | Mensaje automático al cliente el día antes |
+| **App móvil / PWA** | Que los empleados puedan usarlo desde el celular |
+| **Reportes y gráficos** | Ingresos por semana, mes, año — comparativas |
+| **Programa de fidelidad** | Registrar cuántas veces vino un cliente, dar descuentos |
+| **Reservas online** | Que el cliente saque turno desde una página pública |
+| **Múltiples sucursales** | Un lavadero con varias sedes bajo el mismo tenant |
+
+---
+
+## 📋 Orden recomendado para implementar
+
+```
+1. Completar placeholders (Gastos, Otros Ingresos)    ← producto base terminado
+2. Multi-tenancy                                        ← fundación del SaaS
+3. Registro y onboarding de nuevos lavaderos            ← para poder vender
+4. Configuración por lavadero (nombre, logo)            ← personalización mínima
+5. Planes y suscripciones                               ← monetización
+6. Superadmin                                           ← operación del SaaS
+7. Notificaciones WhatsApp                              ← diferenciador de valor
+8. Reportes y gráficos                                  ← retención de clientes
+```
