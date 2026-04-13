@@ -5,7 +5,9 @@ Está dividida en grupos.
 
 ---
 
-## 📌 Panel (`/dashboard`)
+> Para ver cada función y método en detalle: [[frontend/_indice]]
+
+## 📌 Panel (`/dashboard`) — [[frontend/dashboard]]
 
 La pantalla principal. Es como el "centro de control" del día.
 
@@ -24,14 +26,14 @@ La pantalla principal. Es como el "centro de control" del día.
 
 ## Grupo — Operación (solo Admin)
 
-### 📋 Turnos (`/turnos`)
+### 📋 Turnos (`/turnos`) — [[frontend/turnos]]
 Lista de todos los turnos. Por defecto muestra solo los de hoy.
 - Se puede filtrar por fecha, estado, trabajador
 - Se puede crear un nuevo turno
 - Se puede cambiar el estado de un turno
 - Se puede ver el detalle
 
-### 💰 Caja (`/caja`)
+### 💰 Caja (`/caja`) — [[frontend/caja]]
 Control de la caja del día. Tiene varias "vistas" según el estado:
 
 | Vista | Cuándo aparece |
@@ -58,51 +60,51 @@ Para ver ingresos que no vienen de servicios. Todavía no está implementado.
 ### 📄 Cotizaciones (`/cotizaciones`) — 🔲 En construcción
 Para generar presupuestos antes de cobrar. Todavía no está implementado.
 
-### 💸 Liquidaciones (`/liquidaciones`)
+### 💸 Liquidaciones (`/liquidaciones`) — [[frontend/liquidaciones]]
 Calcula cuánto le corresponde pagar a cada empleado por un período.
 - Se elige el empleado y el rango de fechas
 - El sistema suma todos sus servicios completados y aplica su % de comisión
 
-### ✅ Asistencia (`/asistencia`)
+### ✅ Asistencia (`/asistencia`) — [[frontend/asistencia]]
 Registro de quién vino a trabajar cada día.
 
 ---
 
 ## Grupo — Administración (solo Admin)
 
-### 🧾 Facturación (`/facturacion`)
+### 🧾 Facturación (`/facturacion`) — [[frontend/facturacion]]
 Historial de todas las facturas generadas.
 - Filtrás por rango de fechas
 - Ves el total por método de pago (efectivo, transferencia, débito, crédito)
 - Podés imprimir una factura
 
-### 📅 Historial Caja (`/historial-caja`)
+### 📅 Historial Caja (`/historial-caja`) — [[frontend/historial-caja]]
 Lista de todas las cajas cerradas (un accordion por día).
 - Hacés click en un día y se expande el resumen
 - Ves los gastos, ingresos, facturas y ganancias de ese día
 
-### 👥 Clientes (`/clientes`)
+### 👥 Clientes (`/clientes`) — [[frontend/clientes]]
 CRUD de clientes.
 - Crear, editar, buscar clientes
 - Ver los vehículos de cada cliente
 
-### 🚗 Vehículos (`/vehiculos`)
+### 🚗 Vehículos (`/vehiculos`) — [[frontend/vehiculos]]
 CRUD de vehículos.
 - Cada vehículo pertenece a un cliente
 - Datos: placa, marca, modelo, color, tipo (auto/moto/camioneta)
 
-### ⚙️ Servicios (`/servicios`)
+### ⚙️ Servicios (`/servicios`) — [[frontend/servicios]]
 Los tipos de lavado que ofrece el negocio.
 - Cada servicio tiene: nombre, descripción, duración, precio, tipo de vehículo
 - Se pueden activar o desactivar
 
-### 👤 Personal (`/configuracion`)
+### 👤 Personal (`/configuracion`) — [[frontend/configuracion]]
 CRUD de empleados.
 - Crear, editar, activar/desactivar empleados
 - Configurar el % de comisión de cada uno
 - Roles: admin o trabajador
 
-### 🙋 Mi Perfil (`/mi-perfil`)
+### 🙋 Mi Perfil (`/mi-perfil`) — [[frontend/mi-perfil]]
 El usuario logueado puede ver y editar su propia información.
 
 ---

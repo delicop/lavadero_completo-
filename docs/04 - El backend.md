@@ -58,9 +58,11 @@ modulo/
 
 ---
 
+> Para ver cada endpoint y método en detalle: [[backend/_indice]]
+
 ## Los módulos explicados uno a uno
 
-### 🔐 Auth — Login y seguridad
+### 🔐 Auth — [[backend/auth]]
 
 **¿Qué hace?** Maneja el inicio de sesión.
 
@@ -77,7 +79,7 @@ El token contiene: `{ userId, rol }`. Así el sistema sabe quién sos sin pregun
 
 ---
 
-### 👥 Usuarios — El personal
+### 👥 Usuarios — [[backend/usuarios]]
 
 **¿Qué hace?** CRUD de empleados del lavadero.
 
@@ -96,7 +98,7 @@ Cada usuario tiene:
 
 ---
 
-### 👤 Clientes
+### 👤 Clientes — [[backend/clientes]]
 
 **¿Qué hace?** CRUD de clientes del negocio.
 
@@ -110,7 +112,7 @@ Datos: nombre, apellido, teléfono (normalizado a `57XXXXXXXXXX`), email.
 
 ---
 
-### 🚗 Vehículos
+### 🚗 Vehículos — [[backend/vehiculos]]
 
 **¿Qué hace?** CRUD de vehículos. Cada vehículo pertenece a un cliente.
 
@@ -124,7 +126,7 @@ Datos: placa, marca, modelo, color, tipo (`auto` / `moto` / `camioneta`).
 
 ---
 
-### 🔧 Servicios
+### 🔧 Servicios — [[backend/servicios]]
 
 **¿Qué hace?** Los tipos de lavado que ofrece el negocio.
 
@@ -137,7 +139,7 @@ Datos: nombre, descripción, duración en minutos, precio, tipo de vehículo, ac
 
 ---
 
-### 📋 Turnos
+### 📋 Turnos — [[backend/turnos]]
 
 **¿Qué hace?** El corazón del sistema. Maneja los turnos del lavadero.
 
@@ -156,7 +158,7 @@ Un turno pasa por estados: `pendiente → en_proceso → completado` (o `cancela
 
 ---
 
-### 🧾 Facturación
+### 🧾 Facturación — [[backend/facturacion]]
 
 **¿Qué hace?** Genera recibos de pago cuando un cliente paga.
 
@@ -175,7 +177,7 @@ Un turno pasa por estados: `pendiente → en_proceso → completado` (o `cancela
 
 ---
 
-### 💰 Caja
+### 💰 Caja — [[backend/caja]]
 
 **¿Qué hace?** Controla la caja diaria. Es el módulo más complejo.
 

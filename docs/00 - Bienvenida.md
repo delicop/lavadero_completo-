@@ -69,3 +69,11 @@ Lee los archivos en este orden:
 5. [[05 - La base de datos]] — cómo se guardan los datos
 6. [[06 - Estado actual]] — qué está listo y qué falta
 7. [[07 - Cómo agregar cosas]] — guía para seguir desarrollando
+
+---
+
+## Documentación técnica detallada
+
+- [[frontend/_indice]] — cada componente Angular explicado función por función
+- [[backend/_indice]] — cada módulo NestJS explicado endpoint por endpoint
+- [[09 - Glosario]] — glosario de términos técnicos y del negocio
