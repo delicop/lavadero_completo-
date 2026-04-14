@@ -8,10 +8,10 @@ export function formatFecha(fechaIso: string): string {
   });
 }
 
-export function formatPrecio(precio: number): string {
+export function formatPrecio(precio: number, moneda = 'COP'): string {
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
-    currency: 'COP',
+    currency: moneda,
     minimumFractionDigits: 0,
   }).format(precio);
 }

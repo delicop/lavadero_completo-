@@ -1,0 +1,127 @@
+<div class="login-wrapper">
+  <div class="card login-card" style="max-width:480px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:48px;height:48px;background:var(--color-primario);border-radius:12px;
+                  display:flex;align-items:center;justify-content:center;font-size:22px;
+                  margin:0 auto 12px">🚗</div>
+      <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-0.02em">Registrar lavadero</h1>
+      <p style="font-size:0.85rem;color:var(--color-texto-suave);margin-top:3px">
+        Creá tu cuenta y empezá a gestionar tu negocio
+      </p>
+    </div>
+
+    @if (error) {
+      <div class="alerta-error">{{ error }}</div>
+    }
+
+    <form (ngSubmit)="submit()">
+
+      <!-- Sección: el lavadero -->
+      <p style="font-size:0.75rem;font-weight:600;text-transform:uppercase;
+                letter-spacing:0.05em;color:var(--color-texto-suave);margin-bottom:12px">
+        Tu lavadero
+      </p>
+
+      <div class="form-grupo">
+        <label class="form-label">Nombre del lavadero</label>
+        <input
+          class="form-input"
+          type="text"
+          [(ngModel)]="nombreTenant"
+          name="nombreTenant"
+          placeholder="Ej: Lavadero El Rápido"
+          required
+          (input)="generarSlug()"
+        />
+      </div>
+
+      <div class="form-grupo">
+        <label class="form-label">Identificador (slug)</label>
+        <input
+          class="form-input"
+          type="text"
+          [(ngModel)]="slug"
+          name="slug"
+          placeholder="el-rapido"
+          required
+          pattern="[a-z0-9-]+"
+        />
+        <small style="color:var(--color-texto-suave);font-size:0.78rem">
+          Solo minúsculas, números y guiones. Se genera solo.
+        </small>
+      </div>
+
+      <!-- Sección: el admin -->
+      <p style="font-size:0.75rem;font-weight:600;text-transform:uppercase;
+                letter-spacing:0.05em;color:var(--color-texto-suave);margin:20px 0 12px">
+        Tu cuenta de administrador
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-grupo" style="margin-bottom:0">
+          <label class="form-label">Nombre</label>
+          <input
+            class="form-input"
+            type="text"
+            [(ngModel)]="nombre"
+            name="nombre"
+            placeholder="Juan"
+            required
+          />
+        </div>
+        <div class="form-grupo" style="margin-bottom:0">
+          <label class="form-label">Apellido</label>
+          <input
+            class="form-input"
+            type="text"
+            [(ngModel)]="apellido"
+            name="apellido"
+            placeholder="Pérez"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-grupo" style="margin-top:12px">
+        <label class="form-label">Email</label>
+        <input
+          class="form-input"
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="juan@milavadero.com"
+          required
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="form-grupo">
+        <label class="form-label">Contraseña</label>
+        <input
+          class="form-input"
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="Mínimo 8 caracteres"
+          required
+          minlength="8"
+          autocomplete="new-password"
+        />
+      </div>
+
+      <button
+        class="btn btn-primario"
+        type="submit"
+        [disabled]="cargando"
+        style="width:100%;justify-content:center;margin-top:8px;padding:10px"
+      >
+        {{ cargando ? 'Creando tu lavadero...' : 'Crear lavadero' }}
+      </button>
+    </form>
+
+    <p style="text-align:center;margin-top:20px;font-size:0.85rem;color:var(--color-texto-suave)">
+      ¿Ya tenés una cuenta?
+      <a routerLink="/login" style="color:var(--color-primario);font-weight:600">Ingresá acá</a>
+    </p>
+  </div>
+</div>

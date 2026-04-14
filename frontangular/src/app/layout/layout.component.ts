@@ -24,8 +24,9 @@ const ITEMS_ADMIN: ItemMenu[] = [
   { ruta: '/clientes',       label: 'Clientes',       icono: '◻' },
   { ruta: '/vehiculos',     label: 'Vehículos',   icono: '◈' },
   { ruta: '/servicios',     label: 'Servicios',   icono: '◆' },
-  { ruta: '/configuracion', label: 'Personal',    icono: '◉' },
-  { ruta: '/mi-perfil',     label: 'Mi perfil',   icono: '◯' },
+  { ruta: '/configuracion',         label: 'Personal',    icono: '◉' },
+  { ruta: '/configuracion-negocio', label: 'Mi negocio',  icono: '🏪' },
+  { ruta: '/mi-perfil',             label: 'Mi perfil',   icono: '◯' },
 ];
 
 // Subitems del grupo Operación

@@ -1,0 +1,115 @@
+<div style="max-width:640px">
+  <h1 style="font-size:1.3rem;font-weight:700;margin:0 0 24px">Configuración del negocio</h1>
+
+  @if (cargando) {
+    <p style="color:var(--color-texto-suave)">Cargando...</p>
+  } @else {
+    @if (mensaje) {
+      <div [class]="mensajeTipo === 'ok' ? 'alerta-ok' : 'alerta-error'" style="margin-bottom:16px">
+        {{ mensaje }}
+      </div>
+    }
+
+    <form (ngSubmit)="guardar()" style="display:flex;flex-direction:column;gap:20px">
+
+      <!-- Identidad del negocio -->
+      <div class="card">
+        <h2 style="font-size:0.95rem;font-weight:700;margin:0 0 16px;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em">
+          Identidad
+        </h2>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-grupo" style="margin:0">
+            <label class="form-label">Nombre interno del tenant</label>
+            <input class="form-input" [value]="config?.nombre" disabled
+                   style="background:var(--color-fondo);opacity:.7" />
+            <small style="color:var(--color-texto-suave);font-size:0.75rem">
+              Este nombre no se puede cambiar. Es el identificador del tenant.
+            </small>
+          </div>
+          <div class="form-grupo" style="margin:0">
+            <label class="form-label">Nombre comercial</label>
+            <input type="text" class="form-input" [(ngModel)]="nombreComercial" name="nombreComercial"
+                   placeholder="Ej: Lavadero El Brillante" maxlength="200" />
+            <small style="color:var(--color-texto-suave);font-size:0.75rem">
+              Aparece en facturas y comprobantes.
+            </small>
+          </div>
+          <div class="form-grupo" style="margin:0">
+            <label class="form-label">URL del logo</label>
+            <input type="url" class="form-input" [(ngModel)]="logo" name="logo"
+                   placeholder="https://ejemplo.com/logo.png" maxlength="500" />
+          </div>
+          @if (logo) {
+            <div style="display:flex;align-items:center;gap:12px">
+              <img [src]="logo" alt="Logo del negocio"
+                   style="height:48px;object-fit:contain;border:1px solid var(--color-borde);border-radius:4px;padding:4px" />
+              <small style="color:var(--color-texto-suave);font-size:0.75rem">Vista previa del logo</small>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Regionalización -->
+      <div class="card">
+        <h2 style="font-size:0.95rem;font-weight:700;margin:0 0 16px;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em">
+          Regionalización
+        </h2>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-grupo" style="margin:0">
+            <label class="form-label">Zona horaria</label>
+            <select class="form-input" [(ngModel)]="zonaHoraria" name="zonaHoraria">
+              @for (z of zonasHorarias; track z.value) {
+                <option [value]="z.value">{{ z.label }}</option>
+              }
+            </select>
+            <small style="color:var(--color-texto-suave);font-size:0.75rem">
+              Afecta el cálculo de fechas de caja y turnos.
+            </small>
+          </div>
+          <div class="form-grupo" style="margin:0">
+            <label class="form-label">Moneda</label>
+            <select class="form-input" [(ngModel)]="moneda" name="moneda">
+              @for (m of monedas; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacto -->
+      <div class="card">
+        <h2 style="font-size:0.95rem;font-weight:700;margin:0 0 16px;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em">
+          Contacto
+        </h2>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-grupo" style="margin:0">
+            <label class="form-label">Teléfono WhatsApp</label>
+            <input type="text" class="form-input" [(ngModel)]="telefonoWhatsapp" name="telefonoWhatsapp"
+                   placeholder="Ej: 573001234567" maxlength="30" />
+            <small style="color:var(--color-texto-suave);font-size:0.75rem">
+              Número completo con código de país, sin espacios ni guiones.
+            </small>
+          </div>
+          <div class="form-grupo" style="margin:0">
+            <label class="form-label">Email de contacto</label>
+            <input type="email" class="form-input" [(ngModel)]="emailContacto" name="emailContacto"
+                   placeholder="contacto@milavadero.com" maxlength="150" />
+          </div>
+          <div class="form-grupo" style="margin:0">
+            <label class="form-label">Dirección</label>
+            <input type="text" class="form-input" [(ngModel)]="direccion" name="direccion"
+                   placeholder="Ej: Cra 15 #45-20, Bogotá" maxlength="300" />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button class="btn btn-primario" type="submit" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar configuración' }}
+        </button>
+      </div>
+
+    </form>
+  }
+</div>

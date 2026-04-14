@@ -10,6 +10,11 @@ export const routes: Routes = [
       import('./pages/login/login.component').then(m => m.LoginComponent),
   },
   {
+    path: 'registro',
+    loadComponent: () =>
+      import('./pages/registro/registro.component').then(m => m.RegistroComponent),
+  },
+  {
     path: '',
     component: LayoutComponent,
     canActivate: [authGuard],
@@ -89,6 +94,11 @@ export const routes: Routes = [
         path: 'cotizaciones',
         loadComponent: () =>
           import('./pages/cotizaciones/cotizaciones.component').then(m => m.CotizacionesComponent),
+      },
+      {
+        path: 'configuracion-negocio',
+        loadComponent: () =>
+          import('./pages/configuracion-negocio/configuracion-negocio.component').then(m => m.ConfiguracionNegocioComponent),
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],

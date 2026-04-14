@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { SesionService } from './sesion.service';
-import type { AuthResponse, LoginLog, LoginPayload } from '../../shared/types';
+import type { AuthResponse, LoginLog, LoginPayload, RegistrarPayload } from '../../shared/types';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -12,6 +12,13 @@ export class AuthService {
   async login(payload: LoginPayload): Promise<void> {
     const res = await firstValueFrom(
       this.http.post<AuthResponse>('/api/auth/login', payload),
+    );
+    localStorage.setItem('token', res.accessToken);
+  }
+
+  async registrar(payload: RegistrarPayload): Promise<void> {
+    const res = await firstValueFrom(
+      this.http.post<AuthResponse>('/api/auth/registrar', payload),
     );
     localStorage.setItem('token', res.accessToken);
   }

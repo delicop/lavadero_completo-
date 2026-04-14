@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tenant } from './entities/tenant.entity';
+import { ActualizarConfigTenantDto } from './dto/actualizar-config-tenant.dto';
 
 @Injectable()
 export class TenantsService {
@@ -30,5 +31,11 @@ export class TenantsService {
 
   async buscarTodos(): Promise<Tenant[]> {
     return this.repo.find({ order: { fechaCreacion: 'DESC' } });
+  }
+
+  async actualizarConfig(id: string, dto: ActualizarConfigTenantDto): Promise<Tenant> {
+    const tenant = await this.buscarPorId(id);
+    Object.assign(tenant, dto);
+    return this.repo.save(tenant);
   }
 }

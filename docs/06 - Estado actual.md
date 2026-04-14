@@ -1,6 +1,6 @@
 # 📊 Estado actual del proyecto
 
-> Última actualización: abril 2026 — multi-tenancy implementado
+> Última actualización: abril 2026 — Capa 1 completada (multi-tenancy + registro de lavaderos)
 
 ---
 
@@ -19,6 +19,7 @@
 - [x] WebSockets: eventos en tiempo real para turnos y usuarios
 - [x] Zona horaria Colombia (UTC-5) en todos los filtros de fecha
 - [x] **Multi-tenancy**: tabla `tenants`, `tenantId` en todas las entidades, JWT incluye `tenantId`, todos los queries filtran por tenant
+- [x] **Registro de nuevo lavadero**: `POST /api/auth/registrar` crea tenant + usuario admin en una sola operación
 
 ### Frontend (Angular)
 - [x] Login
@@ -36,6 +37,7 @@
 - [x] Mi Perfil
 - [x] Sidebar con grupos colapsables (Operación / Administración)
 - [x] Tiempo real: la pantalla se actualiza sin F5 cuando cambian los turnos
+- [x] **Pantalla de registro** (`/registro`): formulario para que un nuevo lavadero cree su cuenta y slug
 
 ---
 
@@ -65,7 +67,7 @@ Para llegar ahí hay que construir varias cosas en capas:
 
 ---
 
-### ✅ Capa 1 — Multi-tenancy — IMPLEMENTADO
+### ✅ Capa 1 — Multi-tenancy + Onboarding — COMPLETADA
 
 **¿Qué se hizo?**
 
@@ -75,10 +77,11 @@ Para llegar ahí hay que construir varias cosas en capas:
 4. Todos los servicios reciben `tenantId` como parámetro y lo aplican en cada query
 5. Todos los controllers extraen `tenantId` del usuario autenticado (`@UsuarioActual()`)
 6. Seed crea el tenant `Demo Lavadero` (slug: `demo`) y asigna el admin
+7. `POST /api/auth/registrar` — endpoint público que crea un tenant + admin en una sola operación
+8. Pantalla `/registro` en el frontend — formulario con auto-generación de slug, enlazado desde `/login`
 
-**Lo que falta para completar esta capa:**
-- [ ] Pantalla de **registro de nuevo lavadero** (onboarding) — el dueño crea su cuenta y elige su slug
-- [ ] Login con identificación de tenant (hoy el email del usuario es globalmente único; en el futuro dos tenants podrían tener el mismo email y habría que distinguirlos por slug o subdominio)
+**Pendiente futuro (no bloquea el producto):**
+- [ ] Login multi-tenant: si dos lavaderos tuvieran el mismo email de empleado, habría que identificar el tenant por slug o subdominio. Hoy el email es globalmente único.
 
 ---
 
@@ -136,14 +139,13 @@ Funcionalidades que hacen el sistema más valioso para cada lavadero:
 ## 📋 Orden recomendado para implementar
 
 ```
-✅ 1. Multi-tenancy (Capa 1)                            ← HECHO
+✅ 1. Multi-tenancy + Onboarding (Capa 1)               ← COMPLETADO
    2. Completar placeholders (Gastos, Otros Ingresos)   ← producto base terminado
-   3. Registro y onboarding de nuevos lavaderos          ← para poder vender
-   4. Configuración por lavadero (nombre, logo)          ← personalización mínima
-   5. Planes y suscripciones                             ← monetización
-   6. Superadmin                                         ← operación del SaaS
-   7. Notificaciones WhatsApp                            ← diferenciador de valor
-   8. Reportes y gráficos                                ← retención de clientes
+   3. Configuración por lavadero (nombre, logo)          ← personalización mínima
+   4. Planes y suscripciones                             ← monetización
+   5. Superadmin                                         ← operación del SaaS
+   6. Notificaciones WhatsApp                            ← diferenciador de valor
+   7. Reportes y gráficos                                ← retención de clientes
 ```
 
 ### Deuda técnica pendiente
@@ -151,4 +153,5 @@ Funcionalidades que hacen el sistema más valioso para cada lavadero:
 - Quitar los `console.log` de performance del backend (`[PERF] ...`) antes de producción
 - Quitar los `console.log` de debug en `caja.component.ts` (`[CAJA] ngOnInit START`)
 - Login multi-tenant: cuando haya múltiples tenants con el mismo email de empleado, el login necesita identificar el tenant (por slug o subdominio)
+- `tenantId` es nullable en la DB (para que `synchronize: true` no rompa filas existentes); en producción real debería ser NOT NULL
 

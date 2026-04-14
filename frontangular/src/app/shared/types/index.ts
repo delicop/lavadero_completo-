@@ -5,6 +5,15 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface RegistrarPayload {
+  nombreTenant: string;
+  slug: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  password: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
 }
@@ -229,6 +238,33 @@ export interface ResumenCaja {
 export interface EstadoCaja {
   cajaHoy: CajaDia | null;
   cajaSinCerrar: CajaDia | null;
+}
+
+// ── Tenant / Configuración del negocio ───────────────────────────────────────
+
+export interface TenantConfig {
+  id: string;
+  nombre: string;
+  slug: string;
+  activo: boolean;
+  fechaCreacion: string;
+  nombreComercial: string | null;
+  logo: string | null;
+  zonaHoraria: string;
+  moneda: string;
+  telefonoWhatsapp: string | null;
+  emailContacto: string | null;
+  direccion: string | null;
+}
+
+export interface ActualizarTenantConfigPayload {
+  nombreComercial?: string;
+  logo?: string;
+  zonaHoraria?: string;
+  moneda?: string;
+  telefonoWhatsapp?: string;
+  emailContacto?: string;
+  direccion?: string;
 }
 
 // ── Errores de la API ─────────────────────────────────────────────────────────

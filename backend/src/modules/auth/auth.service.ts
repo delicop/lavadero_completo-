@@ -1,18 +1,22 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { TenantsService } from '../tenants/tenants.service';
 import { EventsGateway } from '../events/events.gateway';
 import { LoginLog } from './entities/login-log.entity';
 import { LoginDto } from './dto/login.dto';
 import { CambiarPasswordDto } from './dto/cambiar-password.dto';
+import { RegistrarTenantDto } from './dto/registrar-tenant.dto';
+import { RolUsuario } from '../usuarios/entities/usuario.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usuariosService: UsuariosService,
+    private readonly tenantsService: TenantsService,
     private readonly jwtService: JwtService,
     private readonly eventsGateway: EventsGateway,
     @InjectRepository(LoginLog)
@@ -61,6 +65,40 @@ export class AuthService {
   async actualizarDisponibilidad(usuarioId: string, disponible: boolean): Promise<void> {
     await this.usuariosService.actualizarDisponibilidad(usuarioId, disponible);
     this.eventsGateway.emitirUsuarioActualizado(usuarioId, disponible);
+  }
+
+  async registrar(dto: RegistrarTenantDto): Promise<{ accessToken: string }> {
+    // Verificar que el slug no esté en uso
+    const slugExiste = await this.tenantsService.buscarPorSlug(dto.slug);
+    if (slugExiste) {
+      throw new ConflictException(`El slug "${dto.slug}" ya está en uso`);
+    }
+
+    // Verificar que el email no esté en uso
+    const emailExiste = await this.usuariosService.buscarPorEmailConPassword(dto.email);
+    if (emailExiste) {
+      throw new ConflictException('Ya existe una cuenta con ese email');
+    }
+
+    // Crear tenant
+    const tenant = await this.tenantsService.crear(dto.nombreTenant, dto.slug);
+
+    // Crear admin del tenant
+    const admin = await this.usuariosService.crear(
+      {
+        nombre:             dto.nombre,
+        apellido:           dto.apellido,
+        email:              dto.email,
+        password:           dto.password,
+        rol:                RolUsuario.ADMIN,
+        comisionPorcentaje: 0,
+      },
+      tenant.id,
+    );
+
+    // Login automático al terminar el registro
+    const payload = { sub: admin.id, rol: admin.rol, tenantId: tenant.id };
+    return { accessToken: this.jwtService.sign(payload) };
   }
 
   async historialLogin(limit: number): Promise<LoginLog[]> {

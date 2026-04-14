@@ -7,9 +7,13 @@ import { Factura } from '../facturacion/entities/factura.entity';
 import { Turno } from '../turnos/entities/turno.entity';
 import { CajaController } from './caja.controller';
 import { CajaService } from './caja.service';
+import { TenantsModule } from '../tenants/tenants.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CajaDia, GastoCaja, IngresoManualCaja, Factura, Turno])],
+  imports: [
+    TypeOrmModule.forFeature([CajaDia, GastoCaja, IngresoManualCaja, Factura, Turno]),
+    TenantsModule,
+  ],
   controllers: [CajaController],
   providers: [CajaService],
 })

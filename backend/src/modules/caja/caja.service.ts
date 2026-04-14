@@ -15,6 +15,7 @@ import { EstadoTurno } from '../turnos/entities/turno.entity';
 import { AbrirCajaDto } from './dto/abrir-caja.dto';
 import { RegistrarGastoDto } from './dto/registrar-gasto.dto';
 import { RegistrarIngresoManualDto } from './dto/registrar-ingreso-manual.dto';
+import { TenantsService } from '../tenants/tenants.service';
 
 export interface GananciaTrabajador {
   trabajadorId: string;
@@ -63,14 +64,16 @@ export class CajaService {
     private readonly facturaRepo: Repository<Factura>,
     @InjectRepository(Turno)
     private readonly turnoRepo: Repository<Turno>,
+    private readonly tenantsService: TenantsService,
   ) {}
 
-  private fechaHoy(): string {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
+  private async fechaHoy(tenantId: string): Promise<string> {
+    const tenant = await this.tenantsService.buscarPorId(tenantId);
+    return new Intl.DateTimeFormat('en-CA', { timeZone: tenant.zonaHoraria }).format(new Date());
   }
 
   async obtenerEstado(tenantId: string): Promise<{ cajaHoy: CajaDia | null; cajaSinCerrar: CajaDia | null }> {
-    const hoy = this.fechaHoy();
+    const hoy = await this.fechaHoy(tenantId);
     const [cajaHoy, cajaSinCerrar] = await Promise.all([
       this.cajaDiaRepo.findOne({ where: { fecha: hoy, tenantId } }),
       this.cajaDiaRepo.findOne({
@@ -82,7 +85,7 @@ export class CajaService {
   }
 
   async abrir(dto: AbrirCajaDto, usuarioId: string, tenantId: string): Promise<CajaDia> {
-    const hoy = this.fechaHoy();
+    const hoy = await this.fechaHoy(tenantId);
 
     const existente = await this.cajaDiaRepo.findOne({ where: { fecha: hoy, tenantId } });
     if (existente) throw new ConflictException('Ya existe una caja para el día de hoy');
@@ -248,7 +251,7 @@ export class CajaService {
 
   async registrarGasto(dto: RegistrarGastoDto, usuarioId: string, tenantId: string): Promise<GastoCaja> {
     const cajaAbierta = await this.cajaDiaRepo.findOne({
-      where: { fecha: this.fechaHoy(), estado: EstadoCajaDia.ABIERTA, tenantId },
+      where: { fecha: await this.fechaHoy(tenantId), estado: EstadoCajaDia.ABIERTA, tenantId },
     });
     if (!cajaAbierta) throw new BadRequestException('No hay caja abierta para el día de hoy');
 
@@ -274,7 +277,7 @@ export class CajaService {
     tenantId: string,
   ): Promise<IngresoManualCaja> {
     const cajaAbierta = await this.cajaDiaRepo.findOne({
-      where: { fecha: this.fechaHoy(), estado: EstadoCajaDia.ABIERTA, tenantId },
+      where: { fecha: await this.fechaHoy(tenantId), estado: EstadoCajaDia.ABIERTA, tenantId },
     });
     if (!cajaAbierta) throw new BadRequestException('No hay caja abierta para el día de hoy');
 

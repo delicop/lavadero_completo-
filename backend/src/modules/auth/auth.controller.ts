@@ -7,6 +7,7 @@ import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CambiarPasswordDto } from './dto/cambiar-password.dto';
+import { RegistrarTenantDto } from './dto/registrar-tenant.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -16,6 +17,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('registrar')
+  @HttpCode(HttpStatus.CREATED)
+  registrar(@Body() dto: RegistrarTenantDto) {
+    return this.authService.registrar(dto);
   }
 
   @Get('me')
