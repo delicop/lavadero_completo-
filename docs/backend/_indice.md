@@ -7,6 +7,7 @@ Ver también: [[frontend/_indice]] | [[../04 - El backend]] | [[../05 - La base 
 | Módulo | Prefijo API | Archivo |
 |--------|-------------|---------|
 | [[auth]] | `/api/auth` | Login, cambio de contraseña, disponibilidad |
+| [[tenants]] | *(interno)* | Gestión de tenants (multi-tenancy) |
 | [[usuarios]] | `/api/usuarios` | CRUD de empleados |
 | [[clientes]] | `/api/clientes` | CRUD de clientes |
 | [[turnos]] | `/api/turnos` | Turnos: crear, listar, cambiar estado |

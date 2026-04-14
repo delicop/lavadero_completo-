@@ -12,38 +12,38 @@ export class ClientesService {
     private readonly repo: Repository<Cliente>,
   ) {}
 
-  async crear(dto: CrearClienteDto): Promise<Cliente> {
+  async crear(dto: CrearClienteDto, tenantId: string): Promise<Cliente> {
     if (dto.email) {
-      const existe = await this.repo.findOne({ where: { email: dto.email } });
+      const existe = await this.repo.findOne({ where: { email: dto.email, tenantId } });
       if (existe) {
         throw new ConflictException('Ya existe un cliente con ese email');
       }
     }
 
-    const cliente = this.repo.create({
-      ...dto,
-      email: dto.email ?? null,
-    });
+    const cliente = this.repo.create({ ...dto, email: dto.email ?? null, tenantId });
     return this.repo.save(cliente);
   }
 
-  async buscarTodos(): Promise<Cliente[]> {
-    return this.repo.find({ order: { apellido: 'ASC', nombre: 'ASC' } });
+  async buscarTodos(tenantId: string): Promise<Cliente[]> {
+    return this.repo.find({
+      where: { tenantId },
+      order: { apellido: 'ASC', nombre: 'ASC' },
+    });
   }
 
-  async buscarPorId(id: string): Promise<Cliente> {
-    const cliente = await this.repo.findOne({ where: { id } });
+  async buscarPorId(id: string, tenantId: string): Promise<Cliente> {
+    const cliente = await this.repo.findOne({ where: { id, tenantId } });
     if (!cliente) {
       throw new NotFoundException(`Cliente con id ${id} no encontrado`);
     }
     return cliente;
   }
 
-  async actualizar(id: string, dto: ActualizarClienteDto): Promise<Cliente> {
-    const cliente = await this.buscarPorId(id);
+  async actualizar(id: string, dto: ActualizarClienteDto, tenantId: string): Promise<Cliente> {
+    const cliente = await this.buscarPorId(id, tenantId);
 
     if (dto.email && dto.email !== cliente.email) {
-      const existe = await this.repo.findOne({ where: { email: dto.email } });
+      const existe = await this.repo.findOne({ where: { email: dto.email, tenantId } });
       if (existe) {
         throw new ConflictException('Ya existe un cliente con ese email');
       }
@@ -53,8 +53,8 @@ export class ClientesService {
     return this.repo.save(cliente);
   }
 
-  async eliminar(id: string): Promise<void> {
-    const cliente = await this.buscarPorId(id);
+  async eliminar(id: string, tenantId: string): Promise<void> {
+    const cliente = await this.buscarPorId(id, tenantId);
     await this.repo.remove(cliente);
   }
 }

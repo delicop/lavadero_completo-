@@ -14,28 +14,29 @@ export class VehiculosService {
     private readonly clientesService: ClientesService,
   ) {}
 
-  async crear(dto: CrearVehiculoDto): Promise<Vehiculo> {
-    await this.clientesService.buscarPorId(dto.clienteId);
+  async crear(dto: CrearVehiculoDto, tenantId: string): Promise<Vehiculo> {
+    await this.clientesService.buscarPorId(dto.clienteId, tenantId);
 
-    const existe = await this.repo.findOne({ where: { placa: dto.placa } });
+    const existe = await this.repo.findOne({ where: { placa: dto.placa, tenantId } });
     if (existe) {
       throw new ConflictException(`Ya existe un vehículo con la placa ${dto.placa}`);
     }
 
-    const vehiculo = this.repo.create(dto);
+    const vehiculo = this.repo.create({ ...dto, tenantId });
     return this.repo.save(vehiculo);
   }
 
-  async buscarTodos(): Promise<Vehiculo[]> {
+  async buscarTodos(tenantId: string): Promise<Vehiculo[]> {
     return this.repo.find({
+      where: { tenantId },
       relations: ['cliente'],
       order: { fechaRegistro: 'DESC' },
     });
   }
 
-  async buscarPorId(id: string): Promise<Vehiculo> {
+  async buscarPorId(id: string, tenantId: string): Promise<Vehiculo> {
     const vehiculo = await this.repo.findOne({
-      where: { id },
+      where: { id, tenantId },
       relations: ['cliente'],
     });
     if (!vehiculo) {
@@ -44,19 +45,19 @@ export class VehiculosService {
     return vehiculo;
   }
 
-  async buscarPorCliente(clienteId: string): Promise<Vehiculo[]> {
-    await this.clientesService.buscarPorId(clienteId);
+  async buscarPorCliente(clienteId: string, tenantId: string): Promise<Vehiculo[]> {
+    await this.clientesService.buscarPorId(clienteId, tenantId);
     return this.repo.find({
-      where: { clienteId },
+      where: { clienteId, tenantId },
       order: { marca: 'ASC' },
     });
   }
 
-  async actualizar(id: string, dto: ActualizarVehiculoDto): Promise<Vehiculo> {
-    const vehiculo = await this.buscarPorId(id);
+  async actualizar(id: string, dto: ActualizarVehiculoDto, tenantId: string): Promise<Vehiculo> {
+    const vehiculo = await this.buscarPorId(id, tenantId);
 
     if (dto.placa && dto.placa !== vehiculo.placa) {
-      const existe = await this.repo.findOne({ where: { placa: dto.placa } });
+      const existe = await this.repo.findOne({ where: { placa: dto.placa, tenantId } });
       if (existe) {
         throw new ConflictException(`Ya existe un vehículo con la placa ${dto.placa}`);
       }
@@ -66,8 +67,8 @@ export class VehiculosService {
     return this.repo.save(vehiculo);
   }
 
-  async eliminar(id: string): Promise<void> {
-    const vehiculo = await this.buscarPorId(id);
+  async eliminar(id: string, tenantId: string): Promise<void> {
+    const vehiculo = await this.buscarPorId(id, tenantId);
     await this.repo.remove(vehiculo);
   }
 }

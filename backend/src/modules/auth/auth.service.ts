@@ -31,17 +31,18 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // Registrar historial de login
     await this.loginLogRepo.save(
       this.loginLogRepo.create({
         usuarioId: usuario.id,
         email:     usuario.email,
         nombre:    `${usuario.nombre} ${usuario.apellido}`,
         rol:       usuario.rol,
+        tenantId:  usuario.tenantId,
       }),
     );
 
-    const payload = { sub: usuario.id, rol: usuario.rol };
+    // El payload ahora incluye tenantId — todos los servicios lo usan para aislar datos
+    const payload = { sub: usuario.id, rol: usuario.rol, tenantId: usuario.tenantId };
     const accessToken = this.jwtService.sign(payload);
     return { accessToken };
   }

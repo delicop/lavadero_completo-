@@ -27,12 +27,11 @@ export class TurnosService {
     private readonly eventsGateway: EventsGateway,
   ) {}
 
-  async crear(dto: CrearTurnoDto): Promise<Turno> {
-    // Validar que todos los recursos existen
-    await this.clientesService.buscarPorId(dto.clienteId);
-    await this.usuariosService.buscarPorId(dto.trabajadorId);
+  async crear(dto: CrearTurnoDto, tenantId: string): Promise<Turno> {
+    await this.clientesService.buscarPorId(dto.clienteId, tenantId);
+    await this.usuariosService.buscarPorId(dto.trabajadorId, tenantId);
 
-    const vehiculo = await this.vehiculosService.buscarPorId(dto.vehiculoId);
+    const vehiculo = await this.vehiculosService.buscarPorId(dto.vehiculoId, tenantId);
     if (vehiculo.clienteId !== dto.clienteId) {
       throw new BadRequestException('El vehículo no pertenece al cliente indicado');
     }
@@ -40,6 +39,7 @@ export class TurnosService {
     const turnoActivo = await this.repo.findOne({
       where: {
         vehiculoId: dto.vehiculoId,
+        tenantId,
         estado: In([EstadoTurno.PENDIENTE, EstadoTurno.EN_PROCESO]),
       },
     });
@@ -49,7 +49,7 @@ export class TurnosService {
       );
     }
 
-    const servicio = await this.serviciosService.buscarPorId(dto.servicioId);
+    const servicio = await this.serviciosService.buscarPorId(dto.servicioId, tenantId);
     if (!servicio.activo) {
       throw new BadRequestException('El servicio seleccionado no está disponible');
     }
@@ -58,12 +58,18 @@ export class TurnosService {
       ...dto,
       fechaHora: new Date(dto.fechaHora),
       observaciones: dto.observaciones ?? null,
+      tenantId,
     });
     return this.repo.save(turno);
   }
 
-  async buscarTodos(estado?: EstadoTurno, fechaDesde?: string, fechaHasta?: string): Promise<Turno[]> {
-    const where: Record<string, unknown> = {};
+  async buscarTodos(
+    tenantId: string,
+    estado?: EstadoTurno,
+    fechaDesde?: string,
+    fechaHasta?: string,
+  ): Promise<Turno[]> {
+    const where: Record<string, unknown> = { tenantId };
     if (estado) where['estado'] = estado;
     if (fechaDesde && fechaHasta) {
       where['fechaHora'] = Between(
@@ -78,9 +84,9 @@ export class TurnosService {
     });
   }
 
-  async buscarPorId(id: string): Promise<Turno> {
+  async buscarPorId(id: string, tenantId: string): Promise<Turno> {
     const turno = await this.repo.findOne({
-      where: { id },
+      where: { id, tenantId },
       relations: ['cliente', 'vehiculo', 'servicio', 'trabajador'],
     });
     if (!turno) {
@@ -89,8 +95,13 @@ export class TurnosService {
     return turno;
   }
 
-  async buscarPorTrabajador(trabajadorId: string, fechaDesde?: string, fechaHasta?: string): Promise<Turno[]> {
-    const where: Record<string, unknown> = { trabajadorId };
+  async buscarPorTrabajador(
+    trabajadorId: string,
+    tenantId: string,
+    fechaDesde?: string,
+    fechaHasta?: string,
+  ): Promise<Turno[]> {
+    const where: Record<string, unknown> = { trabajadorId, tenantId };
     if (fechaDesde && fechaHasta) {
       where['fechaHora'] = Between(
         new Date(`${fechaDesde}T00:00:00-05:00`),
@@ -104,15 +115,15 @@ export class TurnosService {
     });
   }
 
-  async actualizar(id: string, dto: ActualizarTurnoDto): Promise<Turno> {
-    const turno = await this.buscarPorId(id);
+  async actualizar(id: string, dto: ActualizarTurnoDto, tenantId: string): Promise<Turno> {
+    const turno = await this.buscarPorId(id, tenantId);
 
     if (turno.estado !== EstadoTurno.PENDIENTE) {
       throw new BadRequestException('Solo se pueden editar turnos en estado pendiente');
     }
 
     if (dto.trabajadorId) {
-      await this.usuariosService.buscarPorId(dto.trabajadorId);
+      await this.usuariosService.buscarPorId(dto.trabajadorId, tenantId);
     }
 
     Object.assign(turno, {
@@ -124,8 +135,8 @@ export class TurnosService {
     return this.repo.save(turno);
   }
 
-  async cambiarEstado(id: string, dto: ActualizarEstadoDto): Promise<Turno> {
-    const turno = await this.buscarPorId(id);
+  async cambiarEstado(id: string, dto: ActualizarEstadoDto, tenantId: string): Promise<Turno> {
+    const turno = await this.buscarPorId(id, tenantId);
 
     const transicionesPermitidas = TRANSICIONES_VALIDAS[turno.estado];
     if (!transicionesPermitidas.includes(dto.estado)) {
@@ -141,8 +152,8 @@ export class TurnosService {
     return turnoGuardado;
   }
 
-  async eliminar(id: string): Promise<void> {
-    const turno = await this.buscarPorId(id);
+  async eliminar(id: string, tenantId: string): Promise<void> {
+    const turno = await this.buscarPorId(id, tenantId);
 
     if (turno.estado === EstadoTurno.EN_PROCESO) {
       throw new BadRequestException('No se puede eliminar un turno en proceso');

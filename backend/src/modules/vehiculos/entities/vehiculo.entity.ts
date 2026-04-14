@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 import { Cliente } from '../../clientes/entities/cliente.entity';
 
@@ -15,6 +16,7 @@ export enum TipoVehiculo {
 }
 
 @Entity('vehiculos')
+@Unique(['placa', 'tenantId'])
 export class Vehiculo {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -26,7 +28,7 @@ export class Vehiculo {
   @Column()
   clienteId!: string;
 
-  @Column({ length: 10, unique: true })
+  @Column({ length: 10 })
   placa!: string;
 
   @Column({ length: 50 })
@@ -40,6 +42,9 @@ export class Vehiculo {
 
   @Column({ type: 'enum', enum: TipoVehiculo, default: TipoVehiculo.AUTO })
   tipo!: TipoVehiculo;
+
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
 
   @CreateDateColumn()
   fechaRegistro!: Date;

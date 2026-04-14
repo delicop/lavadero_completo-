@@ -73,6 +73,9 @@ export class Turno {
   @Column({ type: 'varchar', nullable: true })
   liquidacionId!: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
+
   @CreateDateColumn()
   fechaRegistro!: Date;
 }

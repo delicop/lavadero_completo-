@@ -19,6 +19,7 @@ Corre en http://localhost:3000/api
 backend/src/
 ├── modules/          ← cada módulo maneja una parte del negocio
 │   ├── auth/         ← login y seguridad
+│   ├── tenants/      ← multi-tenancy: cada lavadero como tenant
 │   ├── usuarios/     ← personal del lavadero
 │   ├── clientes/     ← clientes del negocio
 │   ├── vehiculos/    ← autos de los clientes
@@ -72,12 +73,29 @@ Cuando un usuario pone su email y contraseña:
 3. Si todo está bien, genera un **JWT** (un token, como una pulsera de evento)
 4. El frontend guarda ese token y lo manda en cada pedido
 
-El token contiene: `{ userId, rol }`. Así el sistema sabe quién sos sin preguntarte cada vez.
+El token contiene: `{ userId, rol, tenantId }`. Así el sistema sabe quién sos y a qué lavadero pertenecés sin preguntarte cada vez.
 
 **Endpoints:**
 - `POST /api/auth/login` → recibe email+contraseña, devuelve el token
 
 ---
+
+### 🏢 Tenants — multi-tenancy
+
+**¿Qué hace?** Administra los lavaderos registrados en el sistema.
+
+Cada tenant es un lavadero independiente con sus propios datos (clientes, turnos, caja, etc.). Ningún tenant puede ver datos de otro.
+
+**Cómo funciona el aislamiento:**
+1. El JWT incluye `tenantId`
+2. El `@UsuarioActual()` decorator extrae el usuario (con su `tenantId`) del token
+3. Cada controller pasa el `tenantId` a su servicio
+4. Cada servicio agrega `WHERE tenantId = ?` a todos los queries
+
+**Archivos:**
+- `modules/tenants/entities/tenant.entity.ts`
+- `modules/tenants/tenants.service.ts`
+- `modules/tenants/tenants.module.ts`
 
 ### 👥 Usuarios — [[backend/usuarios]]
 

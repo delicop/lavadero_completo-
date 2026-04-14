@@ -17,8 +17,8 @@ export class FacturacionService {
     private readonly turnosService: TurnosService,
   ) {}
 
-  async crear(dto: CrearFacturaDto): Promise<Factura> {
-    const turno = await this.turnosService.buscarPorId(dto.turnoId);
+  async crear(dto: CrearFacturaDto, tenantId: string): Promise<Factura> {
+    const turno = await this.turnosService.buscarPorId(dto.turnoId, tenantId);
 
     if (turno.estado !== EstadoTurno.COMPLETADO) {
       throw new BadRequestException(
@@ -31,14 +31,13 @@ export class FacturacionService {
       throw new ConflictException('Este turno ya tiene una factura generada');
     }
 
-    const factura = this.repo.create({
-      ...dto,
-      observaciones: dto.observaciones ?? null,
-    });
+    const factura = this.repo.create({ ...dto, observaciones: dto.observaciones ?? null, tenantId });
     const saved = await this.repo.save(factura);
 
-    // Actualizar columna pre-computada en la caja abierta del día
-    const cajaAbierta = await this.cajaDiaRepo.findOne({ where: { estado: EstadoCajaDia.ABIERTA } });
+    // Actualizar columna pre-computada en la caja abierta del tenant
+    const cajaAbierta = await this.cajaDiaRepo.findOne({
+      where: { estado: EstadoCajaDia.ABIERTA, tenantId },
+    });
     if (cajaAbierta) {
       const campo = dto.metodoPago === 'efectivo' ? 'ventasEfectivo' : 'ventasTransferencia';
       await this.cajaDiaRepo.increment({ id: cajaAbierta.id }, campo, Number(dto.total));
@@ -47,10 +46,9 @@ export class FacturacionService {
     return saved;
   }
 
-  async buscarTodas(fechaDesde?: string, fechaHasta?: string): Promise<Factura[]> {
-    const where: Record<string, unknown> = {};
+  async buscarTodas(tenantId: string, fechaDesde?: string, fechaHasta?: string): Promise<Factura[]> {
+    const where: Record<string, unknown> = { tenantId };
     if (fechaDesde && fechaHasta) {
-      // Usar offset Colombia (UTC-5) para que el rango corresponda al día local
       where['fechaEmision'] = Between(
         new Date(`${fechaDesde}T00:00:00-05:00`),
         new Date(`${fechaHasta}T23:59:59-05:00`),
@@ -63,9 +61,9 @@ export class FacturacionService {
     });
   }
 
-  async buscarPorId(id: string): Promise<Factura> {
+  async buscarPorId(id: string, tenantId: string): Promise<Factura> {
     const factura = await this.repo.findOne({
-      where: { id },
+      where: { id, tenantId },
       relations: ['turno', 'turno.cliente', 'turno.vehiculo', 'turno.servicio'],
     });
     if (!factura) {
@@ -74,9 +72,9 @@ export class FacturacionService {
     return factura;
   }
 
-  async buscarPorTurno(turnoId: string): Promise<Factura> {
+  async buscarPorTurno(turnoId: string, tenantId: string): Promise<Factura> {
     const factura = await this.repo.findOne({
-      where: { turnoId },
+      where: { turnoId, tenantId },
       relations: ['turno', 'turno.cliente', 'turno.vehiculo', 'turno.servicio'],
     });
     if (!factura) {

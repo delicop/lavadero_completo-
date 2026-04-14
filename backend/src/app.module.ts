@@ -11,6 +11,7 @@ import { FacturacionModule } from './modules/facturacion/facturacion.module';
 import { LiquidacionesModule } from './modules/liquidaciones/liquidaciones.module';
 import { CajaModule } from './modules/caja/caja.module';
 import { EventsModule } from './modules/events/events.module';
+import { TenantsModule } from './modules/tenants/tenants.module';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { EventsModule } from './modules/events/events.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get<string>('DB_HOST', '127.0.0.1'),  // 127.0.0.1 evita resolución DNS en Windows+Docker
+        host: config.get<string>('DB_HOST', '127.0.0.1'),
         port: config.get<number>('DB_PORT', 5432),
         database: config.get<string>('DB_NAME', 'lavadero'),
         username: config.get<string>('DB_USER', 'postgres'),
@@ -32,6 +33,7 @@ import { EventsModule } from './modules/events/events.module';
         extra: { max: 10, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000 },
       }),
     }),
+    TenantsModule,
     AuthModule,
     UsuariosModule,
     ClientesModule,

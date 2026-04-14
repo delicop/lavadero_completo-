@@ -9,6 +9,8 @@
 
 Gestión de los empleados del lavadero. Todos los endpoints requieren rol `admin`.
 
+Todos los métodos reciben `tenantId` y filtran por él — un admin solo puede ver/modificar usuarios de su propio lavadero.
+
 ---
 
 ## Controller — endpoints
@@ -36,22 +38,22 @@ Gestión de los empleados del lavadero. Todos los endpoints requieren rol `admin
 
 ## Service — métodos
 
-### `crear(dto)` — crear un nuevo empleado
-1. Verifica que no haya otro usuario con el mismo email → `ConflictException`
+### `crear(dto, tenantId)` — crear un nuevo empleado
+1. Verifica que no haya otro usuario con el mismo email (búsqueda global) → `ConflictException`
 2. Hashea la contraseña con `bcrypt.hash(dto.password, 10)` (costo 10 = balance seguridad/velocidad)
-3. Crea y guarda el usuario
+3. Crea y guarda el usuario con `tenantId` asignado
 4. Devuelve el usuario **sin** el campo `passwordHash` (llama a `omitirPassword()`)
 
 ---
 
-### `buscarTodos()` — listar todos los empleados
-Devuelve ordenados por `fechaRegistro DESC` (los más nuevos primero).
+### `buscarTodos(tenantId)` — listar todos los empleados del tenant
+Filtra por `tenantId`. Devuelve ordenados por `fechaRegistro DESC`.
 Omite `passwordHash` de cada usuario.
 
 ---
 
-### `buscarPorId(id)` — buscar un empleado por ID
-Si no existe: lanza `NotFoundException`.
+### `buscarPorId(id, tenantId)` — buscar un empleado por ID
+Filtra por `id` Y `tenantId`. Si no existe: lanza `NotFoundException`.
 Devuelve sin `passwordHash`.
 
 ---
@@ -78,16 +80,16 @@ Hace un `UPDATE` directo. Usado por el AuthService cuando un trabajador cambia s
 
 ---
 
-### `actualizar(id, dto)` — actualizar datos del empleado
-Busca el usuario, aplica los cambios:
+### `actualizar(id, dto, tenantId)` — actualizar datos del empleado
+Busca el usuario filtrando por `id` y `tenantId`. Aplica los cambios:
 - Si `dto.password` tiene valor: hashea y reemplaza `passwordHash`
 - Actualiza `nombre`, `apellido`, `rol`, `activo`, `comisionPorcentaje` (solo si vienen en el DTO)
 Guarda y devuelve sin `passwordHash`.
 
 ---
 
-### `eliminar(id)` — eliminar permanentemente
-Busca el usuario, si no existe: `NotFoundException`.
+### `eliminar(id, tenantId)` — eliminar permanentemente
+Busca el usuario filtrando por `id` y `tenantId`. Si no existe: `NotFoundException`.
 Lo elimina con `repo.remove()`.
 
 > ⚠️ Es una eliminación permanente. En producción sería mejor solo desactivarlo (`activo = false`).

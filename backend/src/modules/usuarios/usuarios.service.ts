@@ -17,32 +17,36 @@ export class UsuariosService {
     private readonly repo: Repository<Usuario>,
   ) {}
 
-  async crear(dto: CrearUsuarioDto): Promise<Omit<Usuario, 'passwordHash'>> {
+  async crear(dto: CrearUsuarioDto, tenantId: string): Promise<Omit<Usuario, 'passwordHash'>> {
     const existe = await this.repo.findOne({ where: { email: dto.email } });
     if (existe) {
       throw new ConflictException('Ya existe un usuario con ese email');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const usuario = this.repo.create({ ...dto, passwordHash });
+    const usuario = this.repo.create({ ...dto, passwordHash, tenantId });
     const guardado = await this.repo.save(usuario);
 
     return this.omitirPassword(guardado);
   }
 
-  async buscarTodos(): Promise<Omit<Usuario, 'passwordHash'>[]> {
-    const usuarios = await this.repo.find({ order: { fechaRegistro: 'DESC' } });
+  async buscarTodos(tenantId: string): Promise<Omit<Usuario, 'passwordHash'>[]> {
+    const usuarios = await this.repo.find({
+      where: { tenantId },
+      order: { fechaRegistro: 'DESC' },
+    });
     return usuarios.map((u) => this.omitirPassword(u));
   }
 
-  async buscarPorId(id: string): Promise<Omit<Usuario, 'passwordHash'>> {
-    const usuario = await this.repo.findOne({ where: { id } });
+  async buscarPorId(id: string, tenantId: string): Promise<Omit<Usuario, 'passwordHash'>> {
+    const usuario = await this.repo.findOne({ where: { id, tenantId } });
     if (!usuario) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
     return this.omitirPassword(usuario);
   }
 
+  // Sin filtro por tenant — usado solo en login (email es globalmente único)
   async buscarPorEmailConPassword(email: string): Promise<Usuario | null> {
     return this.repo.findOne({ where: { email } });
   }
@@ -62,8 +66,9 @@ export class UsuariosService {
   async actualizar(
     id: string,
     dto: ActualizarUsuarioDto,
+    tenantId: string,
   ): Promise<Omit<Usuario, 'passwordHash'>> {
-    const usuario = await this.repo.findOne({ where: { id } });
+    const usuario = await this.repo.findOne({ where: { id, tenantId } });
     if (!usuario) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
@@ -73,10 +78,10 @@ export class UsuariosService {
     }
 
     Object.assign(usuario, {
-      nombre: dto.nombre ?? usuario.nombre,
-      apellido: dto.apellido ?? usuario.apellido,
-      rol: dto.rol ?? usuario.rol,
-      activo: dto.activo ?? usuario.activo,
+      nombre:             dto.nombre             ?? usuario.nombre,
+      apellido:           dto.apellido           ?? usuario.apellido,
+      rol:                dto.rol                ?? usuario.rol,
+      activo:             dto.activo             ?? usuario.activo,
       comisionPorcentaje: dto.comisionPorcentaje ?? usuario.comisionPorcentaje,
     });
 
@@ -84,8 +89,8 @@ export class UsuariosService {
     return this.omitirPassword(actualizado);
   }
 
-  async eliminar(id: string): Promise<void> {
-    const usuario = await this.repo.findOne({ where: { id } });
+  async eliminar(id: string, tenantId: string): Promise<void> {
+    const usuario = await this.repo.findOne({ where: { id, tenantId } });
     if (!usuario) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }

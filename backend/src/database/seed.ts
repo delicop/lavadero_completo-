@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Usuario, RolUsuario } from '../modules/usuarios/entities/usuario.entity';
+import { Tenant } from '../modules/tenants/entities/tenant.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -9,41 +10,55 @@ const dataSource = new DataSource({
   database: process.env['DB_NAME'] ?? 'lavadero',
   username: process.env['DB_USER'] ?? 'postgres',
   password: process.env['DB_PASSWORD'] ?? 'password',
-  entities: [Usuario],
+  entities: [Usuario, Tenant],
   synchronize: true,
 });
 
 async function seed() {
   await dataSource.initialize();
 
-  const repo = dataSource.getRepository(Usuario);
+  const tenantRepo  = dataSource.getRepository(Tenant);
+  const usuarioRepo = dataSource.getRepository(Usuario);
 
-  const passwordHash = await bcrypt.hash('Admin1234', 10);
-  const existe = await repo.findOne({ where: { email: 'admin@lavadero.com' } });
-
-  if (existe) {
-    // Reactivar y restaurar rol admin aunque haya sido modificado
-    existe.activo = true;
-    existe.rol    = RolUsuario.ADMIN;
-    existe.passwordHash = passwordHash;
-    await repo.save(existe);
-    console.log('✓ Usuario admin reactivado:');
+  // 1. Crear o reutilizar el tenant demo
+  let tenant = await tenantRepo.findOne({ where: { slug: 'demo' } });
+  if (!tenant) {
+    tenant = tenantRepo.create({ nombre: 'Demo Lavadero', slug: 'demo', activo: true });
+    await tenantRepo.save(tenant);
+    console.log(`✓ Tenant creado: "${tenant.nombre}" (id: ${tenant.id})`);
   } else {
-    const admin = repo.create({
-      nombre: 'Admin',
-      apellido: 'Lavadero',
-      email: 'admin@lavadero.com',
-      passwordHash,
-      rol: RolUsuario.ADMIN,
-      activo: true,
-    });
-    await repo.save(admin);
-    console.log('✓ Usuario admin creado:');
+    console.log(`✓ Tenant existente: "${tenant.nombre}" (id: ${tenant.id})`);
   }
 
-  console.log('  Email:    admin@lavadero.com');
+  // 2. Crear o reactivar el usuario admin
+  const passwordHash = await bcrypt.hash('Admin1234', 10);
+  const existe = await usuarioRepo.findOne({ where: { email: 'admin@lavadero.com' } });
+
+  if (existe) {
+    existe.activo      = true;
+    existe.rol         = RolUsuario.ADMIN;
+    existe.passwordHash = passwordHash;
+    existe.tenantId    = tenant.id;
+    await usuarioRepo.save(existe);
+    console.log('✓ Usuario admin reactivado y asignado al tenant');
+  } else {
+    const admin = usuarioRepo.create({
+      nombre:       'Admin',
+      apellido:     'Lavadero',
+      email:        'admin@lavadero.com',
+      passwordHash,
+      rol:          RolUsuario.ADMIN,
+      activo:       true,
+      tenantId:     tenant.id,
+    });
+    await usuarioRepo.save(admin);
+    console.log('✓ Usuario admin creado');
+  }
+
+  console.log('\n  Email:    admin@lavadero.com');
   console.log('  Password: Admin1234');
   console.log('  Rol:      admin');
+  console.log(`  Tenant:   ${tenant.nombre} (slug: ${tenant.slug})`);
   console.log('\n  ⚠ Cambiá la contraseña después del primer login.');
 
   await dataSource.destroy();

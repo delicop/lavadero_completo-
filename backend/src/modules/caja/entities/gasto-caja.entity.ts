@@ -42,6 +42,9 @@ export class GastoCaja {
   @Column()
   usuarioId!: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
+
   @CreateDateColumn()
   fechaRegistro!: Date;
 }

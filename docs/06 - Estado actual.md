@@ -1,7 +1,6 @@
 # 📊 Estado actual del proyecto
 
-> Última actualización: abril 2026
-> El proyecto está commiteado y subido a git.
+> Última actualización: abril 2026 — multi-tenancy implementado
 
 ---
 
@@ -19,6 +18,7 @@
 - [x] Liquidaciones: calcular y marcar como pagada
 - [x] WebSockets: eventos en tiempo real para turnos y usuarios
 - [x] Zona horaria Colombia (UTC-5) en todos los filtros de fecha
+- [x] **Multi-tenancy**: tabla `tenants`, `tenantId` en todas las entidades, JWT incluye `tenantId`, todos los queries filtran por tenant
 
 ### Frontend (Angular)
 - [x] Login
@@ -65,26 +65,20 @@ Para llegar ahí hay que construir varias cosas en capas:
 
 ---
 
-### Capa 1 — Multi-tenancy (el más importante, todo lo demás depende de esto)
+### ✅ Capa 1 — Multi-tenancy — IMPLEMENTADO
 
-**¿Qué es?** Que una sola instalación del sistema sirva a muchos lavaderos al mismo tiempo, y que cada uno vea **solo sus propios datos**.
+**¿Qué se hizo?**
 
-**¿Qué hay que cambiar?**
+1. Tabla `tenants`: `id`, `nombre`, `slug`, `activo`, `fechaCreacion`
+2. Columna `tenantId` en **todas** las tablas del sistema
+3. JWT ahora contiene `{ userId, rol, tenantId }`
+4. Todos los servicios reciben `tenantId` como parámetro y lo aplican en cada query
+5. Todos los controllers extraen `tenantId` del usuario autenticado (`@UsuarioActual()`)
+6. Seed crea el tenant `Demo Lavadero` (slug: `demo`) y asigna el admin
 
-1. Agregar tabla `tenant` (el "lavadero"):
-   ```
-   tenant: id, nombre, slug, plan, activo, fechaCreacion
-   ```
-
-2. Agregar `tenantId` a **todas** las tablas del sistema (usuarios, clientes, vehículos, servicios, turnos, facturas, caja, etc.)
-
-3. Crear un `TenantGuard` que lea el `tenantId` del JWT y lo agregue automáticamente a **todos** los queries de TypeORM, para que sea imposible que un lavadero vea datos de otro.
-
-4. El JWT pasa a tener: `{ userId, rol, tenantId }`
-
-5. Agregar una pantalla de **registro de nuevo lavadero** (onboarding) donde el dueño crea su cuenta y elige su subdominio (ej: `milavadero.tuapp.com`)
-
-> ⚠️ Este cambio es estructural. Conviene hacerlo antes de tener datos reales en producción porque requiere migrar todas las tablas.
+**Lo que falta para completar esta capa:**
+- [ ] Pantalla de **registro de nuevo lavadero** (onboarding) — el dueño crea su cuenta y elige su slug
+- [ ] Login con identificación de tenant (hoy el email del usuario es globalmente único; en el futuro dos tenants podrían tener el mismo email y habría que distinguirlos por slug o subdominio)
 
 ---
 
@@ -142,12 +136,19 @@ Funcionalidades que hacen el sistema más valioso para cada lavadero:
 ## 📋 Orden recomendado para implementar
 
 ```
-1. Completar placeholders (Gastos, Otros Ingresos)    ← producto base terminado
-2. Multi-tenancy                                        ← fundación del SaaS
-3. Registro y onboarding de nuevos lavaderos            ← para poder vender
-4. Configuración por lavadero (nombre, logo)            ← personalización mínima
-5. Planes y suscripciones                               ← monetización
-6. Superadmin                                           ← operación del SaaS
-7. Notificaciones WhatsApp                              ← diferenciador de valor
-8. Reportes y gráficos                                  ← retención de clientes
+✅ 1. Multi-tenancy (Capa 1)                            ← HECHO
+   2. Completar placeholders (Gastos, Otros Ingresos)   ← producto base terminado
+   3. Registro y onboarding de nuevos lavaderos          ← para poder vender
+   4. Configuración por lavadero (nombre, logo)          ← personalización mínima
+   5. Planes y suscripciones                             ← monetización
+   6. Superadmin                                         ← operación del SaaS
+   7. Notificaciones WhatsApp                            ← diferenciador de valor
+   8. Reportes y gráficos                                ← retención de clientes
 ```
+
+### Deuda técnica pendiente
+
+- Quitar los `console.log` de performance del backend (`[PERF] ...`) antes de producción
+- Quitar los `console.log` de debug en `caja.component.ts` (`[CAJA] ngOnInit START`)
+- Login multi-tenant: cuando haya múltiples tenants con el mismo email de empleado, el login necesita identificar el tenant (por slug o subdominio)
+

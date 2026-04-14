@@ -43,11 +43,13 @@ Maneja el login, cambio de contraseña, disponibilidad del trabajador e historia
 2. Si no existe o está inactivo (`activo === false`): lanza `UnauthorizedException`
 3. Compara la contraseña enviada con el hash usando `bcrypt.compare()`
 4. Si no coincide: lanza `UnauthorizedException`
-5. Registra el acceso creando un `LoginLog` con: usuarioId, email, nombre completo, rol
-6. Firma el JWT con payload `{ sub: usuario.id, rol: usuario.rol }`
+5. Registra el acceso creando un `LoginLog` con: usuarioId, email, nombre completo, rol, **tenantId**
+6. Firma el JWT con payload `{ sub: usuario.id, rol: usuario.rol, tenantId: usuario.tenantId }`
 7. Devuelve `{ accessToken }`
 
 **Importante:** tanto "usuario no existe" como "contraseña incorrecta" devuelven el mismo error (`"Credenciales inválidas"`) para no revelar si el email existe.
+
+**Multi-tenancy:** el `tenantId` viaja en el JWT y llega a cada request. Todos los módulos lo usan para aislar sus queries.
 
 ---
 

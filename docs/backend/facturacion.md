@@ -10,6 +10,8 @@
 
 Genera y consulta facturas. Solo admins pueden acceder.
 
+Todos los métodos reciben `tenantId`. Al crear una factura, la caja que se actualiza también se filtra por tenant.
+
 ---
 
 ## Controller — endpoints
@@ -38,15 +40,15 @@ Genera y consulta facturas. Solo admins pueden acceder.
 
 ## Service — métodos
 
-### `crear(dto)` — crear una factura
+### `crear(dto, tenantId)` — crear una factura
 Realiza **2 validaciones** antes de crear:
-1. El turno existe y está en estado `completado`. Si no: `BadRequestException`
+1. El turno existe (en este tenant) y está en estado `completado`. Si no: `BadRequestException`
 2. El turno no tiene ya una factura → `ConflictException`
 
-Crea y guarda la factura.
+Crea y guarda la factura con `tenantId`.
 
-**Efecto secundario — actualiza la caja:**
-Busca la caja abierta del día (`estado = ABIERTA`).
+**Efecto secundario — actualiza la caja del tenant:**
+Busca la caja abierta del día filtrando por `estado = ABIERTA` Y `tenantId`.
 Si existe:
 - Si `metodoPago === 'efectivo'`: incrementa `ventasEfectivo` en la caja
 - Si es cualquier otro método: incrementa `ventasTransferencia`
@@ -56,7 +58,7 @@ Usa `cajaDiaRepo.increment({ id }, campo, monto)` (TypeORM actualiza directo sin
 
 ---
 
-### `buscarTodas(fechaDesde?, fechaHasta?)` — listar facturas con rango de fechas opcional
+### `buscarTodas(tenantId, fechaDesde?, fechaHasta?)` — listar facturas con rango de fechas opcional
 Si se pasan ambas fechas: filtra `fechaEmision` entre:
 ```
 YYYY-MM-DDT00:00:00-05:00   (inicio del día en Colombia)
@@ -67,12 +69,12 @@ Ordena por `fechaEmision DESC`.
 
 ---
 
-### `buscarPorId(id)` — buscar factura por ID
-Si no existe: `NotFoundException`.
+### `buscarPorId(id, tenantId)` — buscar factura por ID
+Filtra por `id` Y `tenantId`. Si no existe: `NotFoundException`.
 Carga las mismas relaciones que `buscarTodas`.
 
 ---
 
-### `buscarPorTurno(turnoId)` — buscar la factura de un turno específico
-Si no existe: `NotFoundException`.
+### `buscarPorTurno(turnoId, tenantId)` — buscar la factura de un turno específico
+Filtra por `turnoId` Y `tenantId`. Si no existe: `NotFoundException`.
 Carga las mismas relaciones.

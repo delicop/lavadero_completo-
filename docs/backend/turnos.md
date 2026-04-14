@@ -10,6 +10,8 @@
 
 El módulo más central del sistema. Maneja la creación, listado y cambio de estado de los turnos.
 
+Todos los métodos reciben `tenantId` — tanto para filtrar queries como para validar que los recursos relacionados (cliente, vehículo, servicio, trabajador) pertenezcan al mismo tenant.
+
 ---
 
 ## Controller — endpoints
@@ -44,19 +46,19 @@ El módulo más central del sistema. Maneja la creación, listado y cambio de es
 
 ## Service — métodos
 
-### `crear(dto)` — crear un turno
-Realiza **5 validaciones** antes de crear:
-1. El cliente existe (`clientesService.buscarPorId()`)
-2. El trabajador existe (`usuariosService.buscarPorId()`)
-3. El vehículo existe Y pertenece al cliente → `BadRequestException` si no coincide
-4. El vehículo no tiene ya un turno `pendiente` o `en_proceso` activo → `BadRequestException`
-5. El servicio existe Y está activo → `BadRequestException` si no
+### `crear(dto, tenantId)` — crear un turno
+Realiza **5 validaciones** antes de crear (todas con `tenantId`):
+1. El cliente existe en este tenant (`clientesService.buscarPorId(id, tenantId)`)
+2. El trabajador existe en este tenant (`usuariosService.buscarPorId(id, tenantId)`)
+3. El vehículo existe en este tenant Y pertenece al cliente → `BadRequestException` si no coincide
+4. El vehículo no tiene ya un turno `pendiente` o `en_proceso` activo **en este tenant** → `BadRequestException`
+5. El servicio existe en este tenant Y está activo → `BadRequestException` si no
 
-Si pasa todas las validaciones: crea el turno con `fechaHora` convertida a `Date`.
+Si pasa todas las validaciones: crea el turno con `fechaHora` convertida a `Date` y `tenantId` asignado.
 
 ---
 
-### `buscarTodos(estado?, fechaDesde?, fechaHasta?)` — listar turnos con filtros opcionales
+### `buscarTodos(tenantId, estado?, fechaDesde?, fechaHasta?)` — listar turnos con filtros opcionales
 Si se pasan fechas: aplica `Between` con timezone Colombia (UTC-5):
 ```
 fechaHora >= YYYY-MM-DDT00:00:00-05:00
@@ -67,27 +69,27 @@ Ordena por `fechaHora DESC`.
 
 ---
 
-### `buscarPorId(id)` — buscar uno con todas sus relaciones
-Si no existe: `NotFoundException`.
+### `buscarPorId(id, tenantId)` — buscar uno con todas sus relaciones
+Filtra por `id` Y `tenantId`. Si no existe: `NotFoundException`.
 Carga: `cliente`, `vehiculo`, `servicio`, `trabajador`.
 
 ---
 
-### `buscarPorTrabajador(trabajadorId, fechaDesde?, fechaHasta?)` — turnos de un trabajador
-Igual que `buscarTodos` pero filtra por `trabajadorId`.
+### `buscarPorTrabajador(trabajadorId, tenantId, fechaDesde?, fechaHasta?)` — turnos de un trabajador
+Igual que `buscarTodos` pero filtra por `trabajadorId` y `tenantId`.
 Ordena por `fechaHora ASC` (para mostrar en orden cronológico al trabajador).
 No carga la relación `trabajador` (ya se sabe quién es).
 
 ---
 
-### `actualizar(id, dto)` — actualizar datos del turno
+### `actualizar(id, dto, tenantId)` — actualizar datos del turno
 Solo se puede si el estado es `pendiente`. Si no: `BadRequestException`.
 Puede actualizar: `trabajadorId`, `fechaHora`, `observaciones`.
-Si cambia `trabajadorId`: valida que el nuevo trabajador existe.
+Si cambia `trabajadorId`: valida que el nuevo trabajador existe en este tenant.
 
 ---
 
-### `cambiarEstado(id, dto)` — cambiar el estado del turno
+### `cambiarEstado(id, dto, tenantId)` — cambiar el estado del turno
 1. Busca el turno
 2. Consulta `TRANSICIONES_VALIDAS[turno.estado]` (definido en la entidad) para saber si el cambio es válido
 3. Si no está permitido: `BadRequestException` con mensaje descriptivo
@@ -103,6 +105,6 @@ Si cambia `trabajadorId`: valida que el nuevo trabajador existe.
 
 ---
 
-### `eliminar(id)` — eliminar un turno
+### `eliminar(id, tenantId)` — eliminar un turno
 No se puede eliminar un turno `en_proceso` → `BadRequestException`.
 Para los demás estados, elimina con `repo.remove()`.

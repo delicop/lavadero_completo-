@@ -21,6 +21,7 @@ export class Usuario {
   @Column({ length: 100 })
   apellido!: string;
 
+  // Email único globalmente — simplifica el login en la fase actual de SaaS
   @Column({ unique: true, length: 150 })
   email!: string;
 
@@ -38,6 +39,9 @@ export class Usuario {
 
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 50 })
   comisionPorcentaje!: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
 
   @CreateDateColumn()
   fechaRegistro!: Date;

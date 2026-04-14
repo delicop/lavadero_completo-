@@ -38,6 +38,9 @@ export class Factura {
   @Column({ type: 'text', nullable: true })
   observaciones!: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
+
   @CreateDateColumn()
   fechaEmision!: Date;
 }

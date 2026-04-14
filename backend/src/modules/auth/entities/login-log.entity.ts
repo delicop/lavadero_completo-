@@ -17,6 +17,9 @@ export class LoginLog {
   @Column({ length: 20 })
   rol!: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
+
   @CreateDateColumn()
   fechaHora!: Date;
 }

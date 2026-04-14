@@ -49,6 +49,9 @@ export class Liquidacion {
   @Column({ type: 'timestamptz', nullable: true })
   fechaPago!: Date | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
+
   @CreateDateColumn()
   fechaCreacion!: Date;
 }

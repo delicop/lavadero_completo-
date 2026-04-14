@@ -12,39 +12,41 @@ export class ServiciosService {
     private readonly repo: Repository<Servicio>,
   ) {}
 
-  async crear(dto: CrearServicioDto): Promise<Servicio> {
-    const existe = await this.repo.findOne({ where: { tipoVehiculo: dto.tipoVehiculo, nombre: dto.nombre } });
+  async crear(dto: CrearServicioDto, tenantId: string): Promise<Servicio> {
+    const existe = await this.repo.findOne({
+      where: { tipoVehiculo: dto.tipoVehiculo, nombre: dto.nombre, tenantId },
+    });
     if (existe) {
       throw new ConflictException(`Ya existe "${dto.nombre}" para el tipo "${dto.tipoVehiculo}"`);
     }
 
-    const servicio = this.repo.create({
-      ...dto,
-      descripcion: dto.descripcion ?? null,
-    });
+    const servicio = this.repo.create({ ...dto, descripcion: dto.descripcion ?? null, tenantId });
     return this.repo.save(servicio);
   }
 
-  async buscarTodos(soloActivos = false): Promise<Servicio[]> {
-    const where = soloActivos ? { activo: true } : {};
+  async buscarTodos(tenantId: string, soloActivos = false): Promise<Servicio[]> {
+    const where: Record<string, unknown> = { tenantId };
+    if (soloActivos) where['activo'] = true;
     return this.repo.find({ where, order: { tipoVehiculo: 'ASC', nombre: 'ASC' } });
   }
 
-  async buscarPorId(id: string): Promise<Servicio> {
-    const servicio = await this.repo.findOne({ where: { id } });
+  async buscarPorId(id: string, tenantId: string): Promise<Servicio> {
+    const servicio = await this.repo.findOne({ where: { id, tenantId } });
     if (!servicio) {
       throw new NotFoundException(`Servicio con id ${id} no encontrado`);
     }
     return servicio;
   }
 
-  async actualizar(id: string, dto: ActualizarServicioDto): Promise<Servicio> {
-    const servicio = await this.buscarPorId(id);
+  async actualizar(id: string, dto: ActualizarServicioDto, tenantId: string): Promise<Servicio> {
+    const servicio = await this.buscarPorId(id, tenantId);
 
     const nuevoTipo   = dto.tipoVehiculo ?? servicio.tipoVehiculo;
     const nuevoNombre = dto.nombre ?? servicio.nombre;
     if (nuevoTipo !== servicio.tipoVehiculo || nuevoNombre !== servicio.nombre) {
-      const existe = await this.repo.findOne({ where: { tipoVehiculo: nuevoTipo, nombre: nuevoNombre } });
+      const existe = await this.repo.findOne({
+        where: { tipoVehiculo: nuevoTipo, nombre: nuevoNombre, tenantId },
+      });
       if (existe) {
         throw new ConflictException(`Ya existe "${nuevoNombre}" para el tipo "${nuevoTipo}"`);
       }
@@ -54,8 +56,8 @@ export class ServiciosService {
     return this.repo.save(servicio);
   }
 
-  async eliminar(id: string): Promise<void> {
-    const servicio = await this.buscarPorId(id);
+  async eliminar(id: string, tenantId: string): Promise<void> {
+    const servicio = await this.buscarPorId(id, tenantId);
     await this.repo.remove(servicio);
   }
 }

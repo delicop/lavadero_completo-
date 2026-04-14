@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique } from 'typeorm';
 
-@Unique(['tipoVehiculo', 'nombre'])
+@Unique(['tipoVehiculo', 'nombre', 'tenantId'])
 @Entity('servicios')
 export class Servicio {
   @PrimaryGeneratedColumn('uuid')
@@ -23,6 +23,9 @@ export class Servicio {
 
   @Column({ default: true })
   activo!: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
 
   @CreateDateColumn()
   fechaRegistro!: Date;

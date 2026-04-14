@@ -11,6 +11,8 @@
 El módulo más complejo del sistema. Controla la caja diaria con apertura, cierre, gastos, ingresos y el resumen financiero.
 Solo accesible para admins.
 
+Todos los métodos reciben `tenantId` — cada lavadero tiene su propia caja independiente.
+
 ---
 
 ## Controller — endpoints
@@ -55,8 +57,8 @@ Todos los métodos que necesitan "la fecha de hoy" usan este helper.
 
 ---
 
-### `obtenerEstado()` — estado actual de la caja
-Ejecuta en paralelo:
+### `obtenerEstado(tenantId)` — estado actual de la caja
+Ejecuta en paralelo, filtrando por `tenantId`:
 1. Busca si hay una caja con `fecha === hoy`
 2. Busca si hay una caja con `estado = ABIERTA` y `fecha ≠ hoy` (anterior sin cerrar)
 
@@ -64,16 +66,16 @@ Devuelve `{ cajaHoy, cajaSinCerrar }`.
 
 ---
 
-### `abrir(dto, usuarioId)` — abrir la caja del día
-**Validaciones:**
-1. Si ya existe una caja para hoy: `ConflictException`
-2. Si hay una caja abierta de otro día: `BadRequestException` (debe cerrarla primero)
+### `abrir(dto, usuarioId, tenantId)` — abrir la caja del día
+**Validaciones** (todas filtradas por `tenantId`):
+1. Si ya existe una caja para hoy en este tenant: `ConflictException`
+2. Si hay una caja abierta de otro día en este tenant: `BadRequestException` (debe cerrarla primero)
 
-Crea la caja con: fecha de hoy, monto inicial, estado `ABIERTA`, usuarioAperturaId, fechaApertura.
+Crea la caja con: fecha de hoy, monto inicial, estado `ABIERTA`, usuarioAperturaId, fechaApertura, **tenantId**.
 
 ---
 
-### `calcularResumen(cajaDiaId)` — el método más complejo
+### `calcularResumen(cajaDiaId, tenantId)` — el método más complejo
 Calcula el resumen financiero completo de un día. Ejecuta 4 queries en paralelo:
 
 1. **Turnos completados del día** — con JOIN a trabajador y servicio (para calcular comisiones)
@@ -103,42 +105,42 @@ totalDia = montoInicial + gananciaLavadero - totalGastos
 
 ---
 
-### `listarFacturasDia(cajaDiaId)` — facturas de un día
+### `listarFacturasDia(cajaDiaId, tenantId)` — facturas de un día
 Busca la caja, luego trae las facturas de ese día con todos los JOINs.
 Mismo rango de fechas UTC-5 que en `calcularResumen`.
 
 ---
 
-### `cerrar(cajaDiaId, usuarioId)` — cerrar la caja
+### `cerrar(cajaDiaId, usuarioId, tenantId)` — cerrar la caja
 Si ya está cerrada: `BadRequestException`.
 Cambia `estado = CERRADA`, guarda `usuarioCierreId` y `fechaCierre`.
 
 ---
 
-### `registrarGasto(dto, usuarioId)` — registrar un gasto
-Verifica que haya una caja abierta HOY.
-Crea el gasto asociado a esa caja y al usuario que lo registró.
+### `registrarGasto(dto, usuarioId, tenantId)` — registrar un gasto
+Verifica que haya una caja abierta HOY en este tenant.
+Crea el gasto asociado a esa caja, al usuario y con `tenantId`.
 
 ---
 
-### `eliminarGasto(gastoId)` — eliminar un gasto
-Busca el gasto, luego la caja a la que pertenece.
+### `eliminarGasto(gastoId, tenantId)` — eliminar un gasto
+Busca el gasto filtrando por `id` Y `tenantId`, luego la caja a la que pertenece.
 Si la caja está cerrada: `BadRequestException` (no se puede modificar historia).
 Elimina con `repo.remove()`.
 
 ---
 
-### `registrarIngresoManual(dto, usuarioId)` — registrar ingreso extra
+### `registrarIngresoManual(dto, usuarioId, tenantId)` — registrar ingreso extra
 Igual que `registrarGasto` pero para ingresos manuales.
 
 ---
 
-### `eliminarIngresoManual(id)` — eliminar ingreso manual
+### `eliminarIngresoManual(id, tenantId)` — eliminar ingreso manual
 Igual que `eliminarGasto` con la misma validación de caja cerrada.
 
 ---
 
-### `historial(limit = 30)` — listar cajas cerradas
-Devuelve las últimas `limit` cajas con `estado = CERRADA`.
+### `historial(tenantId, limit = 30)` — listar cajas cerradas del tenant
+Devuelve las últimas `limit` cajas del tenant con `estado = CERRADA`.
 Ordena por `fecha DESC`.
 Carga las relaciones: `usuarioApertura`, `usuarioCierre` (para saber quién abrió/cerró).

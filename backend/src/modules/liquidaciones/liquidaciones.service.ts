@@ -16,8 +16,8 @@ export class LiquidacionesService {
     private readonly usuariosService: UsuariosService,
   ) {}
 
-  async crear(dto: CrearLiquidacionDto): Promise<Liquidacion> {
-    const trabajador = await this.usuariosService.buscarPorId(dto.trabajadorId);
+  async crear(dto: CrearLiquidacionDto, tenantId: string): Promise<Liquidacion> {
+    const trabajador = await this.usuariosService.buscarPorId(dto.trabajadorId, tenantId);
 
     const fechaDesde = new Date(`${dto.fechaDesde}T00:00:00`);
     const fechaHasta = new Date(`${dto.fechaHasta}T23:59:59`);
@@ -26,10 +26,10 @@ export class LiquidacionesService {
       throw new BadRequestException('La fecha de inicio debe ser anterior a la fecha de fin');
     }
 
-    // Turnos completados del trabajador en el período sin liquidar
     const turnos = await this.turnosRepo.find({
       where: {
         trabajadorId: dto.trabajadorId,
+        tenantId,
         estado: EstadoTurno.COMPLETADO,
         liquidacionId: IsNull(),
         fechaHora: Between(fechaDesde, fechaHasta),
@@ -55,29 +55,30 @@ export class LiquidacionesService {
       totalServicios,
       comisionPorcentaje: comision,
       totalPago,
+      tenantId,
     });
 
     const guardada = await this.repo.save(liquidacion);
 
-    // Marcar los turnos como liquidados
     await this.turnosRepo.update(
       turnos.map(t => t.id),
       { liquidacionId: guardada.id },
     );
 
-    return this.buscarPorId(guardada.id);
+    return this.buscarPorId(guardada.id, tenantId);
   }
 
-  async buscarTodas(): Promise<Liquidacion[]> {
+  async buscarTodas(tenantId: string): Promise<Liquidacion[]> {
     return this.repo.find({
+      where: { tenantId },
       relations: ['trabajador'],
       order: { fechaCreacion: 'DESC' },
     });
   }
 
-  async buscarPorId(id: string): Promise<Liquidacion> {
+  async buscarPorId(id: string, tenantId: string): Promise<Liquidacion> {
     const liquidacion = await this.repo.findOne({
-      where: { id },
+      where: { id, tenantId },
       relations: ['trabajador'],
     });
     if (!liquidacion) {
@@ -86,24 +87,24 @@ export class LiquidacionesService {
     return liquidacion;
   }
 
-  async buscarTurnosDeLiquidacion(id: string): Promise<Turno[]> {
-    await this.buscarPorId(id);
+  async buscarTurnosDeLiquidacion(id: string, tenantId: string): Promise<Turno[]> {
+    await this.buscarPorId(id, tenantId);
     return this.turnosRepo.find({
-      where: { liquidacionId: id },
+      where: { liquidacionId: id, tenantId },
       relations: ['cliente', 'vehiculo', 'servicio'],
       order: { fechaHora: 'ASC' },
     });
   }
 
-  async buscarPorTrabajador(trabajadorId: string): Promise<Liquidacion[]> {
+  async buscarPorTrabajador(trabajadorId: string, tenantId: string): Promise<Liquidacion[]> {
     return this.repo.find({
-      where: { trabajadorId },
+      where: { trabajadorId, tenantId },
       order: { fechaCreacion: 'DESC' },
     });
   }
 
-  async marcarPagada(id: string): Promise<Liquidacion> {
-    const liquidacion = await this.buscarPorId(id);
+  async marcarPagada(id: string, tenantId: string): Promise<Liquidacion> {
+    const liquidacion = await this.buscarPorId(id, tenantId);
 
     if (liquidacion.estado === EstadoLiquidacion.PAGADA) {
       throw new BadRequestException('Esta liquidación ya fue pagada');

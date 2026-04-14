@@ -66,32 +66,29 @@ export class CajaService {
   ) {}
 
   private fechaHoy(): string {
-    // Fecha en hora Colombia (UTC-5) como 'YYYY-MM-DD'
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
   }
 
-  async obtenerEstado(): Promise<{ cajaHoy: CajaDia | null; cajaSinCerrar: CajaDia | null }> {
-    const t = Date.now();
+  async obtenerEstado(tenantId: string): Promise<{ cajaHoy: CajaDia | null; cajaSinCerrar: CajaDia | null }> {
     const hoy = this.fechaHoy();
     const [cajaHoy, cajaSinCerrar] = await Promise.all([
-      this.cajaDiaRepo.findOne({ where: { fecha: hoy } }),
+      this.cajaDiaRepo.findOne({ where: { fecha: hoy, tenantId } }),
       this.cajaDiaRepo.findOne({
-        where: { estado: EstadoCajaDia.ABIERTA, fecha: Not(hoy) },
+        where: { estado: EstadoCajaDia.ABIERTA, fecha: Not(hoy), tenantId },
         order: { fecha: 'DESC' },
       }),
     ]);
-    console.log(`[PERF] obtenerEstado: ${Date.now() - t}ms`);
     return { cajaHoy, cajaSinCerrar };
   }
 
-  async abrir(dto: AbrirCajaDto, usuarioId: string): Promise<CajaDia> {
+  async abrir(dto: AbrirCajaDto, usuarioId: string, tenantId: string): Promise<CajaDia> {
     const hoy = this.fechaHoy();
 
-    const existente = await this.cajaDiaRepo.findOne({ where: { fecha: hoy } });
+    const existente = await this.cajaDiaRepo.findOne({ where: { fecha: hoy, tenantId } });
     if (existente) throw new ConflictException('Ya existe una caja para el día de hoy');
 
     const sinCerrar = await this.cajaDiaRepo.findOne({
-      where: { estado: EstadoCajaDia.ABIERTA, fecha: Not(hoy) },
+      where: { estado: EstadoCajaDia.ABIERTA, fecha: Not(hoy), tenantId },
     });
     if (sinCerrar) {
       throw new BadRequestException(
@@ -106,76 +103,50 @@ export class CajaService {
       estado: EstadoCajaDia.ABIERTA,
       usuarioAperturaId: usuarioId,
       fechaApertura: new Date(),
+      tenantId,
     });
     return this.cajaDiaRepo.save(caja);
   }
 
-  async calcularResumen(cajaDiaId: string): Promise<ResumenCaja> {
-    const tTotal = Date.now();
-
-    const tFindOne = Date.now();
-    const cajaDia = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId } });
-    console.log(`[PERF] calcularResumen findOne cajaDia: ${Date.now() - tFindOne}ms`);
+  async calcularResumen(cajaDiaId: string, tenantId: string): Promise<ResumenCaja> {
+    const cajaDia = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId, tenantId } });
     if (!cajaDia) throw new NotFoundException('Caja no encontrada');
 
-    const fecha = cajaDia.fecha; // 'YYYY-MM-DD'
+    const fecha = cajaDia.fecha;
 
-    // Ventas por método leídas desde columnas pre-computadas (sin JOIN a facturas)
     const ventasEfectivo = Number(cajaDia.ventasEfectivo);
     const ventasTransferencia = Number(cajaDia.ventasTransferencia);
 
-    // Queries en paralelo con timings individuales para diagnóstico
-    const t0 = Date.now();
     const [turnos, gastos, ingManuales, facturas] = await Promise.all([
-      (async () => {
-        const t = Date.now();
-        const r = await this.turnoRepo
-          .createQueryBuilder('t')
-          .select(['t.id', 't.trabajadorId', 't.servicioId'])
-          .addSelect(['u.id', 'u.nombre', 'u.apellido', 'u.comisionPorcentaje'])
-          .addSelect(['s.precio'])
-          .innerJoin('t.trabajador', 'u')
-          .innerJoin('t.servicio', 's')
-          .where('t.estado = :estado', { estado: EstadoTurno.COMPLETADO })
-          .andWhere(`t.fechaHora >= :fecha::date AND t.fechaHora < (:fecha::date + INTERVAL '1 day')`, { fecha })
-          .getMany();
-        console.log(`[PERF] turnos:          ${Date.now() - t}ms (${r.length} filas)`);
-        return r;
-      })(),
-      (async () => {
-        const t = Date.now();
-        const r = await this.gastoCajaRepo.find({ where: { cajaDiaId } });
-        console.log(`[PERF] gastos:          ${Date.now() - t}ms (${r.length} filas)`);
-        return r;
-      })(),
-      (async () => {
-        const t = Date.now();
-        const r = await this.ingresoManualRepo.find({ where: { cajaDiaId } });
-        console.log(`[PERF] ingresos manual: ${Date.now() - t}ms (${r.length} filas)`);
-        return r;
-      })(),
-      (async () => {
-        const t = Date.now();
-        const r = await this.facturaRepo
-          .createQueryBuilder('f')
-          .leftJoinAndSelect('f.turno', 't')
-          .leftJoinAndSelect('t.cliente', 'c')
-          .leftJoinAndSelect('t.vehiculo', 'v')
-          .leftJoinAndSelect('t.servicio', 's')
-          .leftJoinAndSelect('t.trabajador', 'u')
-          .where('f.fechaEmision >= :desde AND f.fechaEmision <= :hasta', {
-            desde: new Date(`${fecha}T00:00:00-05:00`),
-            hasta: new Date(`${fecha}T23:59:59-05:00`),
-          })
-          .orderBy('f.fechaEmision', 'ASC')
-          .getMany();
-        console.log(`[PERF] facturas:        ${Date.now() - t}ms (${r.length} filas)`);
-        return r;
-      })(),
+      this.turnoRepo
+        .createQueryBuilder('t')
+        .select(['t.id', 't.trabajadorId', 't.servicioId'])
+        .addSelect(['u.id', 'u.nombre', 'u.apellido', 'u.comisionPorcentaje'])
+        .addSelect(['s.precio'])
+        .innerJoin('t.trabajador', 'u')
+        .innerJoin('t.servicio', 's')
+        .where('t.estado = :estado', { estado: EstadoTurno.COMPLETADO })
+        .andWhere('t.tenantId = :tenantId', { tenantId })
+        .andWhere(`t.fechaHora >= :fecha::date AND t.fechaHora < (:fecha::date + INTERVAL '1 day')`, { fecha })
+        .getMany(),
+      this.gastoCajaRepo.find({ where: { cajaDiaId } }),
+      this.ingresoManualRepo.find({ where: { cajaDiaId } }),
+      this.facturaRepo
+        .createQueryBuilder('f')
+        .leftJoinAndSelect('f.turno', 't')
+        .leftJoinAndSelect('t.cliente', 'c')
+        .leftJoinAndSelect('t.vehiculo', 'v')
+        .leftJoinAndSelect('t.servicio', 's')
+        .leftJoinAndSelect('t.trabajador', 'u')
+        .where('f.tenantId = :tenantId', { tenantId })
+        .andWhere('f.fechaEmision >= :desde AND f.fechaEmision <= :hasta', {
+          desde: new Date(`${fecha}T00:00:00-05:00`),
+          hasta: new Date(`${fecha}T23:59:59-05:00`),
+        })
+        .orderBy('f.fechaEmision', 'ASC')
+        .getMany(),
     ]);
-    console.log(`[PERF] Promise.all total: ${Date.now() - t0}ms`);
 
-    // Gastos
     const gastosEfectivo = gastos
       .filter(g => g.tipoPago === TipoPagoCaja.EFECTIVO)
       .reduce((s, g) => s + Number(g.monto), 0);
@@ -184,7 +155,6 @@ export class CajaService {
       .reduce((s, g) => s + Number(g.monto), 0);
     const totalIngresosManual = ingManuales.reduce((s, i) => s + Number(i.monto), 0);
 
-    // Ganancia por trabajador — usa el % de cada uno sobre sus turnos del día
     const mapaT = new Map<string, { nombre: string; apellido: string; comision: number; total: number }>();
     for (const t of turnos) {
       const u = t.trabajador;
@@ -217,7 +187,7 @@ export class CajaService {
     const gananciaLavadero = totalVentas - totalGananciaEmpleados;
     const totalDia = montoInicial + gananciaLavadero - totalGastos;
 
-    const result: ResumenCaja = {
+    return {
       cajaDia,
       ingresos: {
         montoInicial: Number(cajaDia.montoInicial),
@@ -241,12 +211,10 @@ export class CajaService {
       ingresosManualLista: ingManuales,
       facturasList: facturas,
     };
-    console.log(`[PERF] calcularResumen TOTAL: ${Date.now() - tTotal}ms`);
-    return result;
   }
 
-  async listarFacturasDia(cajaDiaId: string): Promise<Factura[]> {
-    const cajaDia = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId } });
+  async listarFacturasDia(cajaDiaId: string, tenantId: string): Promise<Factura[]> {
+    const cajaDia = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId, tenantId } });
     if (!cajaDia) throw new NotFoundException('Caja no encontrada');
 
     return this.facturaRepo
@@ -256,7 +224,8 @@ export class CajaService {
       .leftJoinAndSelect('t.vehiculo', 'v')
       .leftJoinAndSelect('t.servicio', 's')
       .leftJoinAndSelect('t.trabajador', 'u')
-      .where('f.fechaEmision >= :desde AND f.fechaEmision <= :hasta', {
+      .where('f.tenantId = :tenantId', { tenantId })
+      .andWhere('f.fechaEmision >= :desde AND f.fechaEmision <= :hasta', {
         desde: new Date(`${cajaDia.fecha}T00:00:00-05:00`),
         hasta: new Date(`${cajaDia.fecha}T23:59:59-05:00`),
       })
@@ -264,8 +233,8 @@ export class CajaService {
       .getMany();
   }
 
-  async cerrar(cajaDiaId: string, usuarioId: string): Promise<CajaDia> {
-    const caja = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId } });
+  async cerrar(cajaDiaId: string, usuarioId: string, tenantId: string): Promise<CajaDia> {
+    const caja = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId, tenantId } });
     if (!caja) throw new NotFoundException('Caja no encontrada');
     if (caja.estado === EstadoCajaDia.CERRADA) {
       throw new BadRequestException('La caja ya está cerrada');
@@ -277,19 +246,19 @@ export class CajaService {
     return this.cajaDiaRepo.save(caja);
   }
 
-  async registrarGasto(dto: RegistrarGastoDto, usuarioId: string): Promise<GastoCaja> {
+  async registrarGasto(dto: RegistrarGastoDto, usuarioId: string, tenantId: string): Promise<GastoCaja> {
     const cajaAbierta = await this.cajaDiaRepo.findOne({
-      where: { fecha: this.fechaHoy(), estado: EstadoCajaDia.ABIERTA },
+      where: { fecha: this.fechaHoy(), estado: EstadoCajaDia.ABIERTA, tenantId },
     });
     if (!cajaAbierta) throw new BadRequestException('No hay caja abierta para el día de hoy');
 
     return this.gastoCajaRepo.save(
-      this.gastoCajaRepo.create({ ...dto, cajaDiaId: cajaAbierta.id, usuarioId }),
+      this.gastoCajaRepo.create({ ...dto, cajaDiaId: cajaAbierta.id, usuarioId, tenantId }),
     );
   }
 
-  async eliminarGasto(gastoId: string): Promise<void> {
-    const gasto = await this.gastoCajaRepo.findOne({ where: { id: gastoId } });
+  async eliminarGasto(gastoId: string, tenantId: string): Promise<void> {
+    const gasto = await this.gastoCajaRepo.findOne({ where: { id: gastoId, tenantId } });
     if (!gasto) throw new NotFoundException('Gasto no encontrado');
 
     const caja = await this.cajaDiaRepo.findOne({ where: { id: gasto.cajaDiaId } });
@@ -302,19 +271,20 @@ export class CajaService {
   async registrarIngresoManual(
     dto: RegistrarIngresoManualDto,
     usuarioId: string,
+    tenantId: string,
   ): Promise<IngresoManualCaja> {
     const cajaAbierta = await this.cajaDiaRepo.findOne({
-      where: { fecha: this.fechaHoy(), estado: EstadoCajaDia.ABIERTA },
+      where: { fecha: this.fechaHoy(), estado: EstadoCajaDia.ABIERTA, tenantId },
     });
     if (!cajaAbierta) throw new BadRequestException('No hay caja abierta para el día de hoy');
 
     return this.ingresoManualRepo.save(
-      this.ingresoManualRepo.create({ ...dto, cajaDiaId: cajaAbierta.id, usuarioId }),
+      this.ingresoManualRepo.create({ ...dto, cajaDiaId: cajaAbierta.id, usuarioId, tenantId }),
     );
   }
 
-  async eliminarIngresoManual(id: string): Promise<void> {
-    const ing = await this.ingresoManualRepo.findOne({ where: { id } });
+  async eliminarIngresoManual(id: string, tenantId: string): Promise<void> {
+    const ing = await this.ingresoManualRepo.findOne({ where: { id, tenantId } });
     if (!ing) throw new NotFoundException('Ingreso manual no encontrado');
 
     const caja = await this.cajaDiaRepo.findOne({ where: { id: ing.cajaDiaId } });
@@ -324,9 +294,9 @@ export class CajaService {
     await this.ingresoManualRepo.remove(ing);
   }
 
-  async historial(limit = 30): Promise<CajaDia[]> {
+  async historial(tenantId: string, limit = 30): Promise<CajaDia[]> {
     return this.cajaDiaRepo.find({
-      where: { estado: EstadoCajaDia.CERRADA },
+      where: { estado: EstadoCajaDia.CERRADA, tenantId },
       order: { fecha: 'DESC' },
       take: limit,
       relations: ['usuarioApertura', 'usuarioCierre'],

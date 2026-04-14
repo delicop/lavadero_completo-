@@ -11,7 +11,8 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RolUsuario } from './entities/usuario.entity';
+import { UsuarioActual } from '../../common/decorators/usuario-actual.decorator';
+import { Usuario, RolUsuario } from './entities/usuario.entity';
 import { UsuariosService } from './usuarios.service';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
@@ -23,27 +24,31 @@ export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
   @Post()
-  crear(@Body() dto: CrearUsuarioDto) {
-    return this.usuariosService.crear(dto);
+  crear(@Body() dto: CrearUsuarioDto, @UsuarioActual() usuario: Usuario) {
+    return this.usuariosService.crear(dto, usuario.tenantId!);
   }
 
   @Get()
-  buscarTodos() {
-    return this.usuariosService.buscarTodos();
+  buscarTodos(@UsuarioActual() usuario: Usuario) {
+    return this.usuariosService.buscarTodos(usuario.tenantId!);
   }
 
   @Get(':id')
-  buscarPorId(@Param('id') id: string) {
-    return this.usuariosService.buscarPorId(id);
+  buscarPorId(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
+    return this.usuariosService.buscarPorId(id, usuario.tenantId!);
   }
 
   @Patch(':id')
-  actualizar(@Param('id') id: string, @Body() dto: ActualizarUsuarioDto) {
-    return this.usuariosService.actualizar(id, dto);
+  actualizar(
+    @Param('id') id: string,
+    @Body() dto: ActualizarUsuarioDto,
+    @UsuarioActual() usuario: Usuario,
+  ) {
+    return this.usuariosService.actualizar(id, dto, usuario.tenantId!);
   }
 
   @Delete(':id')
-  eliminar(@Param('id') id: string) {
-    return this.usuariosService.eliminar(id);
+  eliminar(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
+    return this.usuariosService.eliminar(id, usuario.tenantId!);
   }
 }

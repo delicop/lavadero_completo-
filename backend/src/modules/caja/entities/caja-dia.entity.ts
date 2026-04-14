@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
@@ -14,11 +15,12 @@ export enum EstadoCajaDia {
 }
 
 @Entity('caja_dias')
+@Unique(['fecha', 'tenantId'])
 export class CajaDia {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'date', unique: true })
+  @Column({ type: 'date' })
   fecha!: string; // 'YYYY-MM-DD'
 
   @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
@@ -56,6 +58,9 @@ export class CajaDia {
 
   @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
   ventasTransferencia!: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  tenantId!: string | null;
 
   @CreateDateColumn()
   fechaCreacion!: Date;
