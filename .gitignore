@@ -1,7 +1,8 @@
 # Archivos y carpetas que no deben subirse al repositorio
-CLAUDE.md
 node_modules/
 dist/
+.claude/
+.obsidian/
 .env
 .env.*
 .DS_Store
