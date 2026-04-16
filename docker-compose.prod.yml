@@ -12,6 +12,7 @@ services:
 
   backend:
     build: ./backend
+    image: lavadero-backend
     container_name: lavadero_backend
     restart: always
     ports:
