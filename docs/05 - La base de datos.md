@@ -22,6 +22,17 @@ El lavadero como negocio. Cada tenant es una empresa que usa el sistema.
 | slug | texto (único) | Identificador URL-friendly, ej: `el-rapido` |
 | activo | boolean | Si el tenant puede usar el sistema |
 | fechaCreacion | fecha | Cuándo se registró |
+| nombreComercial | texto (nullable) | Nombre visible en facturas y comprobantes |
+| logo | texto (nullable) | URL del logo del negocio |
+| zonaHoraria | texto | Zona IANA, ej: `America/Bogota`. Default: `America/Bogota` |
+| moneda | texto | Código ISO, ej: `COP`. Default: `COP` |
+| telefonoWhatsapp | texto (nullable) | Ej: `573001234567` |
+| emailContacto | texto (nullable) | Email de contacto del negocio |
+| direccion | texto (nullable) | Dirección física |
+| colorPrimario | texto (nullable) | Color hex para botones y acciones, ej: `#2563eb` |
+| colorSidebar | texto (nullable) | Color hex del fondo del sidebar, ej: `#0f172a` |
+| colorFondo | texto (nullable) | Color hex del área de contenido, ej: `#f8fafc` |
+| colorSuperficie | texto (nullable) | Color hex de cards, inputs y modales, ej: `#ffffff` |
 
 ---
 

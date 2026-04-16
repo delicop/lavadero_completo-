@@ -6,6 +6,7 @@ import {
 } from 'typeorm';
 
 export enum RolUsuario {
+  SUPERADMIN = 'superadmin',
   ADMIN = 'admin',
   TRABAJADOR = 'trabajador',
 }

@@ -1,0 +1,251 @@
+<div class="sa-shell">
+
+  <!-- Header -->
+  <header class="sa-header">
+    <div class="sa-header__brand">
+      <span class="sa-header__icon">⚙</span>
+      <span class="sa-header__title">Panel Superadmin</span>
+    </div>
+    <div class="sa-header__nav">
+      <button class="sa-tab-btn" [class.sa-tab-btn--active]="vista === 'empresas'" (click)="cambiarVista('empresas')">
+        Empresas
+      </button>
+      <button class="sa-tab-btn" [class.sa-tab-btn--active]="vista === 'usuarios'" (click)="cambiarVista('usuarios')">
+        Usuarios
+      </button>
+    </div>
+    <button class="sa-btn sa-btn--ghost" (click)="logout()">Cerrar sesión</button>
+  </header>
+
+  <main class="sa-main">
+
+    <!-- Error global -->
+    <div class="sa-alert sa-alert--error" *ngIf="error">
+      {{ error }}
+      <button class="sa-alert__close" (click)="error = ''">×</button>
+    </div>
+
+    <div class="sa-loading" *ngIf="cargando">Cargando...</div>
+
+    <ng-container *ngIf="!cargando">
+
+      <!-- Métricas -->
+      <section class="sa-metrics" *ngIf="metricas">
+        <div class="sa-metric">
+          <span class="sa-metric__value">{{ metricas.totalTenants }}</span>
+          <span class="sa-metric__label">Empresas totales</span>
+        </div>
+        <div class="sa-metric sa-metric--green">
+          <span class="sa-metric__value">{{ metricas.tenantsActivos }}</span>
+          <span class="sa-metric__label">Empresas activas</span>
+        </div>
+        <div class="sa-metric">
+          <span class="sa-metric__value">{{ metricas.totalUsuarios }}</span>
+          <span class="sa-metric__label">Usuarios totales</span>
+        </div>
+        <div class="sa-metric sa-metric--blue">
+          <span class="sa-metric__value">{{ metricas.usuariosActivos }}</span>
+          <span class="sa-metric__label">Usuarios activos</span>
+        </div>
+      </section>
+
+      <!-- ── Vista: Empresas ── -->
+      <section class="sa-section" *ngIf="vista === 'empresas'">
+        <div class="sa-section__header">
+          <h2 class="sa-section__title">Lavaderos registrados</h2>
+          <button class="sa-btn sa-btn--secondary" (click)="cargarDatos()">Actualizar</button>
+        </div>
+        <div class="sa-table-wrap">
+          <table class="sa-table">
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Slug</th>
+                <th>Estado</th>
+                <th>Usuarios</th>
+                <th>Activos</th>
+                <th>Registrado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let t of tenants" [class.sa-row--inactive]="!t.activo">
+                <td>
+                  <div class="sa-name">{{ t.nombreComercial || t.nombre }}</div>
+                  <div class="sa-sub" *ngIf="t.nombreComercial">{{ t.nombre }}</div>
+                </td>
+                <td><code class="sa-code">{{ t.slug }}</code></td>
+                <td>
+                  <span class="sa-badge" [class.sa-badge--green]="t.activo" [class.sa-badge--red]="!t.activo">
+                    {{ t.activo ? 'Activo' : 'Suspendido' }}
+                  </span>
+                </td>
+                <td class="sa-num">{{ t.totalUsuarios }}</td>
+                <td class="sa-num">{{ t.usuariosActivos }}</td>
+                <td class="sa-date">{{ t.fechaCreacion | date:'dd/MM/yyyy' }}</td>
+                <td class="sa-actions">
+                  <button
+                    class="sa-btn sa-btn--sm"
+                    [class.sa-btn--warning]="t.activo"
+                    [class.sa-btn--success]="!t.activo"
+                    [disabled]="procesando === t.id"
+                    (click)="toggleActivoTenant(t)"
+                  >{{ procesando === t.id ? '...' : (t.activo ? 'Suspender' : 'Activar') }}</button>
+                  <button
+                    class="sa-btn sa-btn--sm sa-btn--secondary"
+                    (click)="cambiarVista('usuarios'); filtroTenantId = t.id"
+                  >Ver usuarios</button>
+                  <button
+                    class="sa-btn sa-btn--sm sa-btn--danger"
+                    [disabled]="procesando === t.id"
+                    (click)="tenantAEliminar = t"
+                  >Eliminar</button>
+                </td>
+              </tr>
+              <tr *ngIf="tenants.length === 0">
+                <td colspan="7" class="sa-empty">No hay empresas registradas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── Vista: Usuarios ── -->
+      <section class="sa-section" *ngIf="vista === 'usuarios'">
+        <div class="sa-section__header">
+          <h2 class="sa-section__title">Usuarios</h2>
+          <div class="sa-section__controls">
+            <select class="sa-select" [(ngModel)]="filtroTenantId">
+              <option value="">Todas las empresas</option>
+              <option *ngFor="let t of tenants" [value]="t.id">
+                {{ t.nombreComercial || t.nombre }}
+              </option>
+            </select>
+            <button class="sa-btn sa-btn--secondary" (click)="cargarDatos()">Actualizar</button>
+          </div>
+        </div>
+        <div class="sa-table-wrap">
+          <table class="sa-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Empresa</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Registrado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let u of usuariosFiltrados" [class.sa-row--inactive]="!u.activo">
+                <td class="sa-name">{{ u.nombre }} {{ u.apellido }}</td>
+                <td class="sa-email">{{ u.email }}</td>
+                <td>
+                  <code class="sa-code">{{ u.tenantSlug }}</code>
+                </td>
+                <td>
+                  <span class="sa-badge" [class.sa-badge--blue]="u.rol === 'admin'" [class.sa-badge--gray]="u.rol === 'trabajador'">
+                    {{ u.rol }}
+                  </span>
+                </td>
+                <td>
+                  <span class="sa-badge" [class.sa-badge--green]="u.activo" [class.sa-badge--red]="!u.activo">
+                    {{ u.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="sa-date">{{ u.fechaRegistro | date:'dd/MM/yyyy' }}</td>
+                <td class="sa-actions">
+                  <button
+                    class="sa-btn sa-btn--sm"
+                    [class.sa-btn--warning]="u.activo"
+                    [class.sa-btn--success]="!u.activo"
+                    [disabled]="procesando === u.id"
+                    (click)="toggleActivoUsuario(u)"
+                  >{{ procesando === u.id ? '...' : (u.activo ? 'Desactivar' : 'Activar') }}</button>
+                  <button
+                    class="sa-btn sa-btn--sm sa-btn--secondary"
+                    [disabled]="procesando === u.id"
+                    (click)="abrirCambioPassword(u)"
+                  >Contraseña</button>
+                  <button
+                    class="sa-btn sa-btn--sm sa-btn--danger"
+                    [disabled]="procesando === u.id"
+                    (click)="usuarioAEliminar = u"
+                  >Eliminar</button>
+                </td>
+              </tr>
+              <tr *ngIf="usuariosFiltrados.length === 0">
+                <td colspan="7" class="sa-empty">No hay usuarios</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </ng-container>
+  </main>
+
+  <!-- Modal: Confirmar eliminar empresa -->
+  <div class="sa-overlay" *ngIf="tenantAEliminar" (click)="tenantAEliminar = null">
+    <div class="sa-dialog" (click)="$event.stopPropagation()">
+      <h3 class="sa-dialog__title">Eliminar empresa</h3>
+      <p class="sa-dialog__body">
+        ¿Eliminar <strong>{{ tenantAEliminar.nombreComercial || tenantAEliminar.nombre }}</strong>?
+        Se borrarán todos sus datos (usuarios, turnos, caja, etc.). Esta acción no se puede deshacer.
+      </p>
+      <div class="sa-dialog__actions">
+        <button class="sa-btn sa-btn--secondary" (click)="tenantAEliminar = null">Cancelar</button>
+        <button class="sa-btn sa-btn--danger" [disabled]="procesando !== null" (click)="confirmarEliminarTenant()">
+          {{ procesando ? 'Eliminando...' : 'Sí, eliminar todo' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmar eliminar usuario -->
+  <div class="sa-overlay" *ngIf="usuarioAEliminar" (click)="usuarioAEliminar = null">
+    <div class="sa-dialog" (click)="$event.stopPropagation()">
+      <h3 class="sa-dialog__title">Eliminar usuario</h3>
+      <p class="sa-dialog__body">
+        ¿Eliminar a <strong>{{ usuarioAEliminar.nombre }} {{ usuarioAEliminar.apellido }}</strong>
+        ({{ usuarioAEliminar.email }})?
+      </p>
+      <div class="sa-dialog__actions">
+        <button class="sa-btn sa-btn--secondary" (click)="usuarioAEliminar = null">Cancelar</button>
+        <button class="sa-btn sa-btn--danger" [disabled]="procesando !== null" (click)="confirmarEliminarUsuario()">
+          {{ procesando ? 'Eliminando...' : 'Sí, eliminar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cambiar contraseña -->
+  <div class="sa-overlay" *ngIf="usuarioCambioPass" (click)="usuarioCambioPass = null">
+    <div class="sa-dialog" (click)="$event.stopPropagation()">
+      <h3 class="sa-dialog__title">Cambiar contraseña</h3>
+      <p class="sa-dialog__body">
+        Usuario: <strong>{{ usuarioCambioPass.nombre }} {{ usuarioCambioPass.apellido }}</strong><br>
+        <span class="sa-email">{{ usuarioCambioPass.email }}</span>
+      </p>
+      <div class="sa-field">
+        <label class="sa-label">Nueva contraseña</label>
+        <input
+          class="sa-input"
+          type="password"
+          [(ngModel)]="nuevaPassword"
+          placeholder="Mínimo 6 caracteres"
+          (keydown.enter)="guardarPassword()"
+        />
+        <div class="sa-field-error" *ngIf="errorPass">{{ errorPass }}</div>
+      </div>
+      <div class="sa-dialog__actions">
+        <button class="sa-btn sa-btn--secondary" (click)="usuarioCambioPass = null">Cancelar</button>
+        <button class="sa-btn sa-btn--primary" [disabled]="guardandoPass || !nuevaPassword" (click)="guardarPassword()">
+          {{ guardandoPass ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

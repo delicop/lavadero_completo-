@@ -8,8 +8,7 @@ import { TenantsService } from './tenants.service';
 import { ActualizarConfigTenantDto } from './dto/actualizar-config-tenant.dto';
 
 @Controller('tenants')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(RolUsuario.ADMIN)
+@UseGuards(JwtAuthGuard)
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) {}
 
@@ -19,6 +18,8 @@ export class TenantsController {
   }
 
   @Patch('config')
+  @UseGuards(RolesGuard)
+  @Roles(RolUsuario.ADMIN)
   @HttpCode(HttpStatus.OK)
   actualizarConfig(
     @UsuarioActual() usuario: Usuario,

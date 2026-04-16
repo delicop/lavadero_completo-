@@ -20,7 +20,7 @@ export interface AuthResponse {
 
 // ── Usuario ───────────────────────────────────────────────────────────────────
 
-export type RolUsuario = 'admin' | 'trabajador';
+export type RolUsuario = 'superadmin' | 'admin' | 'trabajador';
 
 export interface Usuario {
   id: string;
@@ -31,6 +31,7 @@ export interface Usuario {
   rol: RolUsuario;
   activo: boolean;
   disponible: boolean;
+  tenantId: string | null;
   fechaRegistro: string;
 }
 
@@ -255,6 +256,10 @@ export interface TenantConfig {
   telefonoWhatsapp: string | null;
   emailContacto: string | null;
   direccion: string | null;
+  colorPrimario: string | null;
+  colorSidebar: string | null;
+  colorFondo: string | null;
+  colorSuperficie: string | null;
 }
 
 export interface ActualizarTenantConfigPayload {
@@ -265,6 +270,44 @@ export interface ActualizarTenantConfigPayload {
   telefonoWhatsapp?: string;
   emailContacto?: string;
   direccion?: string;
+  colorPrimario?: string;
+  colorSidebar?: string;
+  colorFondo?: string;
+  colorSuperficie?: string;
+}
+
+// ── Superadmin ────────────────────────────────────────────────────────────────
+
+export interface TenantConStats {
+  id: string;
+  nombre: string;
+  slug: string;
+  activo: boolean;
+  fechaCreacion: string;
+  nombreComercial: string | null;
+  totalUsuarios: number;
+  usuariosActivos: number;
+}
+
+export interface MetricasGlobales {
+  totalTenants: number;
+  tenantsActivos: number;
+  totalUsuarios: number;
+  usuariosActivos: number;
+}
+
+export interface UsuarioConTenant {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  rol: RolUsuario;
+  activo: boolean;
+  disponible: boolean;
+  fechaRegistro: string;
+  tenantId: string;
+  tenantNombre: string;
+  tenantSlug: string;
 }
 
 // ── Errores de la API ─────────────────────────────────────────────────────────

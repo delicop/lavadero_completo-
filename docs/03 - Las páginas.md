@@ -104,6 +104,44 @@ CRUD de empleados.
 - Configurar el % de comisión de cada uno
 - Roles: admin o trabajador
 
+### 🏪 Mi Negocio (`/configuracion-negocio`) — [[frontend/configuracion-negocio]]
+El admin configura los datos del negocio y personaliza la apariencia visual.
+
+**Sección: Identidad**
+- Nombre interno del tenant (solo lectura)
+- Nombre comercial (aparece en facturas y comprobantes)
+- URL del logo (con vista previa inline)
+
+**Sección: Regionalización**
+- Zona horaria (select con zonas de Latinoamérica y España)
+- Moneda (COP, MXN, ARS, CLP, PEN, USD, EUR)
+
+**Sección: Contacto**
+- Teléfono WhatsApp
+- Email de contacto
+- Dirección física
+
+**Modal: 🎨 Personalizar apariencia**
+
+Se abre con el botón "Personalizar" en la esquina superior. Permite cambiar 4 colores con preview en tiempo real (los cambios se ven en la app mientras se elige):
+
+| Opción | Variable CSS | Qué afecta |
+|--------|-------------|------------|
+| Color de acciones | `--color-primario` | Botones, links activos, badges |
+| Color del sidebar | `--sidebar-bg` | Barra lateral de navegación (auto-detecta si es oscuro para ajustar los textos) |
+| Color del fondo | `--color-fondo` | Área de contenido de las páginas |
+| Color de tarjetas | `--color-superficie` | Cards, inputs y modales |
+
+Cada opción tiene 8 swatches predefinidos + un color picker libre.
+
+**Los colores se aplican a todos los usuarios del tenant** (admin y trabajadores): al iniciar sesión el `sesionResolver` carga la config y aplica el tema antes de renderizar el layout.
+
+**Archivos:**
+- `frontangular/src/app/pages/configuracion-negocio/configuracion-negocio.component.ts`
+- `frontangular/src/app/pages/configuracion-negocio/configuracion-negocio.component.html`
+
+---
+
 ### 🙋 Mi Perfil (`/mi-perfil`) — [[frontend/mi-perfil]]
 El usuario logueado puede ver y editar su propia información.
 
@@ -163,3 +201,62 @@ Formulario para que un nuevo lavadero cree su cuenta y empiece a usar el sistema
 - Pide: nombre del negocio, slug (URL única), nombre/apellido/email/contraseña del admin
 - El slug se auto-genera desde el nombre del negocio pero se puede editar
 - Al completar el registro se loguea automáticamente y redirige al dashboard
+
+---
+
+## Panel Superadmin (`/superadmin`) — solo rol `superadmin`
+
+Interfaz exclusiva para el dueño del SaaS. **No usa el sidebar ni el LayoutComponent** del lavadero — tiene su propio header minimalista.
+
+**Acceso:** solo si el JWT tiene `rol === 'superadmin'`. El guard `superadminGuard` verifica esto. Si un admin o trabajador intenta entrar directamente a `/superadmin`, es redirigido a `/dashboard`.
+
+**Al hacer login como superadmin**, el sistema detecta el rol desde el JWT y redirige automáticamente a `/superadmin` en vez de `/dashboard`.
+
+### Métricas (parte superior)
+4 tarjetas siempre visibles:
+- Empresas totales registradas
+- Empresas activas
+- Usuarios totales (excluyendo superadmins)
+- Usuarios activos
+
+### Tab: Empresas
+Tabla con todos los lavaderos del sistema:
+
+| Columna | Descripción |
+|---------|-------------|
+| Nombre | Nombre comercial o nombre del tenant |
+| Slug | Identificador URL (`el-rapido`) |
+| Estado | Activo / Suspendido |
+| Usuarios | Total de usuarios del tenant |
+| Activos | Cuántos están activos |
+| Registrado | Fecha de creación |
+
+**Acciones por fila:**
+- **Suspender / Activar** — bloquea o habilita el acceso de todo el lavadero
+- **Ver usuarios** — cambia al tab Usuarios filtrado por esa empresa
+- **Eliminar** — borra el lavadero y **todos sus datos** (con modal de confirmación)
+
+### Tab: Usuarios
+Tabla con todos los usuarios de todos los tenants:
+
+| Columna | Descripción |
+|---------|-------------|
+| Nombre | Nombre y apellido |
+| Email | Email de acceso |
+| Empresa | Slug del tenant al que pertenece |
+| Rol | `admin` o `trabajador` |
+| Estado | Activo / Inactivo |
+| Registrado | Fecha de alta |
+
+Tiene un **select para filtrar por empresa**.
+
+**Acciones por fila:**
+- **Desactivar / Activar** — bloquea o habilita el acceso del usuario
+- **Contraseña** — abre un modal para cambiarle la contraseña
+- **Eliminar** — elimina el usuario (con confirmación)
+
+**Archivos:**
+- `frontangular/src/app/pages/superadmin/superadmin.component.ts`
+- `frontangular/src/app/pages/superadmin/superadmin.component.html`
+- `frontangular/src/app/core/services/superadmin.service.ts`
+- `frontangular/src/app/core/guards/superadmin.guard.ts`

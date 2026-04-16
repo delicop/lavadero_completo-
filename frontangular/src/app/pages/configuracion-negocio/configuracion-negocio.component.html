@@ -1,5 +1,10 @@
 <div style="max-width:640px">
-  <h1 style="font-size:1.3rem;font-weight:700;margin:0 0 24px">Configuración del negocio</h1>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+    <h1 style="font-size:1.3rem;font-weight:700;margin:0">Configuración del negocio</h1>
+    <button type="button" class="btn btn-secundario" (click)="modalPersonalizar = true">
+      🎨 Personalizar
+    </button>
+  </div>
 
   @if (cargando) {
     <p style="color:var(--color-texto-suave)">Cargando...</p>
@@ -21,7 +26,7 @@
           <div class="form-grupo" style="margin:0">
             <label class="form-label">Nombre interno del tenant</label>
             <input class="form-input" [value]="config?.nombre" disabled
-                   style="background:var(--color-fondo);opacity:.7" />
+                   style="background:var(--color-fondo);opacity:.8;cursor:not-allowed" />
             <small style="color:var(--color-texto-suave);font-size:0.75rem">
               Este nombre no se puede cambiar. Es el identificador del tenant.
             </small>
@@ -87,9 +92,6 @@
             <label class="form-label">Teléfono WhatsApp</label>
             <input type="text" class="form-input" [(ngModel)]="telefonoWhatsapp" name="telefonoWhatsapp"
                    placeholder="Ej: 573001234567" maxlength="30" />
-            <small style="color:var(--color-texto-suave);font-size:0.75rem">
-              Número completo con código de país, sin espacios ni guiones.
-            </small>
           </div>
           <div class="form-grupo" style="margin:0">
             <label class="form-label">Email de contacto</label>
@@ -113,3 +115,123 @@
     </form>
   }
 </div>
+
+<!-- Modal de personalización visual -->
+<app-modal
+  titulo="Personalizar apariencia"
+  [visible]="modalPersonalizar"
+  ancho="560px"
+  (cerrar)="modalPersonalizar = false"
+>
+  <div style="display:flex;flex-direction:column;gap:24px">
+
+    <!-- Color de acciones -->
+    <div class="pers-seccion">
+      <div class="pers-seccion-header">
+        <span class="pers-seccion-titulo">Color de acciones</span>
+        <small class="pers-seccion-desc">Botones, links activos y elementos interactivos</small>
+      </div>
+      <div class="pers-swatches">
+        @for (c of coloresAccion; track c.value) {
+          <button type="button" class="color-swatch"
+            [style.background]="c.value"
+            [class.color-swatch--activo]="colorPrimario === c.value"
+            [title]="c.label"
+            (click)="previewPrimario(c.value)">
+          </button>
+        }
+        <input type="color" class="color-picker" [value]="colorPrimario"
+               title="Color personalizado"
+               (input)="previewPrimario($any($event.target).value)" />
+      </div>
+      <div class="pers-preview">
+        <button type="button" class="btn btn-primario" style="pointer-events:none">Guardar</button>
+        <span class="pers-preview-badge" [style.background]="colorPrimario">Activo</span>
+        <code class="pers-codigo">{{ colorPrimario }}</code>
+      </div>
+    </div>
+
+    <!-- Color del sidebar -->
+    <div class="pers-seccion">
+      <div class="pers-seccion-header">
+        <span class="pers-seccion-titulo">Color del sidebar</span>
+        <small class="pers-seccion-desc">Barra lateral de navegación</small>
+      </div>
+      <div class="pers-swatches">
+        @for (c of coloresSidebar; track c.value) {
+          <button type="button" class="color-swatch"
+            [style.background]="c.value"
+            [style.border-color]="c.value === '#ffffff' || c.value === '#f8fafc' ? '#cbd5e1' : 'transparent'"
+            [class.color-swatch--activo]="colorSidebar === c.value"
+            [title]="c.label"
+            (click)="previewSidebar(c.value)">
+          </button>
+        }
+        <input type="color" class="color-picker" [value]="colorSidebar"
+               title="Color personalizado"
+               (input)="previewSidebar($any($event.target).value)" />
+      </div>
+      <div class="pers-preview">
+        <small style="color:var(--color-texto-suave);font-size:0.75rem">El cambio se ve en tiempo real en la barra izquierda</small>
+        <code class="pers-codigo">{{ colorSidebar }}</code>
+      </div>
+    </div>
+
+    <!-- Color del fondo -->
+    <div class="pers-seccion">
+      <div class="pers-seccion-header">
+        <span class="pers-seccion-titulo">Color del fondo</span>
+        <small class="pers-seccion-desc">Área de contenido de las páginas</small>
+      </div>
+      <div class="pers-swatches">
+        @for (c of coloresFondo; track c.value) {
+          <button type="button" class="color-swatch"
+            [style.background]="c.value"
+            [style.border-color]="'#cbd5e1'"
+            [class.color-swatch--activo]="colorFondo === c.value"
+            [title]="c.label"
+            (click)="previewFondo(c.value)">
+          </button>
+        }
+        <input type="color" class="color-picker" [value]="colorFondo"
+               title="Color personalizado"
+               (input)="previewFondo($any($event.target).value)" />
+      </div>
+      <code class="pers-codigo">{{ colorFondo }}</code>
+    </div>
+
+    <!-- Color de tarjetas/inputs -->
+    <div class="pers-seccion">
+      <div class="pers-seccion-header">
+        <span class="pers-seccion-titulo">Color de tarjetas</span>
+        <small class="pers-seccion-desc">Cards, inputs y modales</small>
+      </div>
+      <div class="pers-swatches">
+        @for (c of coloresSuperficie; track c.value) {
+          <button type="button" class="color-swatch"
+            [style.background]="c.value"
+            [style.border-color]="'#cbd5e1'"
+            [class.color-swatch--activo]="colorSuperficie === c.value"
+            [title]="c.label"
+            (click)="previewSuperficie(c.value)">
+          </button>
+        }
+        <input type="color" class="color-picker" [value]="colorSuperficie"
+               title="Color personalizado"
+               (input)="previewSuperficie($any($event.target).value)" />
+      </div>
+      <code class="pers-codigo">{{ colorSuperficie }}</code>
+    </div>
+
+    <!-- Botón guardar -->
+    <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:8px;border-top:1px solid var(--color-borde)">
+      <button type="button" class="btn btn-secundario" (click)="modalPersonalizar = false">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primario" [disabled]="guardando" (click)="guardar()">
+        {{ guardando ? 'Guardando...' : 'Guardar apariencia' }}
+      </button>
+    </div>
+
+  </div>
+</app-modal>

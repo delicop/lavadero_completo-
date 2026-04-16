@@ -13,43 +13,72 @@ Versión: **Angular 21** (la más nueva al momento de escribir esto).
 
 ```
 frontangular/src/app/
-├── core/                  ← servicios y utilidades del sistema
-│   ├── guards/            ← controla quién puede entrar a qué ruta
-│   ├── interceptors/      ← modifica automáticamente los pedidos HTTP
-│   ├── resolvers/         ← carga datos antes de mostrar una página
-│   └── services/          ← todos los llamados a la API van acá
-├── layout/                ← el "marco" de la app (sidebar + contenido)
-├── pages/                 ← una carpeta por página del sistema
+├── core/                      ← servicios y utilidades del sistema
+│   ├── guards/
+│   │   ├── auth.guard.ts      ← verifica que haya token JWT
+│   │   └── superadmin.guard.ts← verifica que el rol sea 'superadmin'
+│   ├── interceptors/          ← agrega el JWT a cada pedido HTTP
+│   ├── resolvers/             ← carga sesión antes de renderizar
+│   └── services/
+│       ├── auth.service.ts    ← login, logout, cambiar contraseña
+│       ├── sesion.service.ts  ← usuario logueado en memoria
+│       ├── superadmin.service.ts ← llamados a /api/superadmin/*
+│       └── ...                ← un servicio por módulo del negocio
+├── layout/                    ← sidebar + router-outlet (solo para tenants)
+├── pages/
+│   ├── superadmin/            ← panel del dueño del SaaS (ruta propia, sin sidebar)
+│   └── ...                    ← resto de páginas del lavadero
 ├── shared/
-│   ├── components/        ← componentes reutilizables (ej: Modal)
-│   ├── types/             ← todas las interfaces TypeScript
-│   └── utils/             ← funciones auxiliares (formatear precio, fecha, etc.)
-├── app.config.ts          ← configuración global (zone, router, http)
-├── app.routes.ts          ← mapa de rutas de la app
-└── app.ts                 ← componente raíz
+│   ├── components/            ← ModalComponent y otros reutilizables
+│   ├── types/                 ← todas las interfaces TypeScript
+│   └── utils/                 ← formatters, whatsapp helpers
+├── app.config.ts              ← configuración global (zone, router, http)
+├── app.routes.ts              ← mapa de rutas de la app
+└── app.ts                     ← componente raíz
 ```
 
 ---
 
 ## Cómo fluye la app cuando abrís una página
 
+**Usuario normal (admin / trabajador) entra a `/caja`:**
 ```
-1. Usuario entra a /caja
+1. authGuard: ¿tiene token? → Sí, continúa
 
-2. authGuard verifica: ¿tiene token JWT válido?
-   → No: redirige a /login
-   → Sí: continúa
-
-3. sesionResolver carga los datos del usuario logueado
+2. sesionResolver: carga /api/auth/me y guarda el usuario en SesionService
    (evita que la app renderice antes de saber quién sos)
 
-4. LayoutComponent se monta con el sidebar
+3. LayoutComponent se monta con el sidebar
 
-5. CajaComponent se carga (lazy loading: solo en ese momento)
+4. CajaComponent se carga (lazy loading: solo en ese momento)
 
-6. ngOnInit() del componente hace los llamados a la API
+5. ngOnInit() del componente hace los llamados a la API
 
-7. La pantalla se actualiza con los datos recibidos
+6. La pantalla se actualiza con los datos recibidos
+```
+
+**Superadmin entra a `/superadmin`:**
+```
+1. authGuard: ¿tiene token? → Sí, continúa
+
+2. superadminGuard: carga la sesión y verifica rol === 'superadmin'
+   → Si no es superadmin: redirige a /dashboard
+   → Si es superadmin: continúa
+
+3. SuperadminComponent se carga SIN LayoutComponent
+   (tiene su propio header, sin sidebar de lavadero)
+
+4. ngOnInit() carga métricas + tenants + usuarios en paralelo
+```
+
+**Login: ¿a dónde redirige?**
+```
+Después del login, auth.service.ts llama getRolDelToken()
+que decodifica el JWT sin hacer otra llamada al servidor:
+
+rol === 'superadmin'  →  /superadmin
+rol === 'admin'       →  /dashboard
+rol === 'trabajador'  →  /dashboard
 ```
 
 ---
@@ -115,6 +144,7 @@ Todos los tipos del negocio están definidos en `shared/types/index.ts`.
 Esto garantiza que si la API cambia la estructura de un dato, TypeScript te avisa en todos los lugares donde se usa.
 
 Tipos principales:
+- `RolUsuario` — `'superadmin' | 'admin' | 'trabajador'`
 - `Usuario` — empleado del lavadero
 - `Cliente` — dueño del auto
 - `Vehiculo` — el auto
@@ -123,6 +153,10 @@ Tipos principales:
 - `Factura` — el recibo de pago
 - `CajaDia`, `GastoCaja`, `IngresoManualCaja`, `ResumenCaja` — control de caja
 - `Liquidacion` — pago a empleado
+- `TenantConfig` — configuración del lavadero (nombre, logo, zona horaria, etc.)
+- `TenantConStats` — tenant con conteo de usuarios (usado en el panel superadmin)
+- `MetricasGlobales` — totales cross-tenant para el panel superadmin
+- `UsuarioConTenant` — usuario con nombre y slug de su empresa (usado en el panel superadmin)
 
 ---
 

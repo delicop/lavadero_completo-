@@ -2,7 +2,7 @@
   <nav class="sidebar">
     <div class="sidebar-marca">
       <div class="sidebar-marca-icono">🚗</div>
-      <span class="sidebar-marca-texto">Lavadero</span>
+      <span class="sidebar-marca-texto">{{ tenantSvc.configActual?.nombreComercial || tenantSvc.configActual?.nombre || 'Lavadero' }}</span>
     </div>
 
     <!-- Links directos (todos los roles) -->

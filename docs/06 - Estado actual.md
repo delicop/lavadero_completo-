@@ -1,13 +1,13 @@
 # 📊 Estado actual del proyecto
 
-> Última actualización: abril 2026 — Capa 2 completada (configuración por lavadero)
+> Última actualización: abril 2026 — Capa 4 completada (panel superadmin)
 
 ---
 
 ## ✅ Qué está terminado y funciona
 
 ### Backend (API)
-- [x] Login con JWT
+- [x] Login con JWT (`POST /api/auth/login`)
 - [x] CRUD de usuarios / personal
 - [x] CRUD de clientes
 - [x] CRUD de vehículos
@@ -20,10 +20,12 @@
 - [x] Zona horaria Colombia (UTC-5) en todos los filtros de fecha
 - [x] **Multi-tenancy**: tabla `tenants`, `tenantId` en todas las entidades, JWT incluye `tenantId`, todos los queries filtran por tenant
 - [x] **Registro de nuevo lavadero**: `POST /api/auth/registrar` crea tenant + usuario admin en una sola operación
-- [x] **Configuración del negocio**: `GET/PATCH /api/tenants/config` — nombre comercial, logo, zona horaria, moneda, WhatsApp, email, dirección
+- [x] **Configuración del negocio**: `GET/PATCH /api/tenants/config` — nombre comercial, logo, zona horaria, moneda, WhatsApp, email, dirección, colores de apariencia (`colorPrimario`, `colorSidebar`, `colorFondo`, `colorSuperficie`)
+- [x] **Superadmin**: módulo `superadmin` con endpoints para ver/gestionar todos los tenants y usuarios (`GET/PATCH/DELETE /api/superadmin/*`)
+- [x] **Rol superadmin**: tercer rol en `RolUsuario` enum (`superadmin` / `admin` / `trabajador`), con `tenantId = null`
 
 ### Frontend (Angular)
-- [x] Login
+- [x] Login (redirige a `/superadmin` si el rol es superadmin, a `/dashboard` para los demás)
 - [x] Dashboard con gestión completa del día (turnos + facturación inline)
 - [x] Turnos: lista, crear, cambiar estado, filtros
 - [x] Caja: abrir/cerrar, gastos, ingresos manuales, resumen con desglose
@@ -39,8 +41,9 @@
 - [x] Sidebar con grupos colapsables (Operación / Administración)
 - [x] Tiempo real: la pantalla se actualiza sin F5 cuando cambian los turnos
 - [x] **Pantalla de registro** (`/registro`): formulario para que un nuevo lavadero cree su cuenta y slug
-- [x] **Configuración del negocio** (`/configuracion-negocio`): nombre comercial, logo, zona horaria, moneda, contacto
+- [x] **Configuración del negocio** (`/configuracion-negocio`): nombre comercial, logo, zona horaria, moneda, contacto, personalización visual (4 colores con preview en tiempo real: acciones, sidebar, fondo, tarjetas)
 - [x] **Landing page** (`/`): página pública de venta del SaaS con hero, features, módulos, precios y CTA
+- [x] **Panel Superadmin** (`/superadmin`): vista separada (sin sidebar), con tab Empresas y tab Usuarios, métricas globales, acciones de gestión completa
 
 ---
 
@@ -96,6 +99,13 @@ Cada lavadero puede personalizar su propia instancia desde `/configuracion-negoc
 - [x] Zona horaria propia (dinámica por tenant, antes hardcodeada a UTC-5)
 - [x] Moneda (dinámica por tenant, antes hardcodeada a COP)
 - [x] Datos de contacto: WhatsApp, email, dirección
+- [x] **Personalización visual**: 4 colores configurables con preview en tiempo real
+  - `colorPrimario` → botones, links activos (`--color-primario`)
+  - `colorSidebar` → barra de navegación (`--sidebar-bg`), con detección automática oscuro/claro para los textos del sidebar
+  - `colorFondo` → área de contenido (`--color-fondo`)
+  - `colorSuperficie` → cards, inputs y modales (`--color-superficie`)
+- [x] El tema se aplica a **todos los usuarios del tenant** (admin y trabajadores) vía `sesionResolver`
+- [x] El nombre del negocio (`nombreComercial` o `nombre`) aparece en la marca del sidebar
 - [ ] Configurar qué módulos tiene habilitados según su plan ← depende de Capa 3
 
 ---
@@ -112,14 +122,18 @@ El sistema necesita saber qué plan tiene cada lavadero y cobrarle:
 
 ---
 
-### Capa 4 — Superadmin del SaaS
+### ✅ Capa 4 — Superadmin del SaaS — COMPLETADA
 
-Una interfaz separada (o una sección protegida) para el dueño del SaaS:
+Una interfaz separada para el dueño del SaaS (`/superadmin`):
 
-- [ ] Ver todos los lavaderos registrados
-- [ ] Ver métricas globales (cuántos turnos se procesaron hoy en total, etc.)
-- [ ] Activar / suspender un tenant manualmente
-- [ ] Ver logs de errores por tenant
+- [x] Ver todos los lavaderos registrados con estadísticas
+- [x] Ver métricas globales (turnos hoy, turnos del mes, usuarios activos)
+- [x] Activar / suspender un tenant manualmente
+- [x] Eliminar un tenant con todos sus datos (con confirmación)
+- [x] Rol `superadmin` en la entidad Usuario (sin tenantId)
+- [x] Endpoints `GET/PATCH/DELETE /api/superadmin/tenants` protegidos por rol superadmin
+- [x] Usuario semilla: `superadmin@lavadero.com` / `Super1234`
+- [ ] Ver logs de errores por tenant ← pendiente futuro
 
 ---
 
@@ -144,9 +158,9 @@ Funcionalidades que hacen el sistema más valioso para cada lavadero:
 ```
 ✅ 1. Multi-tenancy + Onboarding (Capa 1)               ← COMPLETADO
 ✅ 2. Configuración por lavadero (Capa 2)                ← COMPLETADO
+✅ 4. Superadmin                                         ← COMPLETADO
    3. Completar placeholders (Gastos, Otros Ingresos)   ← producto base terminado
-   4. Planes y suscripciones                             ← monetización
-   5. Superadmin                                         ← operación del SaaS
+   5. Planes y suscripciones                             ← monetización (Capa 3)
    6. Notificaciones WhatsApp                            ← diferenciador de valor
    7. Reportes y gráficos                                ← retención de clientes
 ```

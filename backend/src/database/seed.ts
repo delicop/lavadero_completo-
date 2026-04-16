@@ -59,7 +59,36 @@ async function seed() {
   console.log('  Password: Admin1234');
   console.log('  Rol:      admin');
   console.log(`  Tenant:   ${tenant.nombre} (slug: ${tenant.slug})`);
-  console.log('\n  ⚠ Cambiá la contraseña después del primer login.');
+
+  // 3. Crear o reactivar el usuario superadmin (sin tenant)
+  const superPasswordHash = await bcrypt.hash('Super1234', 10);
+  const superExiste = await usuarioRepo.findOne({ where: { email: 'superadmin@lavadero.com' } });
+
+  if (superExiste) {
+    superExiste.activo       = true;
+    superExiste.rol          = RolUsuario.SUPERADMIN;
+    superExiste.passwordHash = superPasswordHash;
+    superExiste.tenantId     = null;
+    await usuarioRepo.save(superExiste);
+    console.log('\n✓ Superadmin reactivado');
+  } else {
+    const superAdmin = usuarioRepo.create({
+      nombre:       'Super',
+      apellido:     'Admin',
+      email:        'superadmin@lavadero.com',
+      passwordHash: superPasswordHash,
+      rol:          RolUsuario.SUPERADMIN,
+      activo:       true,
+      tenantId:     null,
+    });
+    await usuarioRepo.save(superAdmin);
+    console.log('\n✓ Superadmin creado');
+  }
+
+  console.log('  Email:    superadmin@lavadero.com');
+  console.log('  Password: Super1234');
+  console.log('  Rol:      superadmin');
+  console.log('\n  ⚠ Cambiá las contraseñas después del primer login.');
 
   await dataSource.destroy();
 }

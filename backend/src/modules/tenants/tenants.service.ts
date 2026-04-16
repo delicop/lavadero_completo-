@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Tenant } from './entities/tenant.entity';
 import { ActualizarConfigTenantDto } from './dto/actualizar-config-tenant.dto';
 
@@ -9,6 +9,7 @@ export class TenantsService {
   constructor(
     @InjectRepository(Tenant)
     private readonly repo: Repository<Tenant>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async crear(nombre: string, slug: string): Promise<Tenant> {
@@ -37,5 +38,27 @@ export class TenantsService {
     const tenant = await this.buscarPorId(id);
     Object.assign(tenant, dto);
     return this.repo.save(tenant);
+  }
+
+  async toggleActivo(id: string): Promise<Tenant> {
+    const tenant = await this.buscarPorId(id);
+    tenant.activo = !tenant.activo;
+    return this.repo.save(tenant);
+  }
+
+  async eliminar(id: string): Promise<void> {
+    await this.buscarPorId(id);
+    // Eliminar todas las tablas relacionadas al tenant usando el tenantId
+    const tablas = [
+      'facturas', 'liquidaciones', 'turnos', 'gastos_caja',
+      'ingresos_manuales_caja', 'caja_dias', 'vehiculos',
+      'clientes', 'servicios', 'login_logs', 'usuarios',
+    ];
+    await this.dataSource.transaction(async (manager) => {
+      for (const tabla of tablas) {
+        await manager.query(`DELETE FROM "${tabla}" WHERE "tenantId" = $1`, [id]);
+      }
+      await manager.query(`DELETE FROM "tenants" WHERE "id" = $1`, [id]);
+    });
   }
 }

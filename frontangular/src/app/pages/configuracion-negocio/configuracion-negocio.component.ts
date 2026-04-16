@@ -2,6 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TenantService } from '../../core/services/tenant.service';
+import { ThemeService } from '../../core/services/theme.service';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 import type { TenantConfig } from '../../shared/types';
 
 const ZONAS_HORARIAS = [
@@ -28,43 +30,105 @@ const MONEDAS = [
   { label: 'EUR — Euro', value: 'EUR' },
 ];
 
+const COLORES_ACCION = [
+  { label: 'Azul',        value: '#2563eb' },
+  { label: 'Violeta',     value: '#7c3aed' },
+  { label: 'Rosa',        value: '#db2777' },
+  { label: 'Rojo',        value: '#dc2626' },
+  { label: 'Naranja',     value: '#d97706' },
+  { label: 'Verde',       value: '#16a34a' },
+  { label: 'Cyan',        value: '#0891b2' },
+  { label: 'Gris oscuro', value: '#374151' },
+];
+
+const COLORES_SIDEBAR = [
+  { label: 'Blanco',       value: '#ffffff' },
+  { label: 'Gris claro',   value: '#f8fafc' },
+  { label: 'Gris',         value: '#e2e8f0' },
+  { label: 'Gris oscuro',  value: '#1e293b' },
+  { label: 'Negro',        value: '#0f172a' },
+  { label: 'Azul oscuro',  value: '#1e3a8a' },
+  { label: 'Verde oscuro', value: '#14532d' },
+  { label: 'Violeta',      value: '#3b0764' },
+];
+
+const COLORES_FONDO = [
+  { label: 'Blanco roto',  value: '#f8fafc' },
+  { label: 'Blanco puro',  value: '#ffffff' },
+  { label: 'Gris suave',   value: '#f1f5f9' },
+  { label: 'Gris medio',   value: '#e2e8f0' },
+  { label: 'Cálido',       value: '#fafaf9' },
+  { label: 'Azul suave',   value: '#eff6ff' },
+  { label: 'Verde suave',  value: '#f0fdf4' },
+  { label: 'Violeta suave',value: '#faf5ff' },
+];
+
+const COLORES_SUPERFICIE = [
+  { label: 'Blanco puro',  value: '#ffffff' },
+  { label: 'Blanco roto',  value: '#f8fafc' },
+  { label: 'Gris muy claro', value: '#f1f5f9' },
+  { label: 'Cálido',       value: '#fafaf9' },
+  { label: 'Azul muy suave', value: '#f0f7ff' },
+  { label: 'Verde muy suave', value: '#f0fdf4' },
+  { label: 'Amarillo suave', value: '#fefce8' },
+  { label: 'Violeta suave', value: '#faf5ff' },
+];
+
 @Component({
   selector: 'app-configuracion-negocio',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './configuracion-negocio.component.html',
 })
 export class ConfiguracionNegocioComponent implements OnInit {
   private readonly tenantSvc = inject(TenantService);
+  private readonly tema      = inject(ThemeService);
 
-  readonly zonasHorarias = ZONAS_HORARIAS;
-  readonly monedas = MONEDAS;
+  readonly zonasHorarias    = ZONAS_HORARIAS;
+  readonly monedas          = MONEDAS;
+  readonly coloresAccion     = COLORES_ACCION;
+  readonly coloresSidebar    = COLORES_SIDEBAR;
+  readonly coloresFondo      = COLORES_FONDO;
+  readonly coloresSuperficie = COLORES_SUPERFICIE;
 
   config: TenantConfig | null = null;
-  cargando = true;
+  cargando  = true;
   guardando = false;
-  mensaje = '';
+  mensaje   = '';
   mensajeTipo: 'ok' | 'error' = 'ok';
 
-  // Campos del formulario
-  nombreComercial = '';
-  logo = '';
-  zonaHoraria = 'America/Bogota';
-  moneda = 'COP';
+  // Modal de personalización
+  modalPersonalizar = false;
+
+  // Campos del formulario general
+  nombreComercial  = '';
+  logo             = '';
+  zonaHoraria      = 'America/Bogota';
+  moneda           = 'COP';
   telefonoWhatsapp = '';
-  emailContacto = '';
-  direccion = '';
+  emailContacto    = '';
+  direccion        = '';
+
+  // Campos de personalización visual
+  colorPrimario   = '#2563eb';
+  colorSidebar    = '#ffffff';
+  colorFondo      = '#f8fafc';
+  colorSuperficie = '#ffffff';
 
   async ngOnInit(): Promise<void> {
     try {
       this.config = await this.tenantSvc.obtenerConfig();
-      this.nombreComercial = this.config.nombreComercial ?? '';
-      this.logo            = this.config.logo ?? '';
-      this.zonaHoraria     = this.config.zonaHoraria;
-      this.moneda          = this.config.moneda;
+      this.nombreComercial  = this.config.nombreComercial ?? '';
+      this.logo             = this.config.logo ?? '';
+      this.zonaHoraria      = this.config.zonaHoraria;
+      this.moneda           = this.config.moneda;
       this.telefonoWhatsapp = this.config.telefonoWhatsapp ?? '';
-      this.emailContacto   = this.config.emailContacto ?? '';
-      this.direccion       = this.config.direccion ?? '';
+      this.emailContacto    = this.config.emailContacto ?? '';
+      this.direccion        = this.config.direccion ?? '';
+      this.colorPrimario    = this.config.colorPrimario   ?? '#2563eb';
+      this.colorSidebar     = this.config.colorSidebar   ?? '#ffffff';
+      this.colorFondo       = this.config.colorFondo     ?? '#f8fafc';
+      this.colorSuperficie  = this.config.colorSuperficie ?? '#ffffff';
     } catch {
       this.mensaje = 'No se pudo cargar la configuración';
       this.mensajeTipo = 'error';
@@ -73,8 +137,32 @@ export class ConfiguracionNegocioComponent implements OnInit {
     }
   }
 
+  // ── Preview en tiempo real ─────────────────────────────────────────
+
+  previewPrimario(color: string): void {
+    this.colorPrimario = color;
+    this.tema.aplicar({ colorPrimario: color, colorSidebar: this.colorSidebar, colorFondo: this.colorFondo, colorSuperficie: this.colorSuperficie });
+  }
+
+  previewSidebar(color: string): void {
+    this.colorSidebar = color;
+    this.tema.aplicar({ colorPrimario: this.colorPrimario, colorSidebar: color, colorFondo: this.colorFondo, colorSuperficie: this.colorSuperficie });
+  }
+
+  previewFondo(color: string): void {
+    this.colorFondo = color;
+    this.tema.aplicar({ colorPrimario: this.colorPrimario, colorSidebar: this.colorSidebar, colorFondo: color, colorSuperficie: this.colorSuperficie });
+  }
+
+  previewSuperficie(color: string): void {
+    this.colorSuperficie = color;
+    this.tema.aplicar({ colorPrimario: this.colorPrimario, colorSidebar: this.colorSidebar, colorFondo: this.colorFondo, colorSuperficie: color });
+  }
+
+  // ── Guardar ────────────────────────────────────────────────────────
+
   async guardar(): Promise<void> {
-    this.mensaje = '';
+    this.mensaje  = '';
     this.guardando = true;
     try {
       this.config = await this.tenantSvc.actualizarConfig({
@@ -85,9 +173,20 @@ export class ConfiguracionNegocioComponent implements OnInit {
         telefonoWhatsapp: this.telefonoWhatsapp || undefined,
         emailContacto:    this.emailContacto || undefined,
         direccion:        this.direccion || undefined,
+        colorPrimario:    this.colorPrimario,
+        colorSidebar:     this.colorSidebar,
+        colorFondo:       this.colorFondo,
+        colorSuperficie:  this.colorSuperficie,
+      });
+      this.tema.aplicar({
+        colorPrimario:   this.colorPrimario,
+        colorSidebar:    this.colorSidebar,
+        colorFondo:      this.colorFondo,
+        colorSuperficie: this.colorSuperficie,
       });
       this.mensaje = 'Configuración guardada correctamente';
       this.mensajeTipo = 'ok';
+      this.modalPersonalizar = false;
     } catch {
       this.mensaje = 'Error al guardar la configuración';
       this.mensajeTipo = 'error';

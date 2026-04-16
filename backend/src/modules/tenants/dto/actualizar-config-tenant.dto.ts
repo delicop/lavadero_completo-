@@ -35,4 +35,24 @@ export class ActualizarConfigTenantDto {
   @IsString()
   @MaxLength(300)
   direccion?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(7)
+  colorPrimario?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(7)
+  colorSidebar?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(7)
+  colorFondo?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(7)
+  colorSuperficie?: string;
 }

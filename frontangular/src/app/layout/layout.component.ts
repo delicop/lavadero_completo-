@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { SesionService } from '../core/services/sesion.service';
 import { AuthService } from '../core/services/auth.service';
 import { RealtimeService } from '../core/services/realtime.service';
+import { TenantService } from '../core/services/tenant.service';
 import type { Usuario } from '../shared/types';
 
 interface ItemMenu {
@@ -54,6 +55,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly realtime = inject(RealtimeService);
+  readonly tenantSvc = inject(TenantService);
 
   usuario: Usuario | null = null;
   esAdmin = false;

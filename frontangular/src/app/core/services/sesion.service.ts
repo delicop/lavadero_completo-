@@ -29,6 +29,10 @@ export class SesionService {
     return this.usuario$.value?.rol === 'admin';
   }
 
+  esSuperadmin(): boolean {
+    return this.usuario$.value?.rol === 'superadmin';
+  }
+
   limpiar(): void {
     this.usuario$.next(null);
   }

@@ -24,7 +24,8 @@ export class LoginComponent {
     this.cargando = true;
     try {
       await this.auth.login({ email: this.email, password: this.password });
-      await this.router.navigate(['/dashboard']);
+      const destino = this.auth.getRolDelToken() === 'superadmin' ? '/superadmin' : '/dashboard';
+      await this.router.navigate([destino]);
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Error al iniciar sesión';
     } finally {

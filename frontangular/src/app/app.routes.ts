@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { superadminGuard } from './core/guards/superadmin.guard';
 import { LayoutComponent } from './layout/layout.component';
 import { sesionResolver } from './core/resolvers/sesion.resolver';
 
@@ -19,6 +20,12 @@ export const routes: Routes = [
     path: 'registro',
     loadComponent: () =>
       import('./pages/registro/registro.component').then(m => m.RegistroComponent),
+  },
+  {
+    path: 'superadmin',
+    canActivate: [authGuard, superadminGuard],
+    loadComponent: () =>
+      import('./pages/superadmin/superadmin.component').then(m => m.SuperadminComponent),
   },
   {
     path: '',

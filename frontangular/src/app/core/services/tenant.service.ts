@@ -7,11 +7,17 @@ import type { TenantConfig, ActualizarTenantConfigPayload } from '../../shared/t
 export class TenantService {
   private readonly http = inject(HttpClient);
 
-  obtenerConfig(): Promise<TenantConfig> {
-    return firstValueFrom(this.http.get<TenantConfig>('/api/tenants/config'));
+  configActual: TenantConfig | null = null;
+
+  async obtenerConfig(): Promise<TenantConfig> {
+    const config = await firstValueFrom(this.http.get<TenantConfig>('/api/tenants/config'));
+    this.configActual = config;
+    return config;
   }
 
-  actualizarConfig(payload: ActualizarTenantConfigPayload): Promise<TenantConfig> {
-    return firstValueFrom(this.http.patch<TenantConfig>('/api/tenants/config', payload));
+  async actualizarConfig(payload: ActualizarTenantConfigPayload): Promise<TenantConfig> {
+    const config = await firstValueFrom(this.http.patch<TenantConfig>('/api/tenants/config', payload));
+    this.configActual = config;
+    return config;
   }
 }

@@ -46,4 +46,20 @@ export class Tenant {
   /** Dirección física del negocio */
   @Column({ type: 'varchar', length: 300, nullable: true })
   direccion!: string | null;
+
+  /** Color primario de la marca en hex (ej: "#2563eb") */
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  colorPrimario!: string | null;
+
+  /** Color de fondo del sidebar en hex (ej: "#0f172a") */
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  colorSidebar!: string | null;
+
+  /** Color de fondo del contenido en hex (ej: "#f8fafc") */
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  colorFondo!: string | null;
+
+  /** Color de superficie de cards e inputs en hex (ej: "#ffffff") */
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  colorSuperficie!: string | null;
 }

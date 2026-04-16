@@ -12,6 +12,7 @@ import { LiquidacionesModule } from './modules/liquidaciones/liquidaciones.modul
 import { CajaModule } from './modules/caja/caja.module';
 import { EventsModule } from './modules/events/events.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
+import { SuperadminModule } from './modules/superadmin/superadmin.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
       }),
     }),
     TenantsModule,
+    SuperadminModule,
     AuthModule,
     UsuariosModule,
     ClientesModule,

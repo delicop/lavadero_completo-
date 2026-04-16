@@ -17,6 +17,7 @@ Antes de hacer cualquier cosa, leé la carpeta `docs/`. Tiene todo lo que necesi
 | `docs/08 - El frontend en detalle.md` | Angular: servicios, lazy loading, WebSockets, types |
 | `docs/09 - Glosario.md` | Términos técnicos y del negocio explicados |
 | `docs/10 - Bugs encontrados y resueltos.md` | Bugs detectados en revisión de código, fix aplicado y descartados |
+| `docs/11 - Administración del servidor.md` | SSH, Docker, Nginx, deploy de backend y frontend en Oracle Cloud |
 
 ---
 
@@ -24,8 +25,8 @@ Antes de hacer cualquier cosa, leé la carpeta `docs/`. Tiene todo lo que necesi
 
 Sistema de gestión para un lavadero de vehículos. **El objetivo final es convertirlo en un SaaS** para venderlo a múltiples lavaderos como servicio por suscripción.
 
-Estado actual: producto funcional para un solo lavadero (single-tenant).
-Próximo paso estructural: implementar **multi-tenancy** — ver `docs/06 - Estado actual.md` para el roadmap completo.
+Estado actual: multi-tenant funcional con panel superadmin (Capas 1, 2 y 4 completadas).
+Próximo paso estructural: planes y suscripciones (Capa 3) — ver `docs/06 - Estado actual.md` para el roadmap completo.
 
 Incluye registro de clientes, vehículos, servicios, turnos y facturación.
 
@@ -34,7 +35,7 @@ Incluye registro de clientes, vehículos, servicios, turnos y facturación.
 - Frontend: Angular 21 (standalone components, zoneful, lazy loading)
 - Base de datos: PostgreSQL (Docker)
 
-**Módulos implementados:** auth, usuarios, clientes, vehículos, servicios, turnos, facturación, liquidaciones, caja, personal
+**Módulos implementados:** auth, superadmin, usuarios, clientes, vehículos, servicios, turnos, facturación, liquidaciones, caja, personal
 **Módulos en construcción (frontend placeholder):** gastos, otros-ingresos, cotizaciones
 
 **País:** Colombia — código de teléfono `+57`. Los números de WhatsApp se normalizan a `57XXXXXXXXXX`.
@@ -145,6 +146,10 @@ backend/
 │   ├── modules/              # Módulos por dominio
 │   │   ├── auth/             # Login, JWT, guards de autenticación
 │   │   │   ├── auth.module.ts
+│   │   ├── superadmin/       # Panel del dueño del SaaS (cross-tenant)
+│   │   │   ├── superadmin.module.ts
+│   │   │   ├── superadmin.controller.ts
+│   │   │   └── superadmin.service.ts
 │   │   │   ├── auth.controller.ts
 │   │   │   ├── auth.service.ts
 │   │   │   ├── strategies/

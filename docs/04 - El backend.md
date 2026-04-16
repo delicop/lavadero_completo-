@@ -20,6 +20,7 @@ backend/src/
 ├── modules/          ← cada módulo maneja una parte del negocio
 │   ├── auth/         ← login y seguridad
 │   ├── tenants/      ← multi-tenancy: cada lavadero como tenant
+│   ├── superadmin/   ← panel de control del dueño del SaaS
 │   ├── usuarios/     ← personal del lavadero
 │   ├── clientes/     ← clientes del negocio
 │   ├── vehiculos/    ← autos de los clientes
@@ -96,6 +97,51 @@ Cada tenant es un lavadero independiente con sus propios datos (clientes, turnos
 - `modules/tenants/entities/tenant.entity.ts`
 - `modules/tenants/tenants.service.ts`
 - `modules/tenants/tenants.module.ts`
+
+### 🔐 Roles de usuario — RolUsuario
+
+El sistema tiene tres roles, definidos en `usuario.entity.ts`:
+
+| Rol | Descripción | tenantId |
+|-----|-------------|----------|
+| `superadmin` | Dueño del SaaS. Accede a todos los tenants | `null` (no pertenece a ningún lavadero) |
+| `admin` | Dueño/admin de un lavadero. Acceso total dentro de su tenant | UUID del lavadero |
+| `trabajador` | Empleado. Solo accede a turnos y funciones operativas | UUID del lavadero |
+
+El rol viaja dentro del JWT: `{ sub: userId, rol, tenantId }`. Así cada request sabe qué permisos tiene sin consultar la DB.
+
+---
+
+### 🛡️ Superadmin — panel de control del SaaS
+
+**¿Qué hace?** Es la interfaz de administración para el dueño del SaaS. Ve y gestiona **todos** los lavaderos registrados en el sistema, sin importar de qué tenant sean.
+
+**Regla clave:** el superadmin tiene `tenantId = null` en la DB y en el JWT. Los endpoints de superadmin **no filtran por tenant** — operan sobre todos los datos.
+
+**Endpoints (todos protegidos por `@Roles(RolUsuario.SUPERADMIN)`):**
+
+| Método | URL | Qué hace |
+|--------|-----|----------|
+| `GET` | `/api/superadmin/metricas` | Totales: empresas, empresas activas, usuarios, usuarios activos |
+| `GET` | `/api/superadmin/tenants` | Lista todos los lavaderos con conteo de usuarios |
+| `PATCH` | `/api/superadmin/tenants/:id/toggle-activo` | Activa o suspende un lavadero |
+| `DELETE` | `/api/superadmin/tenants/:id` | Elimina un lavadero y **todos sus datos** (transacción) |
+| `GET` | `/api/superadmin/usuarios` | Lista todos los usuarios de todos los tenants. Acepta `?tenantId=` para filtrar |
+| `PATCH` | `/api/superadmin/usuarios/:id/toggle-activo` | Activa o desactiva un usuario |
+| `PATCH` | `/api/superadmin/usuarios/:id/password` | Cambia la contraseña de cualquier usuario |
+| `DELETE` | `/api/superadmin/usuarios/:id` | Elimina un usuario |
+
+**Archivos:**
+```
+modules/superadmin/
+├── superadmin.module.ts
+├── superadmin.controller.ts
+└── superadmin.service.ts
+```
+
+**Usuario semilla:** `superadmin@lavadero.com` / `Super1234` (creado con `npm run seed`).
+
+---
 
 ### 👥 Usuarios — [[backend/usuarios]]
 
@@ -261,3 +307,18 @@ Pedido del navegador
 
 Si el token no existe → error 401 (No autorizado)
 Si el rol no alcanza → error 403 (Prohibido)
+
+**Ejemplo de flujo superadmin:**
+```
+PATCH /api/superadmin/tenants/:id/toggle-activo
+        ↓
+  JwtAuthGuard   ← verifica el token
+        ↓
+  RolesGuard     ← verifica que rol === 'superadmin'
+        ↓
+  SuperadminController → TenantsService.toggleActivo(id)
+        ↓
+  Respuesta: { id, nombre, activo: false, ... }
+```
+
+El superadmin **no pasa por ningún filtro de tenantId** en sus endpoints. Es la única excepción al patrón general del sistema.
