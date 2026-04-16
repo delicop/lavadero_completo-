@@ -16,4 +16,8 @@ export class EventsGateway {
   emitirUsuarioActualizado(usuarioId: string, disponible: boolean): void {
     this.server.emit('usuario:actualizado', { usuarioId, disponible });
   }
+
+  emitirUsuarioCambiado(): void {
+    this.server.emit('usuario:cambiado');
+  }
 }

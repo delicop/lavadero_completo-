@@ -1,6 +1,6 @@
 # 📊 Estado actual del proyecto
 
-> Última actualización: abril 2026 — Capa 1 completada (multi-tenancy + registro de lavaderos)
+> Última actualización: abril 2026 — Capa 2 completada (configuración por lavadero)
 
 ---
 
@@ -20,6 +20,7 @@
 - [x] Zona horaria Colombia (UTC-5) en todos los filtros de fecha
 - [x] **Multi-tenancy**: tabla `tenants`, `tenantId` en todas las entidades, JWT incluye `tenantId`, todos los queries filtran por tenant
 - [x] **Registro de nuevo lavadero**: `POST /api/auth/registrar` crea tenant + usuario admin en una sola operación
+- [x] **Configuración del negocio**: `GET/PATCH /api/tenants/config` — nombre comercial, logo, zona horaria, moneda, WhatsApp, email, dirección
 
 ### Frontend (Angular)
 - [x] Login
@@ -38,6 +39,8 @@
 - [x] Sidebar con grupos colapsables (Operación / Administración)
 - [x] Tiempo real: la pantalla se actualiza sin F5 cuando cambian los turnos
 - [x] **Pantalla de registro** (`/registro`): formulario para que un nuevo lavadero cree su cuenta y slug
+- [x] **Configuración del negocio** (`/configuracion-negocio`): nombre comercial, logo, zona horaria, moneda, contacto
+- [x] **Landing page** (`/`): página pública de venta del SaaS con hero, features, módulos, precios y CTA
 
 ---
 
@@ -85,15 +88,15 @@ Para llegar ahí hay que construir varias cosas en capas:
 
 ---
 
-### Capa 2 — Configuración por lavadero
+### ✅ Capa 2 — Configuración por lavadero — COMPLETADA
 
-Cada lavadero debe poder personalizar su propia instancia:
+Cada lavadero puede personalizar su propia instancia desde `/configuracion-negocio`:
 
-- [ ] Nombre del negocio y logo (para que aparezca en facturas)
-- [ ] Zona horaria propia (hoy está hardcodeada a UTC-5 Colombia)
-- [ ] Moneda (hoy está hardcodeada a COP)
-- [ ] Datos de contacto para WhatsApp
-- [ ] Configurar qué módulos tiene habilitados según su plan
+- [x] Nombre comercial y logo (para que aparezca en facturas)
+- [x] Zona horaria propia (dinámica por tenant, antes hardcodeada a UTC-5)
+- [x] Moneda (dinámica por tenant, antes hardcodeada a COP)
+- [x] Datos de contacto: WhatsApp, email, dirección
+- [ ] Configurar qué módulos tiene habilitados según su plan ← depende de Capa 3
 
 ---
 
@@ -140,8 +143,8 @@ Funcionalidades que hacen el sistema más valioso para cada lavadero:
 
 ```
 ✅ 1. Multi-tenancy + Onboarding (Capa 1)               ← COMPLETADO
-   2. Completar placeholders (Gastos, Otros Ingresos)   ← producto base terminado
-   3. Configuración por lavadero (nombre, logo)          ← personalización mínima
+✅ 2. Configuración por lavadero (Capa 2)                ← COMPLETADO
+   3. Completar placeholders (Gastos, Otros Ingresos)   ← producto base terminado
    4. Planes y suscripciones                             ← monetización
    5. Superadmin                                         ← operación del SaaS
    6. Notificaciones WhatsApp                            ← diferenciador de valor

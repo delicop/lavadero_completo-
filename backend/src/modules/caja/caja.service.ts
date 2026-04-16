@@ -72,6 +72,27 @@ export class CajaService {
     return new Intl.DateTimeFormat('en-CA', { timeZone: tenant.zonaHoraria }).format(new Date());
   }
 
+  private async zonaHorariaTenant(tenantId: string): Promise<string> {
+    const tenant = await this.tenantsService.buscarPorId(tenantId);
+    return tenant.zonaHoraria;
+  }
+
+  private offsetDesdeZonaHoraria(zonaHoraria: string): string {
+    const fecha = new Date();
+    const partes = new Intl.DateTimeFormat('en-US', {
+      timeZone: zonaHoraria,
+      timeZoneName: 'shortOffset',
+    }).formatToParts(fecha);
+    const offsetStr = partes.find(p => p.type === 'timeZoneName')?.value ?? 'GMT+0';
+    // offsetStr es algo como "GMT-5" o "GMT+2"
+    const match = offsetStr.match(/GMT([+-]\d+)/);
+    if (!match) return '+00:00';
+    const horas = parseInt(match[1], 10);
+    const signo = horas >= 0 ? '+' : '-';
+    const absHoras = Math.abs(horas).toString().padStart(2, '0');
+    return `${signo}${absHoras}:00`;
+  }
+
   async obtenerEstado(tenantId: string): Promise<{ cajaHoy: CajaDia | null; cajaSinCerrar: CajaDia | null }> {
     const hoy = await this.fechaHoy(tenantId);
     const [cajaHoy, cajaSinCerrar] = await Promise.all([
@@ -116,6 +137,7 @@ export class CajaService {
     if (!cajaDia) throw new NotFoundException('Caja no encontrada');
 
     const fecha = cajaDia.fecha;
+    const offset = this.offsetDesdeZonaHoraria(await this.zonaHorariaTenant(tenantId));
 
     const ventasEfectivo = Number(cajaDia.ventasEfectivo);
     const ventasTransferencia = Number(cajaDia.ventasTransferencia);
@@ -143,8 +165,8 @@ export class CajaService {
         .leftJoinAndSelect('t.trabajador', 'u')
         .where('f.tenantId = :tenantId', { tenantId })
         .andWhere('f.fechaEmision >= :desde AND f.fechaEmision <= :hasta', {
-          desde: new Date(`${fecha}T00:00:00-05:00`),
-          hasta: new Date(`${fecha}T23:59:59-05:00`),
+          desde: new Date(`${fecha}T00:00:00${offset}`),
+          hasta: new Date(`${fecha}T23:59:59${offset}`),
         })
         .orderBy('f.fechaEmision', 'ASC')
         .getMany(),
@@ -220,6 +242,8 @@ export class CajaService {
     const cajaDia = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId, tenantId } });
     if (!cajaDia) throw new NotFoundException('Caja no encontrada');
 
+    const offset = this.offsetDesdeZonaHoraria(await this.zonaHorariaTenant(tenantId));
+
     return this.facturaRepo
       .createQueryBuilder('f')
       .leftJoinAndSelect('f.turno', 't')
@@ -229,8 +253,8 @@ export class CajaService {
       .leftJoinAndSelect('t.trabajador', 'u')
       .where('f.tenantId = :tenantId', { tenantId })
       .andWhere('f.fechaEmision >= :desde AND f.fechaEmision <= :hasta', {
-        desde: new Date(`${cajaDia.fecha}T00:00:00-05:00`),
-        hasta: new Date(`${cajaDia.fecha}T23:59:59-05:00`),
+        desde: new Date(`${cajaDia.fecha}T00:00:00${offset}`),
+        hasta: new Date(`${cajaDia.fecha}T23:59:59${offset}`),
       })
       .orderBy('f.fechaEmision', 'ASC')
       .getMany();
@@ -283,7 +307,7 @@ export class CajaService {
     const gasto = await this.gastoCajaRepo.findOne({ where: { id: gastoId, tenantId } });
     if (!gasto) throw new NotFoundException('Gasto no encontrado');
 
-    const caja = await this.cajaDiaRepo.findOne({ where: { id: gasto.cajaDiaId } });
+    const caja = await this.cajaDiaRepo.findOne({ where: { id: gasto.cajaDiaId, tenantId } });
     if (caja?.estado === EstadoCajaDia.CERRADA) {
       throw new BadRequestException('No se puede modificar una caja cerrada');
     }
@@ -309,7 +333,7 @@ export class CajaService {
     const ing = await this.ingresoManualRepo.findOne({ where: { id, tenantId } });
     if (!ing) throw new NotFoundException('Ingreso manual no encontrado');
 
-    const caja = await this.cajaDiaRepo.findOne({ where: { id: ing.cajaDiaId } });
+    const caja = await this.cajaDiaRepo.findOne({ where: { id: ing.cajaDiaId, tenantId } });
     if (caja?.estado === EstadoCajaDia.CERRADA) {
       throw new BadRequestException('No se puede modificar una caja cerrada');
     }

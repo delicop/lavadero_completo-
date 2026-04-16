@@ -16,6 +16,7 @@ Antes de hacer cualquier cosa, leé la carpeta `docs/`. Tiene todo lo que necesi
 | `docs/07 - Cómo agregar cosas.md` | Guía para agregar módulos y páginas nuevas |
 | `docs/08 - El frontend en detalle.md` | Angular: servicios, lazy loading, WebSockets, types |
 | `docs/09 - Glosario.md` | Términos técnicos y del negocio explicados |
+| `docs/10 - Bugs encontrados y resueltos.md` | Bugs detectados en revisión de código, fix aplicado y descartados |
 
 ---
 

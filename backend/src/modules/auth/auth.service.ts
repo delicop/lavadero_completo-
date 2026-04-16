@@ -101,8 +101,9 @@ export class AuthService {
     return { accessToken: this.jwtService.sign(payload) };
   }
 
-  async historialLogin(limit: number): Promise<LoginLog[]> {
+  async historialLogin(limit: number, tenantId: string): Promise<LoginLog[]> {
     return this.loginLogRepo.find({
+      where: { tenantId },
       order: { fechaHora: 'DESC' },
       take:  limit,
     });

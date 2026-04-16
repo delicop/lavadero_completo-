@@ -1,8 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { UsuarioService } from '../../core/services/usuario.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 import type { Usuario, RolUsuario } from '../../shared/types';
 
 @Component({
@@ -11,8 +13,11 @@ import type { Usuario, RolUsuario } from '../../shared/types';
   imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './configuracion.component.html',
 })
-export class ConfiguracionComponent implements OnInit {
-  private readonly svc = inject(UsuarioService);
+export class ConfiguracionComponent implements OnInit, OnDestroy {
+  private readonly svc      = inject(UsuarioService);
+  private readonly realtime = inject(RealtimeService);
+
+  private sub: Subscription | null = null;
 
   usuarios: Usuario[] = [];
   cargando = true;
@@ -30,6 +35,11 @@ export class ConfiguracionComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.cargar();
+    this.sub = this.realtime.onUsuarioCambiado$.subscribe(() => this.cargar());
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
   }
 
   async cargar(): Promise<void> {
@@ -83,7 +93,7 @@ export class ConfiguracionComponent implements OnInit {
         await this.svc.crear(payload);
       }
       this.cerrarForm();
-      await this.cargar();
+      // El WebSocket onUsuarioCambiado$ recarga automáticamente
     } catch (err) {
       this.errorForm = err instanceof Error ? err.message : 'Error al guardar';
     }
@@ -91,6 +101,6 @@ export class ConfiguracionComponent implements OnInit {
 
   async toggleActivo(u: Usuario): Promise<void> {
     await this.svc.actualizar(u.id, { activo: !u.activo });
-    await this.cargar();
+    // El WebSocket onUsuarioCambiado$ recarga automáticamente
   }
 }

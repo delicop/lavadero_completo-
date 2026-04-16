@@ -14,6 +14,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UsuarioActual } from '../../common/decorators/usuario-actual.decorator';
 import { Usuario, RolUsuario } from './entities/usuario.entity';
 import { UsuariosService } from './usuarios.service';
+import { EventsGateway } from '../events/events.gateway';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 
@@ -21,11 +22,16 @@ import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(RolUsuario.ADMIN)
 export class UsuariosController {
-  constructor(private readonly usuariosService: UsuariosService) {}
+  constructor(
+    private readonly usuariosService: UsuariosService,
+    private readonly events: EventsGateway,
+  ) {}
 
   @Post()
-  crear(@Body() dto: CrearUsuarioDto, @UsuarioActual() usuario: Usuario) {
-    return this.usuariosService.crear(dto, usuario.tenantId!);
+  async crear(@Body() dto: CrearUsuarioDto, @UsuarioActual() usuario: Usuario) {
+    const result = await this.usuariosService.crear(dto, usuario.tenantId!);
+    this.events.emitirUsuarioCambiado();
+    return result;
   }
 
   @Get()
@@ -39,16 +45,19 @@ export class UsuariosController {
   }
 
   @Patch(':id')
-  actualizar(
+  async actualizar(
     @Param('id') id: string,
     @Body() dto: ActualizarUsuarioDto,
     @UsuarioActual() usuario: Usuario,
   ) {
-    return this.usuariosService.actualizar(id, dto, usuario.tenantId!);
+    const result = await this.usuariosService.actualizar(id, dto, usuario.tenantId!);
+    this.events.emitirUsuarioCambiado();
+    return result;
   }
 
   @Delete(':id')
-  eliminar(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
-    return this.usuariosService.eliminar(id, usuario.tenantId!);
+  async eliminar(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
+    await this.usuariosService.eliminar(id, usuario.tenantId!);
+    this.events.emitirUsuarioCambiado();
   }
 }

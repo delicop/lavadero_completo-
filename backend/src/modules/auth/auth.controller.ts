@@ -50,7 +50,7 @@ export class AuthController {
   @Get('historial')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RolUsuario.ADMIN)
-  historial(@Query('limit') limit?: string) {
-    return this.authService.historialLogin(Number(limit) || 100);
+  historial(@UsuarioActual() usuario: Usuario, @Query('limit') limit?: string) {
+    return this.authService.historialLogin(Number(limit) || 100, usuario.tenantId!);
   }
 }

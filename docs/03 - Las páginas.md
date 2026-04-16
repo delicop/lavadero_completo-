@@ -112,3 +112,54 @@ El usuario logueado puede ver y editar su propia información.
 ## Login (`/login`)
 La pantalla de inicio de sesión. Pide email y contraseña.
 Usa JWT (un "ticket" digital) para autenticar. El ticket se guarda en el navegador y se manda automáticamente en cada pedido al servidor.
+
+---
+
+## Páginas públicas (sin login)
+
+### 🏠 Landing (`/`) — página de venta del SaaS
+
+La página principal del producto, visible para cualquiera sin estar logueado.
+
+**Objetivo:** vender el sistema a nuevos lavaderos. Es la primera cosa que ve alguien que llega a la URL.
+
+**Secciones:**
+
+| Sección | Descripción |
+|---------|-------------|
+| **Navbar** | Logo + botón "Iniciar sesión" (→ `/login`) + botón "Empezar gratis" (→ `/registro`) |
+| **Hero** | Título grande, bajada, mock visual de la app con datos de ejemplo |
+| **Features** | 6 cards con las funcionalidades principales (turnos, caja, facturación, personal, tiempo real, dashboard) |
+| **Módulos incluidos** | Chips con todo lo que trae el plan (12 módulos) |
+| **Cómo funciona** | 3 pasos: crear cuenta → configurar → operar |
+| **Precios** | Plan Básico ($89k COP/mes) y Plan Profesional ($179k COP/mes) |
+| **CTA final** | "14 días gratis, sin tarjeta de crédito" |
+| **Footer** | Links a login y registro |
+
+**Archivos:**
+- `frontangular/src/app/pages/landing/landing.component.ts` — componente con CSS propio (estilos aislados, no usa el CSS global del app)
+- `frontangular/src/app/pages/landing/landing.component.html` — template completo
+
+**Cómo está registrada la ruta:**
+```ts
+// app.routes.ts
+{
+  path: '',
+  pathMatch: 'full',   // solo captura la raíz '/', no afecta las sub-rutas del app
+  loadComponent: () => import('./pages/landing/landing.component')...
+}
+```
+El truco de `pathMatch: 'full'` hace que la landing solo responda a la URL `/` exacta, sin pisar las rutas protegidas (`/dashboard`, `/turnos`, etc.) que también usan el prefijo `''`.
+
+**Para personalizar:**
+- El nombre "LavaderoApp" en el navbar y footer se puede cambiar directamente en el HTML
+- Los precios están hardcodeados en el HTML — cuando exista la Capa 3 (planes y suscripciones) se pueden leer desde la API
+- El mock visual de la app (la tabla de turnos falsa) vive dentro del bloque `.hero-demo` del HTML
+
+---
+
+### 📝 Registro (`/registro`)
+Formulario para que un nuevo lavadero cree su cuenta y empiece a usar el sistema.
+- Pide: nombre del negocio, slug (URL única), nombre/apellido/email/contraseña del admin
+- El slug se auto-genera desde el nombre del negocio pero se puede editar
+- Al completar el registro se loguea automáticamente y redirige al dashboard
