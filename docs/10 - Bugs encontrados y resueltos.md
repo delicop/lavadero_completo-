@@ -171,3 +171,21 @@ El componente `turnos.component.ts` no valida localmente si una transición de e
 - **JWT strategy**: agregar validación de `tenantId` del payload vs. el de la BD cuando se implemente login multi-tenant por slug/subdominio (Capa 3+).
 - **Transiciones de turno**: validar estados permitidos en el frontend antes de llamar al backend para mejorar UX.
 - **`console.log` de debug**: quitar los `[PERF]` del backend y `[CAJA] ngOnInit START` del frontend antes de producción (ya documentado en `06 - Estado actual.md`).
+
+---
+
+### Bug 11 — App móvil: clientes no aparecían al crear turno
+
+**Síntoma:** Al abrir "Nuevo Turno" en la app Flutter, la lista de clientes aparecía vacía aunque la caja estuviera abierta.
+
+**Causa raíz (2 problemas encadenados):**
+
+1. **Retorno temprano en `_cargarDatos()`**: el código original verificaba el estado de la caja _antes_ de cargar los datos. Si la caja estaba cerrada o nula, hacía `return` inmediatamente sin cargar clientes, servicios ni trabajadores. Resultado: al reabrir la caja y volver a la pantalla, todo seguía vacío.
+
+2. **Cast de `precio` en `Servicio.fromJson`**: PostgreSQL devuelve columnas de tipo `numeric` como strings (`"5000.00"`) a través del driver `pg`. El código usaba `(json['precio'] as num).toDouble()` que lanzaba un `TypeError`. Esto hacía fallar el `Future.wait` completo (que carga clientes, servicios, usuarios y caja al mismo tiempo), dejando `_clientes` vacío sin mostrar ningún error visible.
+
+**Fix aplicado:**
+
+- `nuevo_turno_screen.dart`: se carga todo en paralelo siempre; el flag `_cajaCerrada` solo determina qué pantalla mostrar, no si cargar los datos.
+- `servicio.dart` (modelo): `precio: double.tryParse(json['precio'].toString()) ?? 0.0` — maneja tanto string como number.
+- Se agregó display de error con botón "Reintentar" en el paso 1 para hacer visibles futuros errores de carga.

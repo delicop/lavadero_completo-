@@ -19,6 +19,7 @@ class ApiEndpoints {
       '/api/vehiculos/cliente/$clienteId';
 
   static const String servicios = '/api/servicios';
+  static String servicioDetalle(String id) => '/api/servicios/$id';
 
   static const String cajaEstado = '/api/caja/estado';
   static const String cajaAbrir = '/api/caja/abrir';

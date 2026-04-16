@@ -11,6 +11,7 @@ import '../../core/services/vehiculo_service.dart';
 import '../../core/services/servicio_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/turno_service.dart';
+import '../../core/models/caja.dart';
 import '../../core/services/caja_service.dart';
 import '../../shared/theme/colores.dart';
 import '../../shared/utils/formatters.dart';
@@ -65,8 +66,7 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
     if (!mounted) return;
     setState(() => _cargando = true);
     try {
-      // Verificar caja abierta junto con los demás datos
-      final futures = await Future.wait([
+      final results = await Future.wait([
         context.read<ClienteService>().getClientes(),
         context.read<ServicioService>().getServicios(),
         context.read<AuthService>().getUsuarios(),
@@ -74,20 +74,14 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
       ]);
       if (!mounted) return;
 
-      final estadoCaja = futures[3] as dynamic;
-      final cajaActiva = estadoCaja.cajaActiva;
-      if (cajaActiva == null || !(cajaActiva.estaAbierta as bool)) {
-        setState(() {
-          _cajaCerrada = true;
-          _cargando = false;
-        });
-        return;
-      }
+      final estadoCaja = results[3] as EstadoCaja;
+      final cajaAbierta = estadoCaja.cajaHoy?.estaAbierta == true;
 
       setState(() {
-        _clientes = futures[0] as List<Cliente>;
-        _servicios = futures[1] as List<Servicio>;
-        _trabajadores = (futures[2] as List<Usuario>)
+        _cajaCerrada = !cajaAbierta;
+        _clientes = results[0] as List<Cliente>;
+        _servicios = results[1] as List<Servicio>;
+        _trabajadores = (results[2] as List<Usuario>)
             .where((u) => u.rol == 'trabajador' && u.activo && u.disponible)
             .toList();
       });
@@ -246,6 +240,27 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
   Widget _buildPaso1() {
     return Column(
       children: [
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: colorCancelado, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(_error!,
+                      style: const TextStyle(color: colorCancelado, fontSize: 13)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() => _error = null);
+                    _cargarDatos();
+                  },
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
@@ -326,7 +341,19 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
     return Column(
       children: [
         Expanded(
-          child: ListView.builder(
+          child: _servicios.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.car_repair, size: 48, color: colorSubtexto),
+                      SizedBox(height: 12),
+                      Text('No hay servicios registrados',
+                          style: TextStyle(color: colorSubtexto)),
+                    ],
+                  ),
+                )
+              : ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: _servicios.length,
             itemBuilder: (ctx, i) {

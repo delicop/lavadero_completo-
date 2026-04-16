@@ -106,7 +106,7 @@ class CajaProvider extends ChangeNotifier {
       vista = VistaCaja.abierta;
       _cargarResumenHoy();
     } catch (e) {
-      error = 'Error al reabrir la caja.';
+      error = e.toString();
     }
     loading = false;
     notifyListeners();

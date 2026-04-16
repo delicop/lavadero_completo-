@@ -4,6 +4,8 @@ class Servicio {
   final String? descripcion;
   final int duracionMinutos;
   final double precio;
+  final String tipoVehiculo;
+  final bool activo;
 
   Servicio({
     required this.id,
@@ -11,6 +13,8 @@ class Servicio {
     this.descripcion,
     required this.duracionMinutos,
     required this.precio,
+    required this.tipoVehiculo,
+    this.activo = true,
   });
 
   factory Servicio.fromJson(Map<String, dynamic> json) {
@@ -19,7 +23,9 @@ class Servicio {
       nombre: json['nombre'],
       descripcion: json['descripcion'],
       duracionMinutos: json['duracionMinutos'],
-      precio: (json['precio'] as num).toDouble(),
+      precio: double.tryParse(json['precio'].toString()) ?? 0.0,
+      tipoVehiculo: json['tipoVehiculo'] ?? '',
+      activo: json['activo'] ?? true,
     );
   }
 }
