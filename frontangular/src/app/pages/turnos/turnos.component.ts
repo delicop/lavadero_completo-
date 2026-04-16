@@ -175,7 +175,7 @@ export class TurnosComponent implements OnInit, OnDestroy {
     this.clientes = clientes;
     clientes.forEach(c => this.clientesMap.set(c.id, c));
     this.servicios = servicios;
-    this.trabajadores = usuarios.filter(u => u.rol === 'trabajador' && u.activo && u.disponible);
+    this.trabajadores = usuarios.filter(u => u.rol === 'trabajador' && u.activo);
   }
 
   async onClienteChange(): Promise<void> {

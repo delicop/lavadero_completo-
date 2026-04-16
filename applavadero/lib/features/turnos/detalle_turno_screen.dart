@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/models/turno.dart';
 import '../../core/services/turno_service.dart';
 import '../../shared/theme/colores.dart';
 import '../../shared/utils/formatters.dart';
+import '../../shared/utils/whatsapp.dart';
 import '../../shared/widgets/boton_primario.dart';
 import '../../shared/widgets/estado_chip.dart';
 import '../../shared/widgets/loading_overlay.dart';
@@ -51,6 +53,36 @@ class _DetalleTurnoScreenState extends State<DetalleTurnoScreen> {
           .read<TurnosProvider>()
           .cambiarEstado(widget.turnoId, siguiente);
       await _cargar();
+
+      // Al completar: notificar al cliente por WhatsApp (igual que el web)
+      if (siguiente == 'completado' && mounted) {
+        final tel = _turno?.cliente?.telefono ?? '';
+        if (tel.isNotEmpty) {
+          final v = _turno?.vehiculo;
+          final nombre = _turno?.cliente?.nombre ?? '';
+          final mensaje = '🚗 ¡Tu vehículo está listo!\n'
+              '${v != null ? 'Vehículo: ${v.placa} — ${v.marca} ${v.modelo}\n' : ''}'
+              'Podés pasar a buscarlo.\n'
+              '¡Gracias, $nombre!';
+          final url = urlWhatsapp(tel, mensaje: mensaje);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Orden completada — avisar al cliente'),
+              backgroundColor: colorCompletado,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 6),
+              action: SnackBarAction(
+                label: 'WhatsApp',
+                textColor: Colors.white,
+                onPressed: () => launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+            ),
+          );
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

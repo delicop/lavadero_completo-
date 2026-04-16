@@ -82,7 +82,7 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
         _clientes = results[0] as List<Cliente>;
         _servicios = results[1] as List<Servicio>;
         _trabajadores = (results[2] as List<Usuario>)
-            .where((u) => u.rol == 'trabajador' && u.activo && u.disponible)
+            .where((u) => u.rol == 'trabajador' && u.activo)
             .toList();
       });
     } catch (e) {
