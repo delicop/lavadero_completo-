@@ -1,5 +1,4 @@
-// IP local de la PC en la red WiFi.
-// El teléfono y la PC deben estar conectados al mismo WiFi.
+// Servidor hangar (producción) — accesible desde cualquier red.
 const String kBaseUrl = 'http://129.80.17.68:3000';
 
 class ApiEndpoints {

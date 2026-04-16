@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../auth/token_storage.dart';
 import 'api_endpoints.dart';
@@ -34,9 +35,15 @@ class ApiClient {
         onError: (error, handler) {
           final statusCode = error.response?.statusCode ?? 0;
           final raw = error.response?.data?['message'];
+          // Incluimos error.error.toString() para ver el SocketException real
+          // en lugar de perderlo con el genérico 'Error de conexión'
           final message = raw is List
               ? raw.first.toString()
-              : raw?.toString() ?? error.message ?? 'Error de conexión';
+              : raw?.toString() ??
+                  error.error?.toString() ??
+                  error.message ??
+                  'Error de conexión';
+          debugPrint('[ApiClient] Error ${error.type}: $message');
           handler.reject(
             DioException(
               requestOptions: error.requestOptions,
