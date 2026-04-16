@@ -28,7 +28,7 @@ export class RealtimeService implements OnDestroy {
   conectar(): void {
     if (this.socket?.connected) return;
 
-    this.socket = io('http://localhost:3000/eventos', {
+    this.socket = io('http://129.80.17.68:3000/eventos', {
       transports: ['websocket'],
     });
 

@@ -2,10 +2,12 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
+import { Cron } from '@nestjs/schedule';
 import { CajaDia, EstadoCajaDia } from './entities/caja-dia.entity';
 import { GastoCaja, TipoPagoCaja } from './entities/gasto-caja.entity';
 import { IngresoManualCaja } from './entities/ingreso-manual-caja.entity';
@@ -53,6 +55,8 @@ export interface ResumenCaja {
 
 @Injectable()
 export class CajaService {
+  private readonly logger = new Logger(CajaService.name);
+
   constructor(
     @InjectRepository(CajaDia)
     private readonly cajaDiaRepo: Repository<CajaDia>,
@@ -66,6 +70,27 @@ export class CajaService {
     private readonly turnoRepo: Repository<Turno>,
     private readonly tenantsService: TenantsService,
   ) {}
+
+  // Cierra automáticamente todas las cajas abiertas a las 11pm de cada tenant.
+  // Se ejecuta cada minuto entre 23:00 y 23:59 para cubrir distintas zonas horarias.
+  @Cron('0 23 * * *', { timeZone: 'America/Bogota' })
+  async cerrarCajasAutomaticamente(): Promise<void> {
+    this.logger.log('Cron: cerrando cajas abiertas automáticamente...');
+    const cajasAbiertas = await this.cajaDiaRepo.find({
+      where: { estado: EstadoCajaDia.ABIERTA },
+    });
+    for (const caja of cajasAbiertas) {
+      if (!caja.tenantId) continue;
+      const hoy = await this.fechaHoy(caja.tenantId);
+      if (caja.fecha === hoy) {
+        caja.estado = EstadoCajaDia.CERRADA;
+        caja.usuarioCierreId = null;
+        caja.fechaCierre = new Date();
+        await this.cajaDiaRepo.save(caja);
+        this.logger.log(`Caja ${caja.id} (tenant ${caja.tenantId}) cerrada automáticamente.`);
+      }
+    }
+  }
 
   private async fechaHoy(tenantId: string): Promise<string> {
     const tenant = await this.tenantsService.buscarPorId(tenantId);

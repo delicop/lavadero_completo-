@@ -1,6 +1,6 @@
 // IP local de la PC en la red WiFi.
 // El teléfono y la PC deben estar conectados al mismo WiFi.
-const String kBaseUrl = 'http://192.168.1.10:3000';
+const String kBaseUrl = 'http://129.80.17.68:3000';
 
 class ApiEndpoints {
   static const String login = '/api/auth/login';
