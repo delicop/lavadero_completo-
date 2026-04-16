@@ -5,6 +5,7 @@ class Usuario {
   final String email;
   final String rol;
   final bool activo;
+  final bool disponible;
   final double? comisionPorcentaje;
 
   Usuario({
@@ -14,6 +15,7 @@ class Usuario {
     required this.email,
     required this.rol,
     required this.activo,
+    this.disponible = true,
     this.comisionPorcentaje,
   });
 
@@ -28,6 +30,7 @@ class Usuario {
       email: json['email'],
       rol: json['rol'],
       activo: json['activo'] ?? true,
+      disponible: json['disponible'] ?? true,
       comisionPorcentaje: json['comisionPorcentaje'] != null
           ? double.tryParse(json['comisionPorcentaje'].toString())
           : null,

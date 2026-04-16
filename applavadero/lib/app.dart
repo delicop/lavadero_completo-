@@ -29,6 +29,8 @@ import 'features/clientes/cliente_detalle_screen.dart';
 import 'features/clientes/nuevo_cliente_screen.dart';
 import 'features/perfil/perfil_screen.dart';
 import 'features/perfil/perfil_provider.dart';
+import 'features/personal/personal_screen.dart';
+import 'features/personal/personal_provider.dart';
 import 'shared/theme/tema.dart';
 
 class AppLavadero extends StatefulWidget {
@@ -167,6 +169,10 @@ class _AppLavaderoState extends State<AppLavadero> {
               turnoId: state.pathParameters['id']!),
         ),
         GoRoute(
+          path: '/personal',
+          builder: (_, __) => const PersonalScreen(),
+        ),
+        GoRoute(
           path: '/clientes/nuevo',
           builder: (_, __) => const NuevoClienteScreen(),
         ),
@@ -219,6 +225,9 @@ class _AppLavaderoState extends State<AppLavadero> {
               ctx.read<AuthProvider>(), _authService),
           update: (ctx, auth, prev) =>
               prev ?? PerfilProvider(auth, _authService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PersonalProvider(_authService),
         ),
       ],
       child: MaterialApp.router(

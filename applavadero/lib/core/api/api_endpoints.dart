@@ -26,7 +26,9 @@ class ApiEndpoints {
   static const String cajaGasto = '/api/caja/gastos';
   static String cajaGastoEliminar(String id) => '/api/caja/gastos/$id';
   static const String cajaIngresoManual = '/api/caja/ingresos-manuales';
+  static String cajaIngresoEliminar(String id) => '/api/caja/ingresos-manuales/$id';
   static String cajaCerrar(String id) => '/api/caja/cerrar/$id';
+  static String cajaReabrir(String id) => '/api/caja/reabrir/$id';
 
   static const String usuarios = '/api/usuarios';
   static String usuarioDetalle(String id) => '/api/usuarios/$id';

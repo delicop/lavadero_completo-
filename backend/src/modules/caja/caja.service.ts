@@ -249,6 +249,25 @@ export class CajaService {
     return this.cajaDiaRepo.save(caja);
   }
 
+  async reabrir(cajaDiaId: string, tenantId: string): Promise<CajaDia> {
+    const caja = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId, tenantId } });
+    if (!caja) throw new NotFoundException('Caja no encontrada');
+    if (caja.estado === EstadoCajaDia.ABIERTA) {
+      throw new BadRequestException('La caja ya está abierta');
+    }
+
+    // Solo se puede reabrir la caja del día actual
+    const hoy = await this.fechaHoy(tenantId);
+    if (caja.fecha !== hoy) {
+      throw new BadRequestException('Solo se puede reabrir la caja del día de hoy');
+    }
+
+    caja.estado = EstadoCajaDia.ABIERTA;
+    caja.usuarioCierreId = null;
+    caja.fechaCierre = null;
+    return this.cajaDiaRepo.save(caja);
+  }
+
   async registrarGasto(dto: RegistrarGastoDto, usuarioId: string, tenantId: string): Promise<GastoCaja> {
     const cajaAbierta = await this.cajaDiaRepo.findOne({
       where: { fecha: await this.fechaHoy(tenantId), estado: EstadoCajaDia.ABIERTA, tenantId },

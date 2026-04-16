@@ -45,7 +45,7 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
   Future<void> _mostrarNuevoVehiculo() async {
     final marcaCtrl = TextEditingController();
     final modeloCtrl = TextEditingController();
-    final patenteCtrl = TextEditingController();
+    final placaCtrl = TextEditingController();
     final colorCtrl = TextEditingController();
     String tipo = 'auto';
 
@@ -63,7 +63,7 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
                 const SizedBox(height: 12),
                 InputField(label: 'Modelo', controller: modeloCtrl),
                 const SizedBox(height: 12),
-                InputField(label: 'Patente', controller: patenteCtrl),
+                InputField(label: 'Placa', controller: placaCtrl),
                 const SizedBox(height: 12),
                 InputField(label: 'Color (opcional)', controller: colorCtrl),
                 const SizedBox(height: 12),
@@ -93,7 +93,7 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
                     'clienteId': widget.clienteId,
                     'marca': marcaCtrl.text.trim(),
                     'modelo': modeloCtrl.text.trim(),
-                    'patente': patenteCtrl.text.trim().toUpperCase(),
+                    'placa': placaCtrl.text.trim().toUpperCase(),
                     if (colorCtrl.text.isNotEmpty)
                       'color': colorCtrl.text.trim(),
                     'tipo': tipo,
@@ -214,7 +214,7 @@ class _VehiculoCard extends StatelessWidget {
         leading: const Icon(Icons.directions_car, color: colorPrimario),
         title: Text(vehiculo.descripcion),
         subtitle: Text(
-          '${vehiculo.patente}${vehiculo.color != null ? ' · ${vehiculo.color}' : ''}',
+          '${vehiculo.placa}${vehiculo.color != null ? ' · ${vehiculo.color}' : ''}',
           style: const TextStyle(color: colorSubtexto),
         ),
         trailing: Container(

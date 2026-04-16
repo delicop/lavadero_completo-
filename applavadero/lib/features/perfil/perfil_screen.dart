@@ -113,6 +113,19 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       color: colorPrimario, fontSize: 13)),
             ),
             const SizedBox(height: 40),
+            if (usuario.esAdmin) ...[
+              OutlinedButton.icon(
+                icon: const Icon(Icons.people_outline),
+                label: const Text('Gestionar personal'),
+                onPressed: () => context.push('/personal'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorPrimario,
+                  minimumSize: const Size(double.infinity, 52),
+                  side: const BorderSide(color: colorPrimario),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             OutlinedButton.icon(
               icon: const Icon(Icons.lock_outline),
               label: const Text('Cambiar contraseña'),

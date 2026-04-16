@@ -43,6 +43,11 @@ export class CajaController {
     return this.cajaService.cerrar(cajaDiaId, usuario.id, usuario.tenantId!);
   }
 
+  @Post('reabrir/:cajaDiaId')
+  reabrir(@Param('cajaDiaId') cajaDiaId: string, @UsuarioActual() usuario: Usuario) {
+    return this.cajaService.reabrir(cajaDiaId, usuario.tenantId!);
+  }
+
   @Post('gastos')
   registrarGasto(@Body() dto: RegistrarGastoDto, @UsuarioActual() usuario: Usuario) {
     return this.cajaService.registrarGasto(dto, usuario.id, usuario.tenantId!);

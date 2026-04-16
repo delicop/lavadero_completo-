@@ -107,7 +107,7 @@ class _DetalleTurnoScreenState extends State<DetalleTurnoScreen> {
                         if (_turno!.vehiculo != null) ...[
                           _InfoRow(
                               icono: Icons.badge,
-                              label: _turno!.vehiculo!.patente,
+                              label: _turno!.vehiculo!.placa,
                               secundario: true),
                           if (_turno!.vehiculo!.color != null)
                             _InfoRow(

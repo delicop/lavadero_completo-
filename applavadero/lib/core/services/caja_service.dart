@@ -11,28 +11,38 @@ class CajaService {
     return EstadoCaja.fromJson(res as Map<String, dynamic>);
   }
 
-  Future<CajaDia> abrir(double montoInicial) async {
-    final res = await _api
-        .post(ApiEndpoints.cajaAbrir, data: {'montoInicial': montoInicial});
+  Future<CajaDia> abrir(double montoInicial, {String? observaciones}) async {
+    final data = <String, dynamic>{'montoInicial': montoInicial};
+    if (observaciones != null && observaciones.isNotEmpty) {
+      data['observaciones'] = observaciones;
+    }
+    final res = await _api.post(ApiEndpoints.cajaAbrir, data: data);
     return CajaDia.fromJson(res as Map<String, dynamic>);
   }
 
-  Future<void> registrarGasto(String descripcion, double monto) async {
-    await _api.post(ApiEndpoints.cajaGasto,
-        data: {'concepto': descripcion, 'monto': monto, 'tipoPago': 'efectivo'});
+  Future<GastoCaja> registrarGasto(
+      String concepto, double monto, String tipoPago) async {
+    final res = await _api.post(ApiEndpoints.cajaGasto,
+        data: {'concepto': concepto, 'monto': monto, 'tipoPago': tipoPago});
+    return GastoCaja.fromJson(res as Map<String, dynamic>);
   }
 
   Future<void> eliminarGasto(String id) async {
     await _api.delete(ApiEndpoints.cajaGastoEliminar(id));
   }
 
-  Future<void> registrarIngreso(
-      String descripcion, double monto, String metodo) async {
-    await _api.post(ApiEndpoints.cajaIngresoManual, data: {
-      'concepto': descripcion,
+  Future<IngresoManualCaja> registrarIngreso(
+      String concepto, double monto, String tipoPago) async {
+    final res = await _api.post(ApiEndpoints.cajaIngresoManual, data: {
+      'concepto': concepto,
       'monto': monto,
-      'tipoPago': metodo,
+      'tipoPago': tipoPago,
     });
+    return IngresoManualCaja.fromJson(res as Map<String, dynamic>);
+  }
+
+  Future<void> eliminarIngreso(String id) async {
+    await _api.delete(ApiEndpoints.cajaIngresoEliminar(id));
   }
 
   Future<CajaDia> cerrar(String id) async {
@@ -40,8 +50,13 @@ class CajaService {
     return CajaDia.fromJson(res as Map<String, dynamic>);
   }
 
-  Future<Map<String, dynamic>> getResumen(String id) async {
+  Future<CajaDia> reabrir(String id) async {
+    final res = await _api.post(ApiEndpoints.cajaReabrir(id));
+    return CajaDia.fromJson(res as Map<String, dynamic>);
+  }
+
+  Future<ResumenCaja> getResumen(String id) async {
     final res = await _api.get(ApiEndpoints.cajaResumen(id));
-    return res as Map<String, dynamic>;
+    return ResumenCaja.fromJson(res as Map<String, dynamic>);
   }
 }

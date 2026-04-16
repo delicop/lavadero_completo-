@@ -1,7 +1,7 @@
 class Vehiculo {
   final String id;
   final String clienteId;
-  final String patente;
+  final String placa;
   final String marca;
   final String modelo;
   final String? color;
@@ -10,7 +10,7 @@ class Vehiculo {
   Vehiculo({
     required this.id,
     required this.clienteId,
-    required this.patente,
+    required this.placa,
     required this.marca,
     required this.modelo,
     this.color,
@@ -19,13 +19,13 @@ class Vehiculo {
 
   String get descripcion => '$marca $modelo';
   String get descripcionCompleta =>
-      '$marca $modelo - $patente${color != null ? ' · $color' : ''}';
+      '$marca $modelo - $placa${color != null ? ' · $color' : ''}';
 
   factory Vehiculo.fromJson(Map<String, dynamic> json) {
     return Vehiculo(
       id: json['id'],
       clienteId: json['clienteId'],
-      patente: json['patente'],
+      placa: json['placa'],
       marca: json['marca'],
       modelo: json['modelo'],
       color: json['color'],
@@ -35,7 +35,7 @@ class Vehiculo {
 
   Map<String, dynamic> toJson() => {
         'clienteId': clienteId,
-        'patente': patente,
+        'placa': placa,
         'marca': marca,
         'modelo': modelo,
         if (color != null) 'color': color,

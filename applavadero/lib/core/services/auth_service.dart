@@ -30,4 +30,14 @@ class AuthService {
     final res = await _api.get(ApiEndpoints.usuarios);
     return (res as List).map((u) => Usuario.fromJson(u)).toList();
   }
+
+  Future<Usuario> crearUsuario(Map<String, dynamic> data) async {
+    final res = await _api.post(ApiEndpoints.usuarios, data: data);
+    return Usuario.fromJson(res as Map<String, dynamic>);
+  }
+
+  Future<Usuario> actualizarUsuario(String id, Map<String, dynamic> data) async {
+    final res = await _api.patch(ApiEndpoints.usuarioDetalle(id), data: data);
+    return Usuario.fromJson(res as Map<String, dynamic>);
+  }
 }

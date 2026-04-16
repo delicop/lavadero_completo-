@@ -4,8 +4,8 @@ import 'colores.dart';
 ThemeData buildTema() {
   return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
-    colorScheme: const ColorScheme.dark(
+    brightness: Brightness.light,
+    colorScheme: const ColorScheme.light(
       primary: colorPrimario,
       surface: colorSuperficie,
       onSurface: colorTexto,
@@ -49,7 +49,7 @@ ThemeData buildTema() {
       ),
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: colorFondo,
+      backgroundColor: colorSuperficie,
       elevation: 0,
       centerTitle: false,
       titleTextStyle: TextStyle(

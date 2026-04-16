@@ -6,6 +6,7 @@ import '../../shared/utils/formatters.dart';
 import '../../shared/widgets/card_turno.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/loading_overlay.dart';
+import '../caja/caja_provider.dart';
 import 'turnos_provider.dart';
 
 class TurnosScreen extends StatefulWidget {
@@ -42,9 +43,30 @@ class _TurnosScreenState extends State<TurnosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Turnos')),
-      body: Consumer<TurnosProvider>(
-        builder: (_, provider, __) => Column(
+      body: Consumer2<TurnosProvider, CajaProvider>(
+        builder: (_, provider, caja, __) => Column(
           children: [
+            if (caja.vista != VistaCaja.abierta)
+              Container(
+                width: double.infinity,
+                color: const Color(0xFFFEF3C7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded,
+                        color: Color(0xFFB45309), size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Abrí la caja antes de crear un turno',
+                        style: TextStyle(
+                            color: Color(0xFFB45309), fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: OutlinedButton.icon(

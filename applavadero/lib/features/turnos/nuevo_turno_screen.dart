@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/models/cliente.dart';
 import '../../core/models/vehiculo.dart';
 import '../../core/models/servicio.dart';
@@ -10,8 +11,10 @@ import '../../core/services/vehiculo_service.dart';
 import '../../core/services/servicio_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/turno_service.dart';
+import '../../core/services/caja_service.dart';
 import '../../shared/theme/colores.dart';
 import '../../shared/utils/formatters.dart';
+import '../../shared/utils/whatsapp.dart';
 import '../../shared/widgets/boton_primario.dart';
 import '../../shared/widgets/input_field.dart';
 
@@ -39,9 +42,11 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
   // Paso 3
   List<Usuario> _trabajadores = [];
   Usuario? _trabajadorSeleccionado;
+  DateTime _fechaHora = DateTime.now();
   final _obsCtrl = TextEditingController();
 
   bool _cargando = false;
+  bool _cajaCerrada = false;
   String? _error;
 
   @override
@@ -60,18 +65,31 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
     if (!mounted) return;
     setState(() => _cargando = true);
     try {
-      // Tres llamadas independientes en paralelo
+      // Verificar caja abierta junto con los demás datos
       final futures = await Future.wait([
         context.read<ClienteService>().getClientes(),
         context.read<ServicioService>().getServicios(),
         context.read<AuthService>().getUsuarios(),
+        context.read<CajaService>().getEstado(),
       ]);
       if (!mounted) return;
+
+      final estadoCaja = futures[3] as dynamic;
+      final cajaActiva = estadoCaja.cajaActiva;
+      if (cajaActiva == null || !(cajaActiva.estaAbierta as bool)) {
+        setState(() {
+          _cajaCerrada = true;
+          _cargando = false;
+        });
+        return;
+      }
+
       setState(() {
         _clientes = futures[0] as List<Cliente>;
         _servicios = futures[1] as List<Servicio>;
-        _trabajadores =
-            (futures[2] as List<Usuario>).where((u) => u.activo).toList();
+        _trabajadores = (futures[2] as List<Usuario>)
+            .where((u) => u.rol == 'trabajador' && u.activo && u.disponible)
+            .toList();
       });
     } catch (e) {
       if (!mounted) return;
@@ -89,6 +107,25 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
     });
   }
 
+  Future<void> _seleccionarFechaHora() async {
+    final fecha = await showDatePicker(
+      context: context,
+      initialDate: _fechaHora,
+      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+    );
+    if (fecha == null || !mounted) return;
+    final hora = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_fechaHora),
+    );
+    if (hora == null) return;
+    setState(() {
+      _fechaHora = DateTime(
+          fecha.year, fecha.month, fecha.day, hora.hour, hora.minute);
+    });
+  }
+
   Future<void> _crearTurno() async {
     if (_clienteSeleccionado == null ||
         _vehiculoSeleccionado == null ||
@@ -96,20 +133,54 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
 
     setState(() => _cargando = true);
     try {
-      await context.read<TurnoService>().crearTurno({
+      final turnoCreado = await context.read<TurnoService>().crearTurno({
         'clienteId': _clienteSeleccionado!.id,
         'vehiculoId': _vehiculoSeleccionado!.id,
         'servicioId': _servicioSeleccionado!.id,
         if (_trabajadorSeleccionado != null)
           'trabajadorId': _trabajadorSeleccionado!.id,
         if (_obsCtrl.text.isNotEmpty) 'observaciones': _obsCtrl.text,
-        'fechaHora': DateTime.now().toIso8601String(),
+        'fechaHora': _fechaHora.toIso8601String(),
       });
-      if (mounted) context.pop();
+      if (!mounted) return;
+
+      // Notificación WhatsApp al cliente (igual que el web)
+      final tel = _clienteSeleccionado!.telefono;
+      if (tel.isNotEmpty) {
+        final v = _vehiculoSeleccionado!;
+        final s = _servicioSeleccionado!;
+        final fechaFormato = formatearFechaHora(
+            DateTime.tryParse(turnoCreado.fechaHora) ?? _fechaHora);
+        final mensaje =
+            '📅 Orden agendada\n'
+            'Vehículo: ${v.placa} — ${v.marca} ${v.modelo}\n'
+            'Servicio: ${s.nombre}\n'
+            'Fecha: $fechaFormato\n'
+            '¡Te esperamos!';
+        final url = urlWhatsapp(tel, mensaje: mensaje);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('📅 Orden creada — avisar al cliente'),
+            backgroundColor: colorCompletado,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'WhatsApp',
+              textColor: Colors.white,
+              onPressed: () => launchUrl(
+                Uri.parse(url),
+                mode: LaunchMode.externalApplication,
+              ),
+            ),
+          ),
+        );
+      }
+
+      context.pop();
     } catch (e) {
       setState(() => _error = e.toString());
     }
-    setState(() => _cargando = false);
+    if (mounted) setState(() => _cargando = false);
   }
 
   List<Cliente> get _clientesFiltrados {
@@ -129,12 +200,46 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
         title: Text('Nuevo Turno — Paso ${_paso + 1} de 3'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: _paso == 0 ? () => context.pop() : () => setState(() => _paso--),
+          onPressed:
+              _paso == 0 ? () => context.pop() : () => setState(() => _paso--),
         ),
       ),
-      body: _cargando && _clientes.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: colorPrimario))
-          : [_buildPaso1(), _buildPaso2(), _buildPaso3()][_paso],
+      body: _cajaCerrada
+          ? _buildCajaCerrada()
+          : _cargando && _clientes.isEmpty
+              ? const Center(
+                  child: CircularProgressIndicator(color: colorPrimario))
+              : [_buildPaso1(), _buildPaso2(), _buildPaso3()][_paso],
+    );
+  }
+
+  Widget _buildCajaCerrada() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.lock_outline, size: 64, color: colorSubtexto),
+            const SizedBox(height: 16),
+            const Text(
+              'Caja cerrada',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Abrí la caja del día antes de crear un nuevo turno.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colorSubtexto),
+            ),
+            const SizedBox(height: 24),
+            OutlinedButton(
+              onPressed: () => context.pop(),
+              child: const Text('Volver'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -273,9 +378,48 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Fecha y hora
+          const Text('Fecha y hora',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: _seleccionarFechaHora,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border.all(color: colorDivisor),
+                borderRadius: BorderRadius.circular(8),
+                color: colorSuperficie,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.access_time,
+                      color: colorPrimario, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    formatearFechaHora(_fechaHora),
+                    style: const TextStyle(fontSize: 15),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.chevron_right, color: colorSubtexto),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Trabajador
           const Text('Asignar a:',
               style: TextStyle(
                   fontWeight: FontWeight.w600, fontSize: 15)),
+          if (_trabajadores.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('No hay trabajadores disponibles',
+                  style: TextStyle(color: colorSubtexto)),
+            ),
           ..._trabajadores.map((u) => RadioListTile<Usuario>(
                 value: u,
                 groupValue: _trabajadorSeleccionado,

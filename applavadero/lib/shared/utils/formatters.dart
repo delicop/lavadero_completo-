@@ -23,6 +23,10 @@ String formatearHora(String isoDate) {
   return DateFormat('HH:mm').format(DateTime.parse(isoDate).toLocal());
 }
 
+String formatearFechaHora(DateTime dt) {
+  return DateFormat("dd/MM/yyyy HH:mm", 'es').format(dt.toLocal());
+}
+
 String fechaHoyIso() {
   final now = DateTime.now();
   return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
