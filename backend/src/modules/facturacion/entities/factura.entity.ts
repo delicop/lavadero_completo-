@@ -22,7 +22,7 @@ export class Factura {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @OneToOne(() => Turno, { nullable: false })
+  @OneToOne(() => Turno, (t) => t.factura, { nullable: false })
   @JoinColumn({ name: 'turnoId' })
   turno!: Turno;
 

@@ -115,6 +115,17 @@ class _PerfilScreenState extends State<PerfilScreen> {
             const SizedBox(height: 40),
             if (usuario.esAdmin) ...[
               OutlinedButton.icon(
+                icon: const Icon(Icons.store_outlined),
+                label: const Text('Mi Negocio'),
+                onPressed: () => context.push('/negocio'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorPrimario,
+                  minimumSize: const Size(double.infinity, 52),
+                  side: const BorderSide(color: colorPrimario),
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
                 icon: const Icon(Icons.miscellaneous_services_outlined),
                 label: const Text('Gestionar servicios'),
                 onPressed: () => context.push('/servicios'),

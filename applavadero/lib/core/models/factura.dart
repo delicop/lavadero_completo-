@@ -17,7 +17,7 @@ class Factura {
     return Factura(
       id: json['id'],
       turnoId: json['turnoId'],
-      total: (json['total'] as num).toDouble(),
+      total: double.tryParse(json['total'].toString()) ?? 0.0,
       fechaEmision: json['fechaEmision'],
       metodoPago: json['metodoPago'],
     );

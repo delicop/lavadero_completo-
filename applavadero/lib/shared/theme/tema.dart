@@ -1,18 +1,31 @@
 import 'package:flutter/material.dart';
 import 'colores.dart';
 
-ThemeData buildTema() {
+Color _parseHex(String? hex, Color fallback) {
+  if (hex == null || hex.length != 7 || !hex.startsWith('#')) return fallback;
+  try {
+    return Color(int.parse('FF${hex.substring(1)}', radix: 16));
+  } catch (_) {
+    return fallback;
+  }
+}
+
+ThemeData buildTema({String? colorPrimarioHex, String? colorFondoHex, String? colorSuperficieHex}) {
+  final primary    = _parseHex(colorPrimarioHex, colorPrimario);
+  final fondo      = _parseHex(colorFondoHex, colorFondo);
+  final superficie = _parseHex(colorSuperficieHex, colorSuperficie);
+
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    colorScheme: const ColorScheme.light(
-      primary: colorPrimario,
-      surface: colorSuperficie,
+    colorScheme: ColorScheme.light(
+      primary: primary,
+      surface: superficie,
       onSurface: colorTexto,
     ),
-    scaffoldBackgroundColor: colorFondo,
+    scaffoldBackgroundColor: fondo,
     cardTheme: CardThemeData(
-      color: colorSuperficie,
+      color: superficie,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -22,7 +35,7 @@ ThemeData buildTema() {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: colorSuperficie,
+      fillColor: superficie,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: colorDivisor),
@@ -33,14 +46,14 @@ ThemeData buildTema() {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: colorPrimario, width: 2),
+        borderSide: BorderSide(color: primary, width: 2),
       ),
       labelStyle: const TextStyle(color: colorSubtexto),
       hintStyle: const TextStyle(color: colorSubtexto),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: colorPrimario,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -48,20 +61,20 @@ ThemeData buildTema() {
             const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: colorSuperficie,
+    appBarTheme: AppBarTheme(
+      backgroundColor: superficie,
       elevation: 0,
       centerTitle: false,
-      titleTextStyle: TextStyle(
+      titleTextStyle: const TextStyle(
         color: colorTexto,
         fontSize: 20,
         fontWeight: FontWeight.w700,
       ),
-      iconTheme: IconThemeData(color: colorTexto),
+      iconTheme: const IconThemeData(color: colorTexto),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: colorSuperficie,
-      selectedItemColor: colorPrimario,
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: superficie,
+      selectedItemColor: primary,
       unselectedItemColor: colorSubtexto,
       type: BottomNavigationBarType.fixed,
     ),

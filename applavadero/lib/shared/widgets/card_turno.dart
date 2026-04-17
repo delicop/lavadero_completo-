@@ -66,7 +66,6 @@ class CardTurno extends StatelessWidget {
                 const SizedBox(height: 12),
                 _BotonAvanzar(
                   estado: turno.estado,
-                  puedeCobrar: turno.puedeCobrar,
                   onPressed: onAvanzar!,
                 ),
               ],
@@ -80,12 +79,10 @@ class CardTurno extends StatelessWidget {
 
 class _BotonAvanzar extends StatelessWidget {
   final String estado;
-  final bool puedeCobrar;
   final VoidCallback onPressed;
 
   const _BotonAvanzar(
       {required this.estado,
-      required this.puedeCobrar,
       required this.onPressed});
 
   @override
@@ -93,10 +90,7 @@ class _BotonAvanzar extends StatelessWidget {
     String label;
     Color color;
 
-    if (puedeCobrar) {
-      label = 'Cobrar';
-      color = colorCompletado;
-    } else if (estado == 'pendiente') {
+    if (estado == 'pendiente') {
       label = 'Iniciar';
       color = colorEnProceso;
     } else if (estado == 'en_proceso') {

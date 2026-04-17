@@ -13,6 +13,7 @@ import '../../core/services/auth_service.dart';
 import '../../core/services/turno_service.dart';
 import '../../core/models/caja.dart';
 import '../../core/services/caja_service.dart';
+import 'turnos_provider.dart';
 import '../../shared/theme/colores.dart';
 import '../../shared/utils/formatters.dart';
 import '../../shared/utils/whatsapp.dart';
@@ -123,7 +124,8 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
   Future<void> _crearTurno() async {
     if (_clienteSeleccionado == null ||
         _vehiculoSeleccionado == null ||
-        _servicioSeleccionado == null) return;
+        _servicioSeleccionado == null ||
+        _trabajadorSeleccionado == null) return;
 
     setState(() => _cargando = true);
     try {
@@ -137,6 +139,9 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
         'fechaHora': _fechaHora.toIso8601String(),
       });
       if (!mounted) return;
+
+      // Recargar la lista de turnos para que aparezca el recién creado
+      context.read<TurnosProvider>().cargar();
 
       // Notificación WhatsApp al cliente (igual que el web)
       final tel = _clienteSeleccionado!.telefono;
@@ -472,7 +477,7 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
           BotonPrimario(
             texto: 'Crear turno ✓',
             loading: _cargando,
-            onPressed: _crearTurno,
+            onPressed: _trabajadorSeleccionado != null ? _crearTurno : null,
           ),
         ],
       ),

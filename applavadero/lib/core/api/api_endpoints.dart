@@ -28,7 +28,6 @@ class ApiEndpoints {
   static const String cajaIngresoManual = '/api/caja/ingresos-manuales';
   static String cajaIngresoEliminar(String id) => '/api/caja/ingresos-manuales/$id';
   static String cajaCerrar(String id) => '/api/caja/cerrar/$id';
-  static String cajaReabrir(String id) => '/api/caja/reabrir/$id';
 
   static const String usuarios = '/api/usuarios';
   static String usuarioDetalle(String id) => '/api/usuarios/$id';
@@ -36,4 +35,6 @@ class ApiEndpoints {
   static const String facturacion = '/api/facturacion';
   static String facturacionPorTurno(String turnoId) =>
       '/api/facturacion/turno/$turnoId';
+
+  static const String tenantConfig = '/api/tenants/config';
 }

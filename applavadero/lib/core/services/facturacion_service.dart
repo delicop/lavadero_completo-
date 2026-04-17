@@ -14,4 +14,15 @@ class FacturacionService {
     );
     return Factura.fromJson(res as Map<String, dynamic>);
   }
+
+  /// Devuelve null si el turno aún no tiene factura (404), relanza otros errores.
+  Future<Factura?> getFacturaPorTurno(String turnoId) async {
+    try {
+      final res = await _api.get(ApiEndpoints.facturacionPorTurno(turnoId));
+      return Factura.fromJson(res as Map<String, dynamic>);
+    } catch (e) {
+      if (e is ApiException && e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
 }

@@ -20,25 +20,27 @@ class _MisTurnosScreenState extends State<MisTurnosScreen> {
   @override
   void initState() {
     super.initState();
-    final usuario = context.read<AuthProvider>().usuario!;
-    Future.microtask(() =>
-        context.read<DashboardProvider>().cargar(trabajadorId: usuario.id));
+    final usuario = context.read<AuthProvider>().usuario;
+    if (usuario != null) {
+      Future.microtask(() =>
+          context.read<DashboardProvider>().cargar(trabajadorId: usuario.id));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final usuario = context.read<AuthProvider>().usuario!;
+    final usuario = context.read<AuthProvider>().usuario;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mis Turnos — ${usuario.nombre}'),
+        title: Text('Mis Turnos — ${usuario?.nombre ?? ''}'),
         automaticallyImplyLeading: false,
       ),
       body: Consumer<DashboardProvider>(
         builder: (_, provider, __) => LoadingOverlay(
           loading: provider.loading && provider.turnos.isEmpty,
           child: RefreshIndicator(
-            onRefresh: () => provider.cargar(trabajadorId: usuario.id),
+            onRefresh: () => provider.cargar(trabajadorId: usuario?.id),
             child: Column(
               children: [
                 if (provider.turnos.isNotEmpty)
@@ -54,7 +56,7 @@ class _MisTurnosScreenState extends State<MisTurnosScreen> {
                         _MiniStat(
                           label: 'Mi ganancia',
                           valor: formatearPesos(provider.totalDia *
-                              (usuario.comisionPorcentaje ?? 0) /
+                              (usuario?.comisionPorcentaje ?? 0) /
                               100),
                         ),
                       ],

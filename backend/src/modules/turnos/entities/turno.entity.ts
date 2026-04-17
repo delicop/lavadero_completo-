@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  OneToOne,
   JoinColumn,
   Index,
 } from 'typeorm';
@@ -11,6 +12,7 @@ import { Cliente } from '../../clientes/entities/cliente.entity';
 import { Vehiculo } from '../../vehiculos/entities/vehiculo.entity';
 import { Servicio } from '../../servicios/entities/servicio.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { Factura } from '../../facturacion/entities/factura.entity';
 
 export enum EstadoTurno {
   PENDIENTE = 'pendiente',
@@ -75,6 +77,10 @@ export class Turno {
 
   @Column({ type: 'varchar', nullable: true })
   tenantId!: string | null;
+
+  // Relación inversa — no genera columna, solo permite cargar la factura junto al turno
+  @OneToOne(() => Factura, (f) => f.turno, { nullable: true, eager: false })
+  factura?: Factura;
 
   @CreateDateColumn()
   fechaRegistro!: Date;

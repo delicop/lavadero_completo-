@@ -12,6 +12,7 @@ import 'core/services/servicio_service.dart';
 import 'core/services/caja_service.dart';
 import 'core/services/facturacion_service.dart';
 import 'core/services/realtime_service.dart';
+import 'core/services/tenant_service.dart';
 import 'features/login/login_screen.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/dashboard/mis_turnos_screen.dart';
@@ -33,6 +34,7 @@ import 'features/personal/personal_screen.dart';
 import 'features/personal/personal_provider.dart';
 import 'features/servicios/servicios_screen.dart';
 import 'features/servicios/servicios_provider.dart';
+import 'features/negocio/negocio_screen.dart';
 import 'shared/theme/tema.dart';
 
 class AppLavadero extends StatefulWidget {
@@ -54,6 +56,7 @@ class _AppLavaderoState extends State<AppLavadero> {
   late final CajaService _cajaService;
   late final FacturacionService _facturacionService;
   late final RealtimeService _realtimeService;
+  late final TenantService _tenantService;
 
   late final GoRouter _router;
 
@@ -69,6 +72,7 @@ class _AppLavaderoState extends State<AppLavadero> {
     _servicioService = ServicioService(_apiClient);
     _cajaService = CajaService(_apiClient);
     _facturacionService = FacturacionService(_apiClient);
+    _tenantService = TenantService(_apiClient);
     _realtimeService = RealtimeService();
     _realtimeService.conectar();
 
@@ -179,6 +183,10 @@ class _AppLavaderoState extends State<AppLavadero> {
           builder: (_, __) => const ServiciosScreen(),
         ),
         GoRoute(
+          path: '/negocio',
+          builder: (_, __) => const NegocioScreen(),
+        ),
+        GoRoute(
           path: '/clientes/nuevo',
           builder: (_, __) => const NuevoClienteScreen(),
         ),
@@ -205,9 +213,11 @@ class _AppLavaderoState extends State<AppLavadero> {
         Provider.value(value: _facturacionService),
         Provider.value(value: _realtimeService),
 
+        Provider.value(value: _tenantService),
+
         // Auth
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(_tokenStorage, _authService),
+          create: (_) => AuthProvider(_tokenStorage, _authService, _tenantService),
         ),
 
         // Providers con estado
@@ -239,11 +249,17 @@ class _AppLavaderoState extends State<AppLavadero> {
           create: (_) => ServiciosProvider(_servicioService),
         ),
       ],
-      child: MaterialApp.router(
-        title: 'Lavadero',
-        theme: buildTema(),
-        routerConfig: _router,
-        debugShowCheckedModeBanner: false,
+      child: Consumer<AuthProvider>(
+        builder: (_, auth, __) => MaterialApp.router(
+          title: auth.config?.nombreMostrar ?? 'Lavadero',
+          theme: buildTema(
+            colorPrimarioHex:   auth.config?.colorPrimario,
+            colorFondoHex:      auth.config?.colorFondo,
+            colorSuperficieHex: auth.config?.colorSuperficie,
+          ),
+          routerConfig: _router,
+          debugShowCheckedModeBanner: false,
+        ),
       ),
     );
   }

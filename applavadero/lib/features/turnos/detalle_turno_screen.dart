@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/auth/auth_provider.dart';
 import '../../core/models/turno.dart';
 import '../../core/services/turno_service.dart';
+import '../../core/services/facturacion_service.dart';
 import '../../shared/theme/colores.dart';
 import '../../shared/utils/formatters.dart';
 import '../../shared/utils/whatsapp.dart';
@@ -24,6 +26,7 @@ class _DetalleTurnoScreenState extends State<DetalleTurnoScreen> {
   Turno? _turno;
   bool _loading = true;
   bool _accionando = false;
+  bool _tieneFactura = false;
   String? _error;
 
   @override
@@ -33,10 +36,26 @@ class _DetalleTurnoScreenState extends State<DetalleTurnoScreen> {
   }
 
   Future<void> _cargar() async {
+    if (!mounted) return;
+    setState(() { _loading = true; _error = null; });
     try {
-      final turno =
-          await context.read<TurnoService>().getTurno(widget.turnoId);
-      if (mounted) setState(() { _turno = turno; _loading = false; });
+      final turno = await context.read<TurnoService>().getTurno(widget.turnoId);
+      // Solo el admin puede consultar facturas — los trabajadores no tienen permiso
+      final esAdmin = context.read<AuthProvider>().usuario?.rol == 'admin';
+      bool tieneFactura = turno.tieneFactura;
+      if (esAdmin && !tieneFactura && turno.estado == 'completado') {
+        final factura = await context
+            .read<FacturacionService>()
+            .getFacturaPorTurno(widget.turnoId);
+        tieneFactura = factura != null;
+      }
+      if (mounted) {
+        setState(() {
+          _turno = turno;
+          _tieneFactura = tieneFactura;
+          _loading = false;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
@@ -54,34 +73,9 @@ class _DetalleTurnoScreenState extends State<DetalleTurnoScreen> {
           .cambiarEstado(widget.turnoId, siguiente);
       await _cargar();
 
-      // Al completar: notificar al cliente por WhatsApp (igual que el web)
+      // Al completar: ofrecer notificar al cliente por WhatsApp
       if (siguiente == 'completado' && mounted) {
-        final tel = _turno?.cliente?.telefono ?? '';
-        if (tel.isNotEmpty) {
-          final v = _turno?.vehiculo;
-          final nombre = _turno?.cliente?.nombre ?? '';
-          final mensaje = '🚗 ¡Tu vehículo está listo!\n'
-              '${v != null ? 'Vehículo: ${v.placa} — ${v.marca} ${v.modelo}\n' : ''}'
-              'Podés pasar a buscarlo.\n'
-              '¡Gracias, $nombre!';
-          final url = urlWhatsapp(tel, mensaje: mensaje);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Orden completada — avisar al cliente'),
-              backgroundColor: colorCompletado,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 6),
-              action: SnackBarAction(
-                label: 'WhatsApp',
-                textColor: Colors.white,
-                onPressed: () => launchUrl(
-                  Uri.parse(url),
-                  mode: LaunchMode.externalApplication,
-                ),
-              ),
-            ),
-          );
-        }
+        _mostrarSnackbarWhatsApp();
       }
     } catch (e) {
       if (mounted) {
@@ -92,11 +86,75 @@ class _DetalleTurnoScreenState extends State<DetalleTurnoScreen> {
     if (mounted) setState(() => _accionando = false);
   }
 
+  void _mostrarSnackbarWhatsApp() {
+    final tel = _turno?.cliente?.telefono ?? '';
+    if (tel.isEmpty) return;
+    final url = _urlWhatsappCompletado();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Orden completada — avisar al cliente'),
+        backgroundColor: colorCompletado,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: 'WhatsApp',
+          textColor: Colors.white,
+          onPressed: () => launchUrl(
+            Uri.parse(url),
+            mode: LaunchMode.externalApplication,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _urlWhatsappSegunEstado() {
+    final t = _turno!;
+    final v = t.vehiculo;
+    final s = t.servicio;
+    final nombre = t.cliente?.nombre ?? '';
+    final tel = t.cliente?.telefono ?? '';
+
+    String mensaje;
+    switch (t.estado) {
+      case 'pendiente':
+        mensaje = '📅 Tu turno ha sido agendado\n'
+            '${v != null ? 'Vehículo: ${v.placa} — ${v.marca} ${v.modelo}\n' : ''}'
+            '${s != null ? 'Servicio: ${s.nombre}\n' : ''}'
+            'Fecha: ${formatearFechaHora(DateTime.tryParse(t.fechaHora) ?? DateTime.now())}\n'
+            '¡Te esperamos!';
+      case 'en_proceso':
+        mensaje = '🔧 Tu vehículo ya está siendo atendido\n'
+            '${v != null ? '${v.placa} — ${v.marca} ${v.modelo}\n' : ''}'
+            'Te avisamos cuando esté listo, $nombre.';
+      case 'completado':
+        mensaje = _mensajeCompletado();
+      default:
+        mensaje = 'Actualización de tu turno en el lavadero.';
+    }
+    return urlWhatsapp(tel, mensaje: mensaje);
+  }
+
+  String _urlWhatsappCompletado() {
+    final tel = _turno?.cliente?.telefono ?? '';
+    return urlWhatsapp(tel, mensaje: _mensajeCompletado());
+  }
+
+  String _mensajeCompletado() {
+    final t = _turno!;
+    final v = t.vehiculo;
+    final nombre = t.cliente?.nombre ?? '';
+    return '✅ ¡Tu vehículo está listo!\n'
+        '${v != null ? '${v.placa} — ${v.marca} ${v.modelo}\n' : ''}'
+        'Podés pasar a buscarlo.\n'
+        '¡Gracias, $nombre!';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_turno != null ? 'Turno #${_turno!.id}' : 'Turno'),
+        title: Text(_turno != null ? 'Turno #${_turno!.id.substring(0, 8)}' : 'Turno'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => context.pop()),
@@ -174,6 +232,24 @@ class _DetalleTurnoScreenState extends State<DetalleTurnoScreen> {
                         ],
                         const SizedBox(height: 32),
                         _buildBotonAccion(),
+                        // Botón permanente de notificación WhatsApp
+                        if ((_turno!.cliente?.telefono ?? '').isNotEmpty &&
+                            _turno!.estado != 'cancelado') ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.message, size: 18),
+                            label: const Text('Notificar al cliente'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 44),
+                              foregroundColor: colorPrimario,
+                              side: const BorderSide(color: colorPrimario),
+                            ),
+                            onPressed: () => launchUrl(
+                              Uri.parse(_urlWhatsappSegunEstado()),
+                              mode: LaunchMode.externalApplication,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -183,15 +259,22 @@ class _DetalleTurnoScreenState extends State<DetalleTurnoScreen> {
 
   Widget _buildBotonAccion() {
     final t = _turno!;
-    if (t.estado == 'cancelado' || t.estado == 'completado' && !t.puedeCobrar) {
+    final esAdmin = context.read<AuthProvider>().usuario?.rol == 'admin';
+    final puedeCobrar = t.estado == 'completado' && !_tieneFactura && esAdmin;
+
+    if (t.estado == 'cancelado' || (t.estado == 'completado' && _tieneFactura)) {
       return const SizedBox.shrink();
     }
-    if (t.puedeCobrar) {
+    if (puedeCobrar) {
       return BotonPrimario(
         texto: 'Cobrar',
         icono: Icons.payments,
         loading: _accionando,
-        onPressed: () => context.push('/turnos/${t.id}/cobrar'),
+        onPressed: () async {
+          await context.push('/turnos/${t.id}/cobrar');
+          // Recargar para actualizar el estado del botón Cobrar
+          if (mounted) await _cargar();
+        },
       );
     }
     final label = t.estado == 'pendiente'

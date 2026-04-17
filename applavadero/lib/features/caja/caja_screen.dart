@@ -40,31 +40,6 @@ class _CajaScreenState extends State<CajaScreen> {
     ));
   }
 
-  // ── Diálogo confirmar reabrir caja ───────────────────────────────────────
-
-  Future<void> _confirmarReabrir(CajaProvider provider) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: colorSuperficie,
-        title: const Text('Reabrir caja'),
-        content: const Text(
-            '¿Querés reabrir la caja del día? Podrás seguir registrando gastos e ingresos.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Reabrir')),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-    await provider.reabrir();
-    if (provider.error != null && mounted) _mostrarError(provider.error!);
-  }
-
   // ── Diálogo confirmar cerrar caja anterior ────────────────────────────────
 
   Future<void> _confirmarCerrarAnterior() async {
@@ -132,6 +107,7 @@ class _CajaScreenState extends State<CajaScreen> {
     String tipoPago = 'efectivo';
 
     await showModalBottomSheet(
+
       context: context,
       isScrollControlled: true,
       backgroundColor: colorSuperficie,
@@ -193,6 +169,8 @@ class _CajaScreenState extends State<CajaScreen> {
         ),
       ),
     );
+    descCtrl.dispose();
+    montoCtrl.dispose();
   }
 
   // ── Bottom sheet: nuevo ingreso manual ───────────────────────────────────
@@ -264,6 +242,8 @@ class _CajaScreenState extends State<CajaScreen> {
         ),
       ),
     );
+    descCtrl.dispose();
+    montoCtrl.dispose();
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -326,7 +306,6 @@ class _CajaScreenState extends State<CajaScreen> {
         return _VistaCerrada(
           caja: provider.cajaHoy!,
           resumen: provider.resumen,
-          onReabrir: () => _confirmarReabrir(provider),
         );
     }
   }
@@ -625,12 +604,10 @@ class _VistaAbierta extends StatelessWidget {
 class _VistaCerrada extends StatelessWidget {
   final CajaDia caja;
   final ResumenCaja? resumen;
-  final VoidCallback onReabrir;
 
   const _VistaCerrada({
     required this.caja,
     required this.resumen,
-    required this.onReabrir,
   });
 
   @override
@@ -690,17 +667,6 @@ class _VistaCerrada extends StatelessWidget {
                   'La próxima caja se abre mañana con el monto que elijas.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: colorSubtexto, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.lock_open_outlined,
-                      color: colorPendiente),
-                  label: const Text('Reabrir caja',
-                      style: TextStyle(color: colorPendiente)),
-                  onPressed: onReabrir,
-                  style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: colorPendiente),
-                      minimumSize: const Size(double.infinity, 48)),
                 ),
                 const SizedBox(height: 24),
               ],

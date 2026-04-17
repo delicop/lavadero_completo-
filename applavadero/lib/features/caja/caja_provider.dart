@@ -95,23 +95,6 @@ class CajaProvider extends ChangeNotifier {
     await cargar();
   }
 
-  Future<void> reabrir() async {
-    if (cajaHoy == null) return;
-    loading = true;
-    error = null;
-    notifyListeners();
-    try {
-      cajaHoy = await _cajaService.reabrir(cajaHoy!.id);
-      resumen = null;
-      vista = VistaCaja.abierta;
-      _cargarResumenHoy();
-    } catch (e) {
-      error = e.toString();
-    }
-    loading = false;
-    notifyListeners();
-  }
-
   Future<void> cerrar() async {
     if (cajaHoy == null) return;
     loading = true;
@@ -196,6 +179,7 @@ class CajaProvider extends ChangeNotifier {
       await _cajaService.eliminarGasto(gasto.id);
     } catch (e) {
       error = 'Error al eliminar el gasto.';
+      notifyListeners();
       _cargarResumenHoy(); // revertir
     }
   }
@@ -266,6 +250,7 @@ class CajaProvider extends ChangeNotifier {
       await _cajaService.eliminarIngreso(ing.id);
     } catch (e) {
       error = 'Error al eliminar el ingreso.';
+      notifyListeners();
       _cargarResumenHoy(); // revertir
     }
   }

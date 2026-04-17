@@ -29,7 +29,9 @@ export class TurnosService {
 
   async crear(dto: CrearTurnoDto, tenantId: string): Promise<Turno> {
     await this.clientesService.buscarPorId(dto.clienteId, tenantId);
-    await this.usuariosService.buscarPorId(dto.trabajadorId, tenantId);
+    if (dto.trabajadorId) {
+      await this.usuariosService.buscarPorId(dto.trabajadorId, tenantId);
+    }
 
     const vehiculo = await this.vehiculosService.buscarPorId(dto.vehiculoId, tenantId);
     if (vehiculo.clienteId !== dto.clienteId) {
@@ -60,7 +62,9 @@ export class TurnosService {
       observaciones: dto.observaciones ?? null,
       tenantId,
     });
-    return this.repo.save(turno);
+    const guardado = await this.repo.save(turno);
+    this.eventsGateway.emitirTurnoActualizado(guardado.id, guardado.estado);
+    return guardado;
   }
 
   async buscarTodos(

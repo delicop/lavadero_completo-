@@ -25,7 +25,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final usuario = context.read<AuthProvider>().usuario!;
+    final auth = context.watch<AuthProvider>();
+    final usuario = auth.usuario;
+    final negocio = auth.config?.nombreMostrar;
 
     return Scaffold(
       body: Consumer<DashboardProvider>(
@@ -42,7 +44,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Hola, ${usuario.nombre} 👋',
+                      if (negocio != null)
+                        Text(negocio,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600)),
+                      Text('Hola, ${usuario?.nombre ?? ''} 👋',
                           style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w700)),
                       Text(

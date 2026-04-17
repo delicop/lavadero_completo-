@@ -12,6 +12,14 @@ class RealtimeService {
   Stream<dynamic> get onUsuarioActualizado => _usuarioController.stream;
 
   void conectar() {
+    // Limpiar conexión anterior si existe
+    if (_socket != null) {
+      _socket!.off('turno_actualizado');
+      _socket!.off('usuario_actualizado');
+      _socket!.disconnect();
+      _socket = null;
+    }
+
     _socket = IO.io(
       kBaseUrl,
       IO.OptionBuilder()
@@ -21,13 +29,15 @@ class RealtimeService {
     );
 
     _socket!.on(
-        'turno_actualizado', (data) => _turnoController.add(data));
+        'turno:actualizado', (data) => _turnoController.add(data));
     _socket!.on(
-        'usuario_actualizado', (data) => _usuarioController.add(data));
+        'usuario:actualizado', (data) => _usuarioController.add(data));
     _socket!.connect();
   }
 
   void desconectar() {
+    _socket?.off('turno_actualizado');
+    _socket?.off('usuario_actualizado');
     _socket?.disconnect();
     _socket = null;
   }

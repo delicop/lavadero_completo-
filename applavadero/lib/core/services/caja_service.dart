@@ -50,11 +50,6 @@ class CajaService {
     return CajaDia.fromJson(res as Map<String, dynamic>);
   }
 
-  Future<CajaDia> reabrir(String id) async {
-    final res = await _api.post(ApiEndpoints.cajaReabrir(id));
-    return CajaDia.fromJson(res as Map<String, dynamic>);
-  }
-
   Future<ResumenCaja> getResumen(String id) async {
     final res = await _api.get(ApiEndpoints.cajaResumen(id));
     return ResumenCaja.fromJson(res as Map<String, dynamic>);

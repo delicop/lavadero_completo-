@@ -12,10 +12,11 @@ class DashboardProvider extends ChangeNotifier {
   List<Turno> turnos = [];
   bool loading = false;
   String? error;
+  String? _trabajadorId;
   StreamSubscription? _sub;
 
   DashboardProvider(this._turnoService, this._realtimeService) {
-    _sub = _realtimeService.onTurnoActualizado.listen((_) => cargar());
+    _sub = _realtimeService.onTurnoActualizado.listen((_) => cargar(trabajadorId: _trabajadorId));
   }
 
   List<Turno> get enProceso =>
@@ -27,6 +28,7 @@ class DashboardProvider extends ChangeNotifier {
       .fold(0, (sum, t) => sum + (t.servicio?.precio ?? 0));
 
   Future<void> cargar({String? trabajadorId}) async {
+    if (trabajadorId != null) _trabajadorId = trabajadorId;
     loading = true;
     error = null;
     notifyListeners();
