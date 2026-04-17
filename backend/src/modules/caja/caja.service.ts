@@ -233,9 +233,9 @@ export class CajaService {
     const totalGananciaEmpleados = gananciasEmpleados.reduce((s, e) => s + e.ganancia, 0);
     const totalVentas = ventasEfectivo + ventasTransferencia + totalIngresosManual;
     const totalGastos = gastosEfectivo + gastosTransferencia;
-    const montoInicial = Number(cajaDia.montoInicial);
     const gananciaLavadero = totalVentas - totalGananciaEmpleados;
-    const totalDia = montoInicial + gananciaLavadero - totalGastos;
+    // montoInicial es solo referencia del efectivo inicial — no se suma como ingreso del negocio
+    const totalDia = gananciaLavadero - totalGastos;
 
     return {
       cajaDia,
@@ -244,7 +244,7 @@ export class CajaService {
         ventasEfectivo,
         ventasTransferencia,
         ingresosManual: totalIngresosManual,
-        total: montoInicial + totalVentas,
+        total: totalVentas,
       },
       gastos: {
         efectivo: gastosEfectivo,

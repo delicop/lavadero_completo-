@@ -22,13 +22,11 @@
       </div>
     </div>
 
-    <div class="caja-bloqueo">
-      <div class="alert" style="background:var(--warning-bg,#fff3cd);border:1px solid #f0ad4e;color:#856404;padding:1rem;border-radius:8px;margin-bottom:1.5rem">
+    <div style="margin-bottom:1.5rem">
+      <div class="alert" style="background:#fff3cd;border:1px solid #f0ad4e;color:#856404;padding:1rem;border-radius:8px;margin-bottom:1.5rem">
         ⚠️ No se puede operar hasta cerrar la caja del día anterior.
       </div>
-
       <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumenAnterior }"></ng-container>
-
       <div style="margin-top:1.5rem;text-align:right">
         <button class="btn btn-primary" [disabled]="guardando" (click)="cerrarAnterior()">
           {{ guardando ? 'Cerrando...' : 'Confirmar cierre del día anterior' }}
@@ -41,7 +39,7 @@
   @if (vista === 'abrir') {
     <div class="page-header">
       <h1 class="page-title">Apertura de caja</h1>
-      <p class="page-subtitle">Ingrese el dinero con el que inicia el día</p>
+      <p class="page-subtitle">Ingrese el efectivo con el que inicia el día</p>
     </div>
 
     <div class="card" style="max-width:480px">
@@ -55,7 +53,7 @@
           placeholder="0"
         />
         <small style="color:var(--text-muted)">
-          Este monto no cuenta en el total del mes, es solo de referencia.
+          Solo es una referencia del efectivo inicial — no se cuenta como ingreso del día.
         </small>
       </div>
       <div class="form-group">
@@ -78,225 +76,205 @@
     </div>
   }
 
-  <!-- ── CAJA ABIERTA ────────────────────────────────────────────────────── -->
-  @if (vista === 'abierta' && cajaHoy) {
+  <!-- ── CAJA ABIERTA / CERRADA HOY ─────────────────────────────────────── -->
+  @if ((vista === 'abierta' || vista === 'cerrada_hoy') && cajaHoy) {
     <div class="page-header">
       <div>
         <h1 class="page-title">Caja — {{ formatFecha(cajaHoy.fecha) }}</h1>
-        <p class="page-subtitle">Caja abierta · inicio {{ cajaHoy.fechaApertura | date:'h:mm a' }}</p>
+        <p class="page-subtitle">
+          @if (vista === 'abierta') {
+            <span style="color:#16a34a;font-weight:600">● Abierta</span>
+            · inicio {{ cajaHoy.fechaApertura | date:'h:mm a' }}
+          } @else {
+            <span style="color:#6b7280;font-weight:600">● Cerrada</span>
+            @if (cajaHoy.fechaCierre) { · cerrada {{ cajaHoy.fechaCierre | date:'h:mm a' }} }
+          }
+        </p>
       </div>
-      <button class="btn btn-primary" [disabled]="!resumen" (click)="abrirModalCierre()">Cerrar caja</button>
+      @if (vista === 'abierta') {
+        <button class="btn btn-primary" [disabled]="!resumen" (click)="abrirModalCierre()">Cerrar caja</button>
+      }
     </div>
 
     @if (!resumen) {
       <div class="estado-vacio" style="padding:2rem">Calculando resumen...</div>
     } @else {
-      <div class="caja-grid">
 
-        <!-- Resumen en vivo -->
-        <div>
-          <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumen }"></ng-container>
+      <!-- 3 tarjetas principales -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem">
+
+        <div class="card" style="text-align:center;border-top:3px solid #16a34a">
+          <div style="font-size:0.75rem;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.4rem">Ingresos</div>
+          <div style="font-size:1.6rem;font-weight:800;color:#16a34a">{{ formatPrecio(ingresosResumen(resumen)) }}</div>
+          <div style="font-size:0.75rem;color:var(--color-texto-suave);margin-top:0.3rem">
+            Efectivo {{ formatPrecio(resumen.ingresos.ventasEfectivo) }} · Trans. {{ formatPrecio(resumen.ingresos.ventasTransferencia) }}
+          </div>
         </div>
 
-        <!-- Columna derecha: gastos + ingresos manuales -->
-        <div style="display:flex;flex-direction:column;gap:1.5rem">
-
-          <!-- Gastos -->
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Gastos del día</h3>
-              <button class="btn btn-secondary btn-sm" (click)="modalGasto = true">+ Agregar</button>
-            </div>
-            @if (resumen.gastos.lista.length === 0) {
-              <p class="estado-vacio" style="padding:1rem 0">Sin gastos registrados</p>
-            }
-            @for (g of resumen.gastos.lista; track g.id) {
-              <div class="lista-item">
-                <div>
-                  <div class="lista-item-titulo">{{ g.concepto }}</div>
-                  <div class="lista-item-sub">{{ g.tipoPago }}</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:0.75rem">
-                  <span class="badge badge-neutral">{{ formatPrecio(g.monto) }}</span>
-                  <button class="btn-icon" title="Eliminar" (click)="eliminarGasto(g)">✕</button>
-                </div>
-              </div>
-            }
-            <div class="lista-total">
-              <span>Total gastos</span>
-              <strong>{{ formatPrecio(resumen.gastos.total) }}</strong>
-            </div>
+        <div class="card" style="text-align:center;border-top:3px solid #dc2626">
+          <div style="font-size:0.75rem;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.4rem">Egresos</div>
+          <div style="font-size:1.6rem;font-weight:800;color:#dc2626">{{ formatPrecio(egresosResumen(resumen)) }}</div>
+          <div style="font-size:0.75rem;color:var(--color-texto-suave);margin-top:0.3rem">
+            {{ resumen.gastos.lista.length }} gasto{{ resumen.gastos.lista.length !== 1 ? 's' : '' }} registrado{{ resumen.gastos.lista.length !== 1 ? 's' : '' }}
           </div>
-
-          <!-- Ingresos manuales -->
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Ingresos manuales</h3>
-              <button class="btn btn-secondary btn-sm" (click)="modalIngreso = true">+ Agregar</button>
-            </div>
-            @if (resumen.ingresosManualLista.length === 0) {
-              <p class="estado-vacio" style="padding:1rem 0">Sin ingresos manuales</p>
-            }
-            @for (i of resumen.ingresosManualLista; track i.id) {
-              <div class="lista-item">
-                <div>
-                  <div class="lista-item-titulo">{{ i.concepto }}</div>
-                  <div class="lista-item-sub">{{ i.tipoPago }}</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:0.75rem">
-                  <span class="badge badge-success">{{ formatPrecio(i.monto) }}</span>
-                  <button class="btn-icon" title="Eliminar" (click)="eliminarIngreso(i)">✕</button>
-                </div>
-              </div>
-            }
-            @if (resumen.ingresos.ingresosManual > 0) {
-              <div class="lista-total">
-                <span>Total ingresos manuales</span>
-                <strong>{{ formatPrecio(resumen.ingresos.ingresosManual) }}</strong>
-              </div>
-            }
-          </div>
-
         </div>
-      </div>
-    }
-  }
 
-  <!-- ── CAJA CERRADA HOY ────────────────────────────────────────────────── -->
-  @if (vista === 'cerrada_hoy') {
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Caja cerrada{{ resumen ? ' — ' + formatFecha(resumen.cajaDia.fecha) : '' }}</h1>
-        <p class="page-subtitle">La caja de hoy ya fue cerrada</p>
+        <div class="card" style="text-align:center;border-top:3px solid #2563eb">
+          <div style="font-size:0.75rem;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.4rem">Balance neto</div>
+          <div style="font-size:1.6rem;font-weight:800" [style.color]="balanceResumen(resumen) >= 0 ? '#2563eb' : '#dc2626'">
+            {{ formatPrecio(balanceResumen(resumen)) }}
+          </div>
+          <div style="font-size:0.75rem;color:var(--color-texto-suave);margin-top:0.3rem">
+            Ingresos − Egresos
+          </div>
+        </div>
+
       </div>
-    </div>
-    @if (!resumen) {
-      <div class="estado-vacio">Calculando resumen...</div>
-    } @else {
-      <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumen }"></ng-container>
+
+      <!-- Desglose físico + apertura -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+
+        <div class="card" style="display:flex;flex-direction:column;gap:0.5rem">
+          <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-texto-suave);margin-bottom:0.25rem">Físico en caja</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:0.875rem">Efectivo</span>
+            <strong style="color:#1d4ed8">{{ formatPrecio(efectivoEnCaja(resumen)) }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:0.875rem">Transferencias</span>
+            <strong style="color:#15803d">{{ formatPrecio(resumen.ingresos.ventasTransferencia + (resumen.ingresos.ingresosManual > 0 ? 0 : 0)) }}</strong>
+          </div>
+          <div style="border-top:1px solid var(--color-borde);padding-top:0.5rem;display:flex;justify-content:space-between">
+            <span style="font-size:0.875rem;font-weight:600">Comisiones empleados</span>
+            <strong>{{ formatPrecio(resumen.ganancias.totalEmpleados) }}</strong>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;flex-direction:column;gap:0.5rem">
+          <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-texto-suave);margin-bottom:0.25rem">Apertura del día</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:0.875rem">Monto inicial (referencia)</span>
+            <strong>{{ formatPrecio(resumen.ingresos.montoInicial) }}</strong>
+          </div>
+          @if (cajaHoy.observaciones) {
+            <div style="font-size:0.8rem;color:var(--color-texto-suave);font-style:italic">
+              "{{ cajaHoy.observaciones }}"
+            </div>
+          }
+          @if (resumen.ganancias.trabajadores.length > 0) {
+            <div style="border-top:1px solid var(--color-borde);padding-top:0.5rem">
+              @for (t of resumen.ganancias.trabajadores; track t.trabajadorId) {
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem">
+                  <span>{{ t.nombre }} {{ t.apellido }} ({{ t.comisionPorcentaje }}%)</span>
+                  <span>{{ formatPrecio(t.ganancia) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+      </div>
+
+      <!-- Gráfica de barras horaria -->
+      @let barras = barrasHorarias(resumen);
+      @if (barras.length > 0) {
+        @let maxB = maxBarra(barras);
+        <div class="card" style="margin-bottom:1.5rem">
+          <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-texto-suave);margin-bottom:1rem">Movimientos por hora</div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:80px">
+            @for (b of barras; track b.hora) {
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:28px">
+                <div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:60px">
+                  <div
+                    style="flex:1;background:#dcfce7;border-radius:3px 3px 0 0"
+                    [style.height.%]="b.ingresos / maxB * 100"
+                    [title]="'Ingresos: ' + formatPrecio(b.ingresos)"
+                  ></div>
+                  <div
+                    style="flex:1;background:#fee2e2;border-radius:3px 3px 0 0"
+                    [style.height.%]="b.egresos / maxB * 100"
+                    [title]="'Egresos: ' + formatPrecio(b.egresos)"
+                  ></div>
+                </div>
+                <span style="font-size:0.65rem;color:var(--color-texto-suave)">{{ formatHora(b.hora) }}</span>
+              </div>
+            }
+          </div>
+          <div style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.75rem;color:var(--color-texto-suave)">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#dcfce7;border-radius:2px;display:inline-block"></span> Ingresos</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#fee2e2;border-radius:2px;display:inline-block"></span> Egresos</span>
+          </div>
+        </div>
+      }
+
+      <!-- Acciones -->
+      @if (vista === 'abierta') {
+        <div style="display:flex;gap:0.75rem;margin-bottom:1rem">
+          <button class="btn btn-secondary" (click)="modalGasto = true">+ Registrar gasto</button>
+          <button class="btn btn-secondary" (click)="modalIngreso = true">+ Otro ingreso</button>
+        </div>
+      }
+
+      <!-- Tabla unificada de movimientos -->
+      <div class="card">
+        <div class="card-header" style="margin-bottom:0.75rem">
+          <h3 class="card-title">Movimientos del día</h3>
+        </div>
+
+        @if (movimientos(resumen).length === 0) {
+          <p class="estado-vacio" style="padding:1.5rem 0">Sin movimientos registrados</p>
+        } @else {
+          <table class="tabla" style="margin:0">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Tipo</th>
+                <th>Concepto</th>
+                <th>Método</th>
+                <th style="text-align:right">Monto</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of movimientos(resumen); track m.id) {
+                <tr>
+                  <td style="white-space:nowrap;font-size:0.8rem;color:var(--color-texto-suave)">
+                    {{ m.fecha | date:'h:mm a' }}
+                  </td>
+                  <td>
+                    @if (m.tipo === 'venta') {
+                      <span style="font-size:0.75rem;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:12px;font-weight:600">Venta</span>
+                    } @else if (m.tipo === 'gasto') {
+                      <span style="font-size:0.75rem;background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:12px;font-weight:600">Gasto</span>
+                    } @else {
+                      <span style="font-size:0.75rem;background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:12px;font-weight:600">Ingreso</span>
+                    }
+                  </td>
+                  <td style="font-size:0.875rem">{{ m.concepto }}</td>
+                  <td style="font-size:0.8rem;text-transform:capitalize;color:var(--color-texto-suave)">{{ m.tipoPago }}</td>
+                  <td style="text-align:right;font-weight:700" [style.color]="m.signo === 1 ? '#16a34a' : '#dc2626'">
+                    {{ m.signo === 1 ? '' : '−' }}{{ formatPrecio(m.monto) }}
+                  </td>
+                  <td style="width:32px">
+                    @if (m._rawGasto) {
+                      <button class="btn-icon" title="Eliminar gasto" (click)="eliminarGasto(m._rawGasto)">✕</button>
+                    } @else if (m._rawIngreso) {
+                      <button class="btn-icon" title="Eliminar ingreso" (click)="eliminarIngreso(m._rawIngreso)">✕</button>
+                    } @else if (m.tipo === 'venta') {
+                      <button class="btn btn-secundario btn-sm" style="font-size:0.75rem;padding:2px 8px" (click)="verFacturaPorId(m.id, resumen.facturasList)">Ver</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+
     }
   }
 
 </div>
-
-<!-- ══ TEMPLATE: RESUMEN DE CAJA ═════════════════════════════════════════════ -->
-<ng-template #tplResumen let-r>
-  <div class="caja-resumen">
-
-    <!-- Ingresos en efectivo -->
-    <div class="card resumen-card">
-      <h3 class="resumen-titulo">Ingresos en caja</h3>
-      <div class="resumen-fila">
-        <span>Total al inicio</span>
-        <span>{{ formatPrecio(r.ingresos.montoInicial) }}</span>
-      </div>
-      <div class="resumen-fila">
-        <span>Venta en efectivo</span>
-        <span>{{ formatPrecio(r.ingresos.ventasEfectivo) }}</span>
-      </div>
-      <div class="resumen-fila">
-        <span>Venta en transferencia</span>
-        <span>{{ formatPrecio(r.ingresos.ventasTransferencia) }}</span>
-      </div>
-      <div class="resumen-fila">
-        <span>Ingreso manual</span>
-        <span>{{ formatPrecio(r.ingresos.ingresosManual) }}</span>
-      </div>
-      <div class="resumen-fila resumen-total">
-        <span>TOTAL</span>
-        <strong>{{ formatPrecio(r.ingresos.total) }}</strong>
-      </div>
-    </div>
-
-    <!-- Gastos -->
-    <div class="card resumen-card">
-      <h3 class="resumen-titulo">Gastos</h3>
-      <div class="resumen-fila">
-        <span>Por transferencia</span>
-        <span>{{ formatPrecio(r.gastos.transferencia) }}</span>
-      </div>
-      <div class="resumen-fila">
-        <span>En efectivo</span>
-        <span>{{ formatPrecio(r.gastos.efectivo) }}</span>
-      </div>
-      <div class="resumen-fila resumen-total">
-        <span>TOTAL GASTOS</span>
-        <strong>{{ formatPrecio(r.gastos.total) }}</strong>
-      </div>
-    </div>
-
-    <!-- Ganancias -->
-    <div class="card resumen-card">
-      <h3 class="resumen-titulo">Ganancias del día</h3>
-      @if (r.ganancias.trabajadores.length === 0) {
-        <div class="resumen-fila" style="color:var(--color-texto-suave);font-style:italic">
-          <span>Sin turnos completados</span><span>—</span>
-        </div>
-      }
-      @for (t of r.ganancias.trabajadores; track t.trabajadorId) {
-        <div class="resumen-fila">
-          <span>{{ t.nombre }} {{ t.apellido }} ({{ t.comisionPorcentaje }}%)</span>
-          <span>{{ formatPrecio(t.ganancia) }}</span>
-        </div>
-      }
-      <div class="resumen-fila resumen-subtotal">
-        <span>Total empleados</span>
-        <span>{{ formatPrecio(r.ganancias.totalEmpleados) }}</span>
-      </div>
-      <div class="resumen-fila resumen-subtotal">
-        <span>Ganancia lavadero</span>
-        <span>{{ formatPrecio(r.ganancias.lavadero) }}</span>
-      </div>
-      <div class="resumen-fila" style="color:#dc2626">
-        <span>Gastos del día</span>
-        <span>− {{ formatPrecio(r.gastos.total) }}</span>
-      </div>
-      <div class="resumen-fila">
-        <span>Inicio del día</span>
-        <span>{{ formatPrecio(r.ingresos.montoInicial) }}</span>
-      </div>
-      <div class="resumen-fila resumen-total">
-        <span>TOTAL DEL DÍA</span>
-        <strong>{{ formatPrecio(r.ganancias.totalDia) }}</strong>
-      </div>
-      <div class="resumen-fila" style="background:#eff6ff;border-radius:6px;padding:6px 8px;margin-top:6px;font-weight:700;border:1px solid #bfdbfe">
-        <span>Efectivo en caja</span>
-        <span style="color:#1d4ed8">{{ formatPrecio(efectivoEnCaja(r)) }}</span>
-      </div>
-      <div class="resumen-fila" style="background:#f0fdf4;border-radius:6px;padding:6px 8px;margin-top:4px;font-weight:700;border:1px solid #bbf7d0">
-        <span>En transferencia</span>
-        <span style="color:#15803d">{{ formatPrecio(r.ganancias.totalDia - efectivoEnCaja(r)) }}</span>
-      </div>
-    </div>
-
-    <!-- Facturas del día -->
-    @if (r.facturasList && r.facturasList.length > 0) {
-      <div class="card resumen-card" style="grid-column:1/-1">
-        <h3 class="resumen-titulo">Órdenes cobradas ({{ r.facturasList.length }})</h3>
-        <table class="tabla" style="margin:0">
-          <thead>
-            <tr><th>Hora</th><th>Placa</th><th>Cliente</th><th>Servicio</th><th>Trabajador</th><th>Método</th><th>Total</th><th></th></tr>
-          </thead>
-          <tbody>
-            @for (f of r.facturasList; track f.id) {
-              <tr>
-                <td style="white-space:nowrap;font-size:0.8rem">{{ f.fechaEmision | date:'h:mm a' }}</td>
-                <td><strong>{{ f.turno?.vehiculo?.placa ?? '—' }}</strong></td>
-                <td>{{ f.turno?.cliente?.nombre }} {{ f.turno?.cliente?.apellido }}</td>
-                <td>{{ f.turno?.servicio?.nombre ?? '—' }}</td>
-                <td>{{ f.turno?.trabajador?.nombre }} {{ f.turno?.trabajador?.apellido }}</td>
-                <td><span style="font-size:0.78rem;background:#f1f5f9;padding:2px 6px;border-radius:4px">{{ f.metodoPago }}</span></td>
-                <td style="font-weight:700;color:#16a34a">{{ formatPrecio(f.total) }}</td>
-                <td><button class="btn btn-secundario btn-sm" (click)="verFactura(f)">Ver</button></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-
-  </div>
-</ng-template>
 
 <!-- ══ MODAL: DETALLE DE FACTURA ════════════════════════════════════════════ -->
 @if (facturaDetalle) {
@@ -349,6 +327,46 @@
   }
 </app-modal>
 
+<!-- ══ TEMPLATE: RESUMEN PARA CIERRE ════════════════════════════════════════ -->
+<ng-template #tplResumen let-r>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem">
+    <div style="padding:1rem;background:#f0fdf4;border-radius:8px;text-align:center">
+      <div style="font-size:0.75rem;color:#15803d;font-weight:600;text-transform:uppercase;margin-bottom:0.25rem">Ingresos</div>
+      <div style="font-size:1.4rem;font-weight:800;color:#16a34a">{{ formatPrecio(ingresosResumen(r)) }}</div>
+    </div>
+    <div style="padding:1rem;background:#fef2f2;border-radius:8px;text-align:center">
+      <div style="font-size:0.75rem;color:#dc2626;font-weight:600;text-transform:uppercase;margin-bottom:0.25rem">Egresos</div>
+      <div style="font-size:1.4rem;font-weight:800;color:#dc2626">{{ formatPrecio(egresosResumen(r)) }}</div>
+    </div>
+    <div style="padding:1rem;background:#eff6ff;border-radius:8px;text-align:center">
+      <div style="font-size:0.75rem;color:#2563eb;font-weight:600;text-transform:uppercase;margin-bottom:0.25rem">Balance</div>
+      <div style="font-size:1.4rem;font-weight:800;color:#2563eb">{{ formatPrecio(balanceResumen(r)) }}</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.85rem">
+    <div style="padding:0.75rem;background:var(--color-fondo-alt,#f9fafb);border-radius:8px">
+      <div style="font-weight:600;margin-bottom:0.5rem">Ingresos del día</div>
+      <div style="display:flex;justify-content:space-between"><span>Ventas efectivo</span><span>{{ formatPrecio(r.ingresos.ventasEfectivo) }}</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Ventas transferencia</span><span>{{ formatPrecio(r.ingresos.ventasTransferencia) }}</span></div>
+      @if (r.ingresos.ingresosManual > 0) {
+        <div style="display:flex;justify-content:space-between"><span>Ingresos manuales</span><span>{{ formatPrecio(r.ingresos.ingresosManual) }}</span></div>
+      }
+    </div>
+    <div style="padding:0.75rem;background:var(--color-fondo-alt,#f9fafb);border-radius:8px">
+      <div style="font-weight:600;margin-bottom:0.5rem">Desglose</div>
+      <div style="display:flex;justify-content:space-between"><span>Comisiones empleados</span><span>{{ formatPrecio(r.ganancias.totalEmpleados) }}</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Gastos del día</span><span style="color:#dc2626">− {{ formatPrecio(r.gastos.total) }}</span></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid #e5e7eb;margin-top:0.5rem;padding-top:0.5rem;font-weight:700">
+        <span>Efectivo en caja</span><span style="color:#1d4ed8">{{ formatPrecio(efectivoEnCaja(r)) }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-weight:700">
+        <span>Apertura (referencia)</span><span>{{ formatPrecio(r.ingresos.montoInicial) }}</span>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
 <!-- ══ MODAL: NUEVO GASTO ════════════════════════════════════════════════════ -->
 <app-modal
   [visible]="modalGasto"
@@ -386,7 +404,7 @@
 <!-- ══ MODAL: NUEVO INGRESO MANUAL ══════════════════════════════════════════ -->
 <app-modal
   [visible]="modalIngreso"
-  titulo="Registrar ingreso manual"
+  titulo="Registrar otro ingreso"
   ancho="420px"
   (cerrar)="modalIngreso = false"
 >

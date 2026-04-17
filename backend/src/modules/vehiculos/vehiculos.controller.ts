@@ -21,14 +21,19 @@ export class VehiculosController {
     return this.vehiculosService.buscarTodos(usuario.tenantId!);
   }
 
-  @Get(':id')
-  buscarPorId(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
-    return this.vehiculosService.buscarPorId(id, usuario.tenantId!);
-  }
-
   @Get('cliente/:clienteId')
   buscarPorCliente(@Param('clienteId') clienteId: string, @UsuarioActual() usuario: Usuario) {
     return this.vehiculosService.buscarPorCliente(clienteId, usuario.tenantId!);
+  }
+
+  @Get('placa/:placa')
+  buscarPorPlaca(@Param('placa') placa: string, @UsuarioActual() usuario: Usuario) {
+    return this.vehiculosService.buscarPorPlaca(placa, usuario.tenantId!);
+  }
+
+  @Get(':id')
+  buscarPorId(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
+    return this.vehiculosService.buscarPorId(id, usuario.tenantId!);
   }
 
   @Patch(':id')

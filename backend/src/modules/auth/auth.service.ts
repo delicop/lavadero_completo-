@@ -23,7 +23,7 @@ export class AuthService {
     private readonly loginLogRepo: Repository<LoginLog>,
   ) {}
 
-  async login(dto: LoginDto): Promise<{ accessToken: string }> {
+  async login(dto: LoginDto): Promise<{ accessToken: string; config: object }> {
     const usuario = await this.usuariosService.buscarPorEmailConPassword(dto.email);
 
     if (!usuario || !usuario.activo) {
@@ -45,10 +45,17 @@ export class AuthService {
       }),
     );
 
-    // El payload ahora incluye tenantId — todos los servicios lo usan para aislar datos
     const payload = { sub: usuario.id, rol: usuario.rol, tenantId: usuario.tenantId };
     const accessToken = this.jwtService.sign(payload);
-    return { accessToken };
+    const tenant = await this.tenantsService.buscarPorId(usuario.tenantId!);
+    const { id: _id, activo: _activo, fechaCreacion: _fc, ...config } = tenant;
+    return { accessToken, config };
+  }
+
+  async obtenerConfigTenant(tenantId: string): Promise<object> {
+    const tenant = await this.tenantsService.buscarPorId(tenantId);
+    const { id: _id, activo: _activo, fechaCreacion: _fc, ...config } = tenant;
+    return config;
   }
 
   async cambiarPassword(usuarioId: string, dto: CambiarPasswordDto): Promise<void> {

@@ -14,6 +14,7 @@ import { CajaModule } from './modules/caja/caja.module';
 import { EventsModule } from './modules/events/events.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { SuperadminModule } from './modules/superadmin/superadmin.module';
+import { ReportesModule } from './modules/reportes/reportes.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { SuperadminModule } from './modules/superadmin/superadmin.module';
     }),
     TenantsModule,
     SuperadminModule,
+    ReportesModule,
     AuthModule,
     UsuariosModule,
     ClientesModule,

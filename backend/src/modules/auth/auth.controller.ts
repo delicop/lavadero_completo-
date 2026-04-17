@@ -27,10 +27,11 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@UsuarioActual() usuario: Usuario) {
+  async me(@UsuarioActual() usuario: Usuario) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _, ...resto } = usuario;
-    return resto;
+    const config = await this.authService.obtenerConfigTenant(usuario.tenantId!);
+    return { ...resto, config };
   }
 
   @Patch('cambiar-password')

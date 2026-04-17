@@ -113,6 +113,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/configuracion-negocio/configuracion-negocio.component').then(m => m.ConfiguracionNegocioComponent),
       },
+      {
+        path: 'reportes',
+        loadComponent: () =>
+          import('./pages/reportes/reportes.component').then(m => m.ReportesComponent),
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

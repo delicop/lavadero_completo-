@@ -15,10 +15,22 @@ import type {
 
 type Vista =
   | 'cargando'
-  | 'cerrar_anterior'   // hay caja sin cerrar del día anterior
-  | 'abrir'             // no hay caja de hoy
-  | 'abierta'           // caja de hoy abierta
-  | 'cerrada_hoy';      // caja de hoy ya cerrada
+  | 'cerrar_anterior'
+  | 'abrir'
+  | 'abierta'
+  | 'cerrada_hoy';
+
+export interface Movimiento {
+  id: string;
+  tipo: 'venta' | 'gasto' | 'ingreso';
+  concepto: string;
+  tipoPago: string;
+  monto: number;
+  signo: 1 | -1;
+  fecha: Date;
+  _rawGasto?: GastoCaja;
+  _rawIngreso?: IngresoManualCaja;
+}
 
 @Component({
   selector: 'app-caja',
@@ -33,9 +45,8 @@ export class CajaComponent implements OnInit {
   vista: Vista = 'cargando';
   error = '';
   guardando = false;
-  private resumenVersion = 0; // evita que respuestas lentas sobreescriban datos frescos
+  private resumenVersion = 0;
 
-  // Datos de estado
   cajaHoy: CajaDia | null = null;
   cajaSinCerrar: CajaDia | null = null;
   resumen: ResumenCaja | null = null;
@@ -66,44 +77,34 @@ export class CajaComponent implements OnInit {
   readonly formatPrecio = formatPrecio;
 
   async ngOnInit(): Promise<void> {
-    console.log('[CAJA] ngOnInit START', Date.now());
     await this.verificarEstado();
-    console.log('[CAJA] ngOnInit END', Date.now());
   }
 
   async verificarEstado(): Promise<void> {
-    console.log('[CAJA] verificarEstado START', Date.now());
     this.vista = 'cargando';
     this.error = '';
     try {
       const estado = await this.cajaService.obtenerEstado();
-      console.log('[CAJA] obtenerEstado respondió', Date.now(), estado);
       this.cajaHoy = estado.cajaHoy;
       this.cajaSinCerrar = estado.cajaSinCerrar;
 
       if (estado.cajaSinCerrar) {
-        console.log('[CAJA] hay caja sin cerrar — cargando resumen anterior', Date.now());
         this.resumenAnterior = await this.cajaService.obtenerResumen(estado.cajaSinCerrar.id);
-        console.log('[CAJA] resumen anterior cargado', Date.now());
         this.vista = 'cerrar_anterior';
       } else if (!estado.cajaHoy) {
         this.vista = 'abrir';
       } else if (estado.cajaHoy.estado === 'abierta') {
         this.vista = 'abierta';
-        console.log('[CAJA] vista=abierta, lanzando cargarResumenHoy en background', Date.now());
         void this.cargarResumenHoy();
       } else {
         this.vista = 'cerrada_hoy';
-        console.log('[CAJA] vista=cerrada_hoy, lanzando cargarResumenHoy en background', Date.now());
         void this.cargarResumenHoy();
       }
-    } catch (e) {
-      console.error('[CAJA] ERROR en verificarEstado', Date.now(), e);
+    } catch {
       this.error = 'No se pudo cargar el estado de la caja.';
       this.vista = 'abrir';
     }
     this.cdr.detectChanges();
-    console.log('[CAJA] verificarEstado END', Date.now());
   }
 
   private async cargarResumenHoy(): Promise<void> {
@@ -146,8 +147,7 @@ export class CajaComponent implements OnInit {
       await this.cargarResumenHoy();
       this.vista = 'abierta';
     } catch (err: unknown) {
-      this.error =
-        err instanceof Error ? err.message : 'Error al abrir la caja.';
+      this.error = err instanceof Error ? err.message : 'Error al abrir la caja.';
     } finally {
       this.guardando = false;
     }
@@ -186,7 +186,6 @@ export class CajaComponent implements OnInit {
     this.guardando = true;
     try {
       const gasto = await this.cajaService.registrarGasto(concepto, monto, tipo);
-      // Actualizar estado local: sin re-fetch al backend
       if (this.resumen) {
         const m = Number(gasto.monto);
         this.resumen.gastos.lista = [...this.resumen.gastos.lista, gasto];
@@ -204,7 +203,6 @@ export class CajaComponent implements OnInit {
 
   async eliminarGasto(gasto: GastoCaja): Promise<void> {
     if (!confirm(`¿Eliminar gasto "${gasto.concepto}"?`)) return;
-    // Actualizar estado local al instante
     if (this.resumen) {
       const m = Number(gasto.monto);
       const ef = gasto.tipoPago === 'efectivo';
@@ -218,7 +216,7 @@ export class CajaComponent implements OnInit {
       await this.cajaService.eliminarGasto(gasto.id);
     } catch {
       this.error = 'Error al eliminar el gasto.';
-      void this.cargarResumenHoy(); // revertir si falló
+      void this.cargarResumenHoy();
     }
   }
 
@@ -236,7 +234,6 @@ export class CajaComponent implements OnInit {
     this.guardando = true;
     try {
       const ing = await this.cajaService.registrarIngresoManual(concepto, monto, tipo);
-      // Actualizar estado local: sin re-fetch al backend
       if (this.resumen) {
         const m = Number(ing.monto);
         this.resumen.ingresosManualLista = [...this.resumen.ingresosManualLista, ing];
@@ -254,7 +251,6 @@ export class CajaComponent implements OnInit {
 
   async eliminarIngreso(ing: IngresoManualCaja): Promise<void> {
     if (!confirm(`¿Eliminar ingreso "${ing.concepto}"?`)) return;
-    // Actualizar estado local al instante
     if (this.resumen) {
       const m = Number(ing.monto);
       this.resumen.ingresosManualLista = this.resumen.ingresosManualLista.filter(i => i.id !== ing.id);
@@ -267,8 +263,22 @@ export class CajaComponent implements OnInit {
       await this.cajaService.eliminarIngresoManual(ing.id);
     } catch {
       this.error = 'Error al eliminar el ingreso.';
-      void this.cargarResumenHoy(); // revertir si falló
+      void this.cargarResumenHoy();
     }
+  }
+
+  // ── Computed ──────────────────────────────────────────────────────────────
+
+  ingresosResumen(r: ResumenCaja): number {
+    return Number(r.ingresos.ventasEfectivo) + Number(r.ingresos.ventasTransferencia) + Number(r.ingresos.ingresosManual);
+  }
+
+  egresosResumen(r: ResumenCaja): number {
+    return Number(r.gastos.total);
+  }
+
+  balanceResumen(r: ResumenCaja): number {
+    return this.ingresosResumen(r) - this.egresosResumen(r);
   }
 
   efectivoEnCaja(r: ResumenCaja): number {
@@ -278,6 +288,85 @@ export class CajaComponent implements OnInit {
     return Number(r.ingresos.montoInicial) + Number(r.ingresos.ventasEfectivo) + ingManualEfectivo - Number(r.gastos.efectivo);
   }
 
+  movimientos(r: ResumenCaja): Movimiento[] {
+    const lista: Movimiento[] = [];
+
+    for (const f of r.facturasList ?? []) {
+      lista.push({
+        id: f.id,
+        tipo: 'venta',
+        concepto: f.turno?.servicio?.nombre ?? 'Servicio',
+        tipoPago: f.metodoPago,
+        monto: Number(f.total),
+        signo: 1,
+        fecha: new Date(f.fechaEmision),
+      });
+    }
+
+    for (const g of r.gastos.lista) {
+      lista.push({
+        id: g.id,
+        tipo: 'gasto',
+        concepto: g.concepto,
+        tipoPago: g.tipoPago,
+        monto: Number(g.monto),
+        signo: -1,
+        fecha: new Date(g.fechaRegistro),
+        _rawGasto: g,
+      });
+    }
+
+    for (const i of r.ingresosManualLista) {
+      lista.push({
+        id: i.id,
+        tipo: 'ingreso',
+        concepto: i.concepto,
+        tipoPago: i.tipoPago,
+        monto: Number(i.monto),
+        signo: 1,
+        fecha: new Date(i.fechaRegistro),
+        _rawIngreso: i,
+      });
+    }
+
+    return lista.sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
+  }
+
+  barrasHorarias(r: ResumenCaja): { hora: number; ingresos: number; egresos: number }[] {
+    const barras: { hora: number; ingresos: number; egresos: number }[] = Array.from({ length: 24 }, (_, h) => ({
+      hora: h, ingresos: 0, egresos: 0,
+    }));
+
+    for (const f of r.facturasList ?? []) {
+      const h = new Date(f.fechaEmision).getHours();
+      barras[h].ingresos += Number(f.total);
+    }
+    for (const g of r.gastos.lista) {
+      const h = new Date(g.fechaRegistro).getHours();
+      barras[h].egresos += Number(g.monto);
+    }
+    for (const i of r.ingresosManualLista) {
+      const h = new Date(i.fechaRegistro).getHours();
+      barras[h].ingresos += Number(i.monto);
+    }
+
+    // Only keep hours that have activity, pad a bit for context
+    const activos = barras.filter(b => b.ingresos > 0 || b.egresos > 0);
+    if (activos.length === 0) return [];
+
+    const minH = activos[0].hora;
+    const maxH = activos[activos.length - 1].hora;
+    return barras.slice(Math.max(0, minH - 1), Math.min(23, maxH + 2));
+  }
+
+  maxBarra(barras: { ingresos: number; egresos: number }[]): number {
+    return Math.max(1, ...barras.map(b => Math.max(b.ingresos, b.egresos)));
+  }
+
+  formatHora(h: number): string {
+    return h === 0 ? '12a' : h < 12 ? `${h}a` : h === 12 ? '12p' : `${h - 12}p`;
+  }
+
   formatFecha(fecha: string): string {
     return new Date(fecha + 'T12:00:00-05:00').toLocaleDateString('es-CO', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -285,5 +374,6 @@ export class CajaComponent implements OnInit {
   }
 
   verFactura(f: Factura): void  { this.facturaDetalle = f; }
+  verFacturaPorId(id: string, lista: Factura[] | undefined): void { this.facturaDetalle = lista?.find(f => f.id === id) ?? null; }
   cerrarFactura(): void         { this.facturaDetalle = null; }
 }

@@ -1,0 +1,410 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-titulo">Reportes</h1>
+      <p class="page-subtitulo">Análisis y métricas de tu negocio</p>
+    </div>
+  </div>
+
+  <!-- Selector de período -->
+  <div class="reporte-filtros">
+    <div class="reporte-periodo-tabs">
+      <button
+        class="btn-periodo"
+        [class.activo]="periodo === 'semana'"
+        (click)="seleccionarPeriodo('semana')"
+      >Esta semana</button>
+      <button
+        class="btn-periodo"
+        [class.activo]="periodo === 'mes'"
+        (click)="seleccionarPeriodo('mes')"
+      >Este mes</button>
+      <button
+        class="btn-periodo"
+        [class.activo]="periodo === 'personalizado'"
+        (click)="periodo = 'personalizado'"
+      >Personalizado</button>
+    </div>
+
+    <div class="reporte-fechas">
+      <input type="date" class="input" [(ngModel)]="desde" />
+      <span class="reporte-fecha-sep">—</span>
+      <input type="date" class="input" [(ngModel)]="hasta" />
+      @if (periodo === 'personalizado') {
+        <button class="btn btn-primario" (click)="cargar()">Aplicar</button>
+      }
+    </div>
+  </div>
+
+  <!-- Estado de carga / error -->
+  @if (cargando) {
+    <p class="estado-vacio">Cargando...</p>
+  } @else if (error) {
+    <p class="estado-vacio">{{ error }}</p>
+  } @else if (datos) {
+
+    <!-- Tarjetas métricas -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Ingresos del período</div>
+        <div class="stat-valor">{{ formatPrecio(datos.metricas.ingresosPeriodo) }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Trabajos totales</div>
+        <div class="stat-valor">{{ datos.metricas.turnosTotales }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ganancia neta</div>
+        <div class="stat-valor" [class.positivo]="datos.metricas.gananciaNeta >= 0" [class.negativo]="datos.metricas.gananciaNeta < 0">
+          {{ formatPrecio(datos.metricas.gananciaNeta) }}
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Clientes nuevos</div>
+        <div class="stat-valor">{{ datos.metricas.clientesNuevos }}</div>
+      </div>
+    </div>
+
+    <!-- Tabs de contenido -->
+    <div class="reporte-tabs">
+      <button class="tab-btn" [class.activo]="tab === 'ingresos'"  (click)="tab = 'ingresos'">Ingresos</button>
+      <button class="tab-btn" [class.activo]="tab === 'servicios'" (click)="tab = 'servicios'">Servicios</button>
+      <button class="tab-btn" [class.activo]="tab === 'tendencia'" (click)="tab = 'tendencia'">Tendencia</button>
+      <button class="tab-btn" [class.activo]="tab === 'pl'"        (click)="tab = 'pl'">P&L</button>
+    </div>
+
+    <!-- Tab: Ingresos -->
+    @if (tab === 'ingresos') {
+      <div class="reporte-panel-grid">
+
+        <div class="card">
+          <h3 class="card-titulo">Ingresos diarios</h3>
+          <p class="card-subtitulo">Evolución en el período seleccionado</p>
+          @if (datos.ingresosDiarios.length === 0) {
+            <p class="estado-vacio">Sin ingresos registrados</p>
+          } @else {
+            <div class="barchart">
+              @for (dia of datos.ingresosDiarios; track dia.fecha) {
+                <div class="barchart-col" [title]="formatDia(dia.fecha) + ': ' + formatPrecio(dia.total)">
+                  <div class="barchart-barra" [style.height]="alturaBarra(dia.total)"></div>
+                  <div class="barchart-label">{{ formatDia(dia.fecha) }}</div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="card">
+          <h3 class="card-titulo">Distribución de servicios</h3>
+          <p class="card-subtitulo">Porcentaje de ingresos por servicio</p>
+          @if (datos.distribucionServicios.length === 0) {
+            <p class="estado-vacio">Sin datos</p>
+          } @else {
+            <div class="distribucion-lista">
+              @for (s of datos.distribucionServicios; track s.nombre) {
+                <div class="distribucion-item">
+                  <div class="distribucion-header">
+                    <span class="distribucion-nombre">{{ s.nombre }}</span>
+                    <span class="distribucion-pct">{{ s.porcentaje }}%</span>
+                  </div>
+                  <div class="distribucion-barra-bg">
+                    <div class="distribucion-barra-fill" [style.width]="s.porcentaje + '%'"></div>
+                  </div>
+                  <div class="distribucion-detalle">{{ s.cantidad }} trabajos · {{ formatPrecio(s.total) }}</div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+      </div>
+    }
+
+    <!-- Tab: Servicios -->
+    @if (tab === 'servicios') {
+      <div class="card">
+        <h3 class="card-titulo">Ranking de servicios</h3>
+        @if (datos.rankingServicios.length === 0) {
+          <p class="estado-vacio">Sin datos en el período</p>
+        } @else {
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Servicio</th>
+                <th class="text-right">Trabajos</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of datos.rankingServicios; track s.nombre; let i = $index) {
+                <tr>
+                  <td class="text-dim">{{ i + 1 }}</td>
+                  <td>{{ s.nombre }}</td>
+                  <td class="text-right">{{ s.cantidad }}</td>
+                  <td class="text-right">{{ formatPrecio(s.total) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
+
+    <!-- Tab: Tendencia -->
+    @if (tab === 'tendencia') {
+      <div class="card">
+        <h3 class="card-titulo">Comparativa de períodos</h3>
+        <p class="card-subtitulo">Período actual vs período anterior de igual duración</p>
+        <div class="tendencia-grid">
+          <div class="tendencia-item">
+            <div class="tendencia-label">Período actual</div>
+            <div class="tendencia-valor">{{ formatPrecio(datos.tendencia.periodoActual) }}</div>
+          </div>
+          <div class="tendencia-item">
+            <div class="tendencia-label">Período anterior</div>
+            <div class="tendencia-valor text-dim">{{ formatPrecio(datos.tendencia.periodoAnterior) }}</div>
+          </div>
+          <div class="tendencia-item">
+            <div class="tendencia-label">Variación</div>
+            <div
+              class="tendencia-valor tendencia-variacion"
+              [class.positivo]="datos.tendencia.variacion >= 0"
+              [class.negativo]="datos.tendencia.variacion < 0"
+            >
+              {{ signoVariacion(datos.tendencia.variacion) }}{{ datos.tendencia.variacion }}%
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Tab: P&L -->
+    @if (tab === 'pl') {
+      <div class="card">
+        <h3 class="card-titulo">Estado de resultados</h3>
+        <p class="card-subtitulo">Resumen financiero del período</p>
+        <div class="pl-tabla">
+          <div class="pl-fila">
+            <span class="pl-concepto">Ingresos</span>
+            <span class="pl-monto positivo">{{ formatPrecio(datos.pl.ingresos) }}</span>
+          </div>
+          <div class="pl-fila">
+            <span class="pl-concepto">Gastos</span>
+            <span class="pl-monto negativo">− {{ formatPrecio(datos.pl.gastos) }}</span>
+          </div>
+          <div class="pl-separador"></div>
+          <div class="pl-fila pl-total">
+            <span class="pl-concepto">Ganancia neta</span>
+            <span
+              class="pl-monto"
+              [class.positivo]="datos.pl.gananciaNeta >= 0"
+              [class.negativo]="datos.pl.gananciaNeta < 0"
+            >{{ formatPrecio(datos.pl.gananciaNeta) }}</span>
+          </div>
+        </div>
+      </div>
+    }
+
+  }
+
+</div>
+
+<style>
+.reporte-filtros {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.reporte-periodo-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--color-superficie);
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+.btn-periodo {
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--color-texto, #ccc);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.btn-periodo.activo {
+  background: var(--color-primario, #3b82f6);
+  color: #fff;
+}
+
+.reporte-fechas {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reporte-fecha-sep {
+  color: var(--color-texto-dim, #888);
+  font-size: 0.85rem;
+}
+
+.reporte-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  background: transparent;
+  color: var(--color-texto-dim, #888);
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn.activo {
+  color: var(--color-primario, #3b82f6);
+  border-bottom-color: var(--color-primario, #3b82f6);
+}
+
+.reporte-panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .reporte-panel-grid { grid-template-columns: 1fr; }
+}
+
+/* Bar chart */
+.barchart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 180px;
+  padding-top: 1rem;
+}
+
+.barchart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+  cursor: default;
+}
+
+.barchart-barra {
+  width: 100%;
+  min-height: 2px;
+  background: var(--color-primario, #3b82f6);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s;
+}
+
+.barchart-label {
+  font-size: 0.65rem;
+  color: var(--color-texto-dim, #888);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Distribución */
+.distribucion-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.distribucion-item { display: flex; flex-direction: column; gap: 4px; }
+
+.distribucion-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.distribucion-nombre { color: var(--color-texto, #eee); }
+.distribucion-pct    { color: var(--color-primario, #3b82f6); font-weight: 600; }
+
+.distribucion-barra-bg {
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.distribucion-barra-fill {
+  height: 100%;
+  background: var(--color-primario, #3b82f6);
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+.distribucion-detalle {
+  font-size: 0.75rem;
+  color: var(--color-texto-dim, #888);
+}
+
+/* Tendencia */
+.tendencia-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.tendencia-item { display: flex; flex-direction: column; gap: 4px; }
+.tendencia-label { font-size: 0.8rem; color: var(--color-texto-dim, #888); }
+.tendencia-valor { font-size: 1.5rem; font-weight: 700; }
+.tendencia-variacion { font-size: 2rem; }
+
+/* P&L */
+.pl-tabla {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  max-width: 400px;
+}
+
+.pl-fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+}
+
+.pl-fila.pl-total {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.pl-concepto { color: var(--color-texto, #eee); }
+
+.pl-separador {
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin: 0.25rem 0;
+}
+
+/* Colores resultado */
+.positivo { color: #4ade80; }
+.negativo { color: #f87171; }
+.text-dim  { color: var(--color-texto-dim, #888); }
+.text-right { text-align: right; }
+</style>

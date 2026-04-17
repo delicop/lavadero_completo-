@@ -3,6 +3,57 @@
   <button class="btn btn-primario" (click)="abrirNuevo()">+ Nuevo vehículo</button>
 </div>
 
+<!-- Buscador por placa -->
+<div style="margin-bottom:16px;position:relative">
+  <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--color-texto-suave);font-size:1rem;pointer-events:none">🔍</span>
+  <input
+    class="form-input"
+    style="padding-left:36px;font-size:0.95rem"
+    type="text"
+    [(ngModel)]="busqueda"
+    placeholder="Buscar por placa..."
+    autocomplete="off"
+  />
+  @if (busqueda) {
+    <button
+      style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-texto-suave);font-size:1.1rem;line-height:1"
+      (click)="busqueda = ''"
+    >✕</button>
+  }
+</div>
+
+<!-- Resultado destacado cuando hay coincidencia exacta -->
+@if (busqueda.trim() && vehiculosFiltrados.length === 1) {
+  @let v = vehiculosFiltrados[0];
+  <div class="card" style="margin-bottom:16px;border-left:4px solid #2563eb;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="font-size:1.5rem;font-weight:900;letter-spacing:.05em;color:#2563eb">{{ v.placa }}</div>
+      <div>
+        <div style="font-weight:600;font-size:0.95rem">{{ v.marca }} {{ v.modelo }} · <span style="color:var(--color-texto-suave)">{{ v.color }}</span></div>
+        <div style="font-size:0.8rem;color:var(--color-texto-suave)">{{ tipoLabel[v.tipo] }}</div>
+      </div>
+    </div>
+    @if (v.cliente) {
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="text-align:right">
+          <div style="font-weight:700;font-size:0.95rem">{{ v.cliente.apellido }}, {{ v.cliente.nombre }}</div>
+          @if (v.cliente.telefono) {
+            <div style="font-size:0.85rem;color:var(--color-texto-suave)">{{ v.cliente.telefono }}</div>
+          }
+        </div>
+        @if (v.cliente.telefono) {
+          <a
+            [href]="'tel:' + v.cliente.telefono"
+            style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:#16a34a;color:#fff;border-radius:50%;text-decoration:none;font-size:1.1rem;flex-shrink:0"
+            title="Llamar a {{ v.cliente.nombre }}"
+          >📞</a>
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- Modal crear / editar -->
 <app-modal
   [titulo]="editandoId ? 'Editar vehículo' : 'Nuevo vehículo'"
   [visible]="mostrarForm"
@@ -22,7 +73,7 @@
     </div>
     <div class="form-grupo">
       <label class="form-label">Patente</label>
-      <input class="form-input" [(ngModel)]="form.placa" name="placa" placeholder="ABC-1234" required />
+      <input class="form-input" [(ngModel)]="form.placa" name="placa" placeholder="ABC-1234" style="text-transform:uppercase" required />
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-grupo">
@@ -44,7 +95,7 @@
         <select class="form-select" [(ngModel)]="form.tipo" name="tipo" required>
           <option value="auto">Auto</option>
           <option value="moto">Moto</option>
-          <option value="camioneta">Camioneta</option>
+          <option value="camioneta">Camioneta / SUV</option>
         </select>
       </div>
     </div>
@@ -55,23 +106,34 @@
   </form>
 </app-modal>
 
+<!-- Tabla -->
 <div class="card" style="padding:0;overflow:hidden">
   @if (cargando) {
     <p style="padding:24px;color:var(--color-texto-suave)">Cargando...</p>
-  } @else if (vehiculos.length === 0) {
-    <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">No hay vehículos registrados</p>
+  } @else if (vehiculosFiltrados.length === 0) {
+    <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">
+      @if (busqueda) { No se encontró ningún vehículo con placa "{{ busqueda }}" }
+      @else { No hay vehículos registrados }
+    </p>
   } @else {
     <table class="tabla">
       <thead>
-        <tr><th>Patente</th><th>Vehículo</th><th>Color / Tipo</th><th>Cliente</th><th>Registro</th><th></th></tr>
+        <tr><th>Patente</th><th>Vehículo</th><th>Color / Tipo</th><th>Cliente</th><th>Teléfono</th><th>Registro</th><th></th></tr>
       </thead>
       <tbody>
-        @for (v of vehiculos; track v.id) {
+        @for (v of vehiculosFiltrados; track v.id) {
           <tr>
-            <td><strong>{{ v.placa }}</strong></td>
+            <td><strong style="font-size:0.95rem;letter-spacing:.03em">{{ v.placa }}</strong></td>
             <td>{{ v.marca }} {{ v.modelo }}</td>
             <td>{{ v.color }} · {{ tipoLabel[v.tipo] }}</td>
             <td>{{ v.cliente ? v.cliente.apellido + ', ' + v.cliente.nombre : '—' }}</td>
+            <td>
+              @if (v.cliente?.telefono) {
+                <a [href]="'tel:' + v.cliente!.telefono" style="color:var(--color-primario);font-weight:600;text-decoration:none;white-space:nowrap">
+                  📞 {{ v.cliente!.telefono }}
+                </a>
+              } @else { — }
+            </td>
             <td style="color:var(--color-texto-suave);font-size:0.825rem">{{ formatFecha(v.fechaRegistro) }}</td>
             <td style="display:flex;gap:6px">
               <button class="btn btn-secundario btn-sm" (click)="abrirEditar(v)">Editar</button>

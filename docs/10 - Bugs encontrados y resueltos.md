@@ -1,6 +1,6 @@
 # 🐛 Bugs encontrados y resueltos
 
-> Última actualización: abril 2026 — Revisión realizada con análisis estático + revisión manual de código
+> Última actualización: abril 2026 — Revisión realizada con análisis estático + revisión manual de código + bugs detectados durante desarrollo de flujo de órdenes
 
 ---
 
@@ -163,6 +163,49 @@ El `JwtStrategy.validate()` busca al usuario solo por `id`, sin verificar que el
 **Veredicto:** No es un bug crítico, es una mejora de UX.
 
 El componente `turnos.component.ts` no valida localmente si una transición de estado es válida antes de llamar al backend. El backend sí rechaza transiciones inválidas. El usuario solo verá un error del servidor, no una validación anticipada. Queda como mejora futura.
+
+---
+
+---
+
+### Bug 6 — Rutas de vehículos: `GET :id` capturaba `cliente/:id` y `placa/:placa`
+
+**Severidad:** Alta (rompía la carga de vehículos al seleccionar cliente en nueva orden)
+**Archivo:** `backend/src/modules/vehiculos/vehiculos.controller.ts`
+
+**Problema:**
+El decorador `@Get(':id')` estaba declarado **antes** que `@Get('cliente/:clienteId')` y `@Get('placa/:placa')`. NestJS evalúa las rutas en orden de declaración, por lo que `cliente/xxx` y `placa/xxx` eran capturadas por `:id` y nunca llegaban al handler correcto. El select de vehículos en "Nueva orden" siempre mostraba vacío.
+
+**Fix:**
+Mover las rutas específicas (`cliente/:clienteId` y `placa/:placa`) **antes** de la ruta comodín `GET :id`.
+
+---
+
+### Bug 7 — Vehículo no se guardaba al crear cliente (creación silenciosa fallida)
+
+**Severidad:** Alta
+**Archivos:** `backend/src/modules/clientes/clientes.service.ts` · `backend/src/modules/clientes/clientes.module.ts`
+
+**Problema:**
+Al crear un cliente con vehículo incluido, el vehículo no se guardaba. El error era silencioso porque `DataSource.transaction()` no tenía acceso al repositorio de `Vehiculo` — la entidad no estaba registrada en `TypeOrmModule.forFeature()` del módulo `ClientesModule`.
+
+**Fix:**
+1. Agregar `Vehiculo` a `TypeOrmModule.forFeature([Cliente, Vehiculo])` en `clientes.module.ts`
+2. Inyectar `@InjectRepository(Vehiculo)` directamente en `ClientesService`
+3. Simplificar el flujo: el frontend hace **dos llamadas separadas** — primero crea el cliente, luego crea el vehículo con el `clienteId` recibido. Más simple y sin dependencia de transacciones cross-repositorio.
+
+---
+
+### Bug 8 — `montoInicial` de caja contaba como ingreso del día
+
+**Severidad:** Media (afectaba el resumen financiero)
+**Archivo:** `backend/src/modules/caja/caja.service.ts`
+
+**Problema:**
+El `montoInicial` (efectivo que había en caja al abrir) se sumaba al total de ingresos del día, inflando el balance. No es un ingreso del negocio, es efectivo preexistente.
+
+**Fix:**
+Excluir `montoInicial` del cálculo de `ingresos.total` y `totalDia`. Se mantiene visible en la UI como referencia de efectivo físico en caja pero no afecta el balance.
 
 ---
 

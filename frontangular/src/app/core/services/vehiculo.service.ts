@@ -15,6 +15,12 @@ export class VehiculoService {
     return firstValueFrom(this.http.get<Vehiculo[]>(`/api/vehiculos/cliente/${clienteId}`));
   }
 
+  buscarPorPlaca(placa: string): Promise<Vehiculo | null> {
+    return firstValueFrom(
+      this.http.get<Vehiculo | null>(`/api/vehiculos/placa/${encodeURIComponent(placa.toUpperCase())}`)
+    );
+  }
+
   buscarPorId(id: string): Promise<Vehiculo> {
     return firstValueFrom(this.http.get<Vehiculo>(`/api/vehiculos/${id}`));
   }

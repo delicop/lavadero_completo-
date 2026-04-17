@@ -25,6 +25,7 @@ const ITEMS_ADMIN: ItemMenu[] = [
   { ruta: '/clientes',       label: 'Clientes',       icono: '◻' },
   { ruta: '/vehiculos',     label: 'Vehículos',   icono: '◈' },
   { ruta: '/servicios',     label: 'Servicios',   icono: '◆' },
+  { ruta: '/reportes',              label: 'Reportes',    icono: '📊' },
   { ruta: '/configuracion',         label: 'Personal',    icono: '◉' },
   { ruta: '/configuracion-negocio', label: 'Mi negocio',  icono: '🏪' },
   { ruta: '/mi-perfil',             label: 'Mi perfil',   icono: '◯' },
@@ -32,13 +33,11 @@ const ITEMS_ADMIN: ItemMenu[] = [
 
 // Subitems del grupo Operación
 const ITEMS_OPERACION: ItemMenu[] = [
-  { ruta: '/turnos',         label: 'Turnos',         icono: '◷' },
-  { ruta: '/caja',           label: 'Caja',            icono: '◫' },
-  { ruta: '/gastos',         label: 'Gastos',          icono: '📤' },
-  { ruta: '/otros-ingresos', label: 'Otros Ingresos',  icono: '📥' },
-  { ruta: '/cotizaciones',   label: 'Cotizaciones',    icono: '📄' },
-  { ruta: '/liquidaciones',  label: 'Liquidaciones',   icono: '◎' },
-  { ruta: '/asistencia',     label: 'Asistencia',      icono: '◑' },
+  { ruta: '/turnos',       label: 'Turnos',       icono: '◷' },
+  { ruta: '/caja',         label: 'Caja',         icono: '◫' },
+  { ruta: '/cotizaciones', label: 'Cotizaciones', icono: '📄' },
+  { ruta: '/liquidaciones', label: 'Liquidaciones', icono: '◎' },
+  { ruta: '/asistencia',   label: 'Asistencia',   icono: '◑' },
 ];
 
 const RUTAS_GRUPO_ADMIN = new Set(ITEMS_ADMIN.map(i => i.ruta));

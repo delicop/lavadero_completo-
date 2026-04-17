@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cliente } from './entities/cliente.entity';
+import { Vehiculo } from '../vehiculos/entities/vehiculo.entity';
 import { CrearClienteDto } from './dto/crear-cliente.dto';
 import { ActualizarClienteDto } from './dto/actualizar-cliente.dto';
 
@@ -10,6 +11,8 @@ export class ClientesService {
   constructor(
     @InjectRepository(Cliente)
     private readonly repo: Repository<Cliente>,
+    @InjectRepository(Vehiculo)
+    private readonly vehiculoRepo: Repository<Vehiculo>,
   ) {}
 
   async crear(dto: CrearClienteDto, tenantId: string): Promise<Cliente> {
@@ -20,8 +23,27 @@ export class ClientesService {
       }
     }
 
-    const cliente = this.repo.create({ ...dto, email: dto.email ?? null, tenantId });
-    return this.repo.save(cliente);
+    const cliente = this.repo.create({
+      nombre:   dto.nombre,
+      apellido: dto.apellido,
+      telefono: dto.telefono,
+      email:    dto.email   ?? null,
+      cedula:   dto.cedula  ?? null,
+      tenantId,
+    });
+    const clienteGuardado = await this.repo.save(cliente);
+
+    if (dto.vehiculo) {
+      const vehiculo = this.vehiculoRepo.create({
+        ...dto.vehiculo,
+        placa:     dto.vehiculo.placa.toUpperCase(),
+        clienteId: clienteGuardado.id,
+        tenantId,
+      });
+      await this.vehiculoRepo.save(vehiculo);
+    }
+
+    return clienteGuardado;
   }
 
   async buscarTodos(tenantId: string): Promise<Cliente[]> {

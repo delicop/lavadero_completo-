@@ -2,18 +2,28 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { SesionService } from './sesion.service';
+import { ThemeService } from './theme.service';
 import type { AuthResponse, LoginLog, LoginPayload, RegistrarPayload } from '../../shared/types';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http = inject(HttpClient);
+  private readonly http   = inject(HttpClient);
   private readonly sesion = inject(SesionService);
+  private readonly tema   = inject(ThemeService);
 
   async login(payload: LoginPayload): Promise<void> {
     const res = await firstValueFrom(
       this.http.post<AuthResponse>('/api/auth/login', payload),
     );
     localStorage.setItem('token', res.accessToken);
+    if (res.config) {
+      this.tema.aplicar({
+        colorPrimario:   res.config.colorPrimario   ?? '#2563eb',
+        colorSidebar:    res.config.colorSidebar    ?? '#ffffff',
+        colorFondo:      res.config.colorFondo      ?? '#f8fafc',
+        colorSuperficie: res.config.colorSuperficie ?? '#ffffff',
+      });
+    }
   }
 
   async registrar(payload: RegistrarPayload): Promise<void> {

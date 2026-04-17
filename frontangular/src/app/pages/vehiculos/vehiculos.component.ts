@@ -21,6 +21,13 @@ export class VehiculosComponent implements OnInit {
   vehiculos: Vehiculo[] = [];
   clientes: Cliente[] = [];
   cargando = true;
+  busqueda = '';
+
+  get vehiculosFiltrados(): Vehiculo[] {
+    const q = this.busqueda.trim().toUpperCase();
+    if (!q) return this.vehiculos;
+    return this.vehiculos.filter(v => v.placa.toUpperCase().includes(q));
+  }
 
   mostrarForm = false;
   editandoId: string | null = null;

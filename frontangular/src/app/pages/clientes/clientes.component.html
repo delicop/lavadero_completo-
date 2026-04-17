@@ -3,38 +3,109 @@
   <button class="btn btn-primario" (click)="abrirNuevo()">+ Nuevo cliente</button>
 </div>
 
+<!-- ── Modal crear / editar cliente ───────────────────────────────────────── -->
 <app-modal
-  [titulo]="editandoId ? 'Editar cliente' : 'Nuevo cliente'"
+  [titulo]="editandoId ? 'Editar cliente' : 'Crear cliente'"
   [visible]="mostrarForm"
+  ancho="520px"
   (cerrar)="cerrarForm()"
 >
   @if (errorForm) { <div class="alerta-error">{{ errorForm }}</div> }
   <form (ngSubmit)="guardar()">
+
+    <!-- Nombre completo -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-grupo">
-        <label class="form-label">Nombre</label>
-        <input class="form-input" [(ngModel)]="form.nombre" name="nombre" required />
+        <label class="form-label">Nombre <span style="color:#dc2626">*</span></label>
+        <input class="form-input" [(ngModel)]="form.nombre" name="nombre" placeholder="Juan" required />
       </div>
       <div class="form-grupo">
-        <label class="form-label">Apellido</label>
-        <input class="form-input" [(ngModel)]="form.apellido" name="apellido" required />
+        <label class="form-label">Apellido <span style="color:#dc2626">*</span></label>
+        <input class="form-input" [(ngModel)]="form.apellido" name="apellido" placeholder="Pérez" required />
       </div>
     </div>
+
+    <!-- Email -->
     <div class="form-grupo">
-      <label class="form-label">Teléfono</label>
-      <input class="form-input" [(ngModel)]="form.telefono" name="telefono" required />
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" [(ngModel)]="form.email" name="email" placeholder="email@ejemplo.com" />
     </div>
-    <div class="form-grupo">
-      <label class="form-label">Email (opcional)</label>
-      <input class="form-input" type="email" [(ngModel)]="form.email" name="email" />
+
+    <!-- Teléfono + Cédula -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Teléfono <span style="color:#dc2626">*</span></label>
+        <input class="form-input" [(ngModel)]="form.telefono" name="telefono" placeholder="311 234-5678" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Cédula / Documento</label>
+        <input class="form-input" [(ngModel)]="form.cedula" name="cedula" placeholder="12345678" />
+      </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-primario" type="submit">Guardar</button>
+
+    <!-- Sección vehículo — solo al crear -->
+    @if (!editandoId) {
+      <div style="border-top:1px solid var(--color-borde);margin:16px 0 12px">
+        <button
+          type="button"
+          style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:10px 0;font-size:0.9rem;font-weight:600;color:var(--color-texto)"
+          (click)="agregarVehiculo = !agregarVehiculo"
+        >
+          <span>🚗</span>
+          <span>Agregar vehículo</span>
+          <span style="font-size:0.75rem;color:var(--color-texto-suave);font-weight:400;margin-left:4px">(opcional)</span>
+          <span style="margin-left:auto;font-size:0.8rem">{{ agregarVehiculo ? '▲' : '▼' }}</span>
+        </button>
+      </div>
+
+      @if (agregarVehiculo) {
+        <div style="display:flex;flex-direction:column;gap:0">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-grupo">
+              <label class="form-label">Patente / Placa</label>
+              <input class="form-input" [(ngModel)]="formVehiculo.placa" name="v_placa" placeholder="ABC123" style="text-transform:uppercase" />
+            </div>
+            <div class="form-grupo">
+              <label class="form-label">Tipo</label>
+              <select class="form-input" [(ngModel)]="formVehiculo.tipo" name="v_tipo">
+                @for (t of TIPOS_VEHICULO; track t.valor) {
+                  <option [value]="t.valor">{{ t.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-grupo">
+              <label class="form-label">Marca</label>
+              <input class="form-input" [(ngModel)]="formVehiculo.marca" name="v_marca" placeholder="Toyota" />
+            </div>
+            <div class="form-grupo">
+              <label class="form-label">Modelo</label>
+              <input class="form-input" [(ngModel)]="formVehiculo.modelo" name="v_modelo" placeholder="Corolla" />
+            </div>
+          </div>
+
+          <div class="form-grupo">
+            <label class="form-label">Color</label>
+            <input class="form-input" [(ngModel)]="formVehiculo.color" name="v_color" placeholder="Blanco" />
+          </div>
+
+        </div>
+      }
+    }
+
+    <div class="modal-footer" style="margin-top:20px">
+      <button class="btn btn-primario" type="submit" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : (editandoId ? 'Guardar cambios' : 'Crear cliente') }}
+      </button>
       <button class="btn btn-secundario" type="button" (click)="cerrarForm()">Cancelar</button>
     </div>
   </form>
 </app-modal>
 
+<!-- ── Tabla de clientes ───────────────────────────────────────────────────── -->
 <div class="card" style="padding:0;overflow:hidden">
   @if (cargando) {
     <p style="padding:24px;color:var(--color-texto-suave)">Cargando...</p>

@@ -57,7 +57,7 @@
   </div>
 
   <!-- Stats -->
-  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+  <div class="stats-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
     <div class="stat-card">
       <div class="stat-label">En espera</div>
       <div class="stat-valor" style="color:#f59e0b">{{ pendientes.length }}</div>
@@ -74,10 +74,105 @@
       <div class="stat-unidad">{{ facturasHoy.length }} cobrados</div>
     </div>
     <div class="stat-card">
+      <div class="stat-label">Por cobrar hoy</div>
+      <div class="stat-valor" style="color:#f59e0b">{{ porCobrarHoy }}</div>
+      <div class="stat-unidad">{{ porCobrarHoy === 0 ? 'Todo al día' : 'pendientes de cobro' }}</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-label">Ingresos del día</div>
       <div class="stat-valor" style="font-size:1.4rem;color:#16a34a">{{ formatPrecio(ingresos) }}</div>
       <div class="stat-unidad">cobrado en facturas</div>
     </div>
+  </div>
+
+  <!-- Trabajos de la semana + Métodos de pago -->
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px">
+    <div class="card">
+      <h3 style="font-size:0.875rem;font-weight:700;margin:0 0 16px">Trabajos de la semana</h3>
+      @if (turnosSemana.length === 0) {
+        <p style="color:var(--color-texto-suave);font-size:0.875rem;text-align:center;padding:20px 0">Sin datos esta semana</p>
+      } @else {
+        <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:8px">
+          @for (dia of turnosSemana; track dia.label) {
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px">
+              <span style="font-size:0.7rem;color:var(--color-texto-suave)">{{ dia.count }}</span>
+              <div
+                style="width:100%;background:var(--color-primario,#3b82f6);border-radius:4px 4px 0 0;min-height:2px;transition:height .3s"
+                [style.height]="(dia.count / maxTurnoSemana * 90) + 'px'"
+              ></div>
+              <span style="font-size:0.75rem;color:var(--color-texto-suave)">{{ dia.label }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:0.875rem;font-weight:700;margin:0 0 16px">Métodos de pago</h3>
+      @if (ingresosPorMetodo.length === 0) {
+        <p style="color:var(--color-texto-suave);font-size:0.875rem;text-align:center;padding:20px 0">Sin cobros registrados hoy</p>
+      } @else {
+        <div style="display:flex;flex-direction:column;gap:12px">
+          @for (m of ingresosPorMetodo; track m.label) {
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.875rem;color:var(--color-texto-suave)">{{ m.label }}</span>
+              <span style="font-weight:700;font-size:0.95rem">{{ formatPrecio(m.total) }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Gráfica de ingresos -->
+  <div class="card" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h3 style="font-size:0.875rem;font-weight:700;margin:0">Ingresos del lavadero</h3>
+      <div style="display:flex;gap:4px;background:var(--color-fondo);padding:3px;border-radius:8px">
+        <button
+          style="padding:4px 14px;border-radius:6px;border:none;font-size:0.8rem;cursor:pointer;transition:background .15s"
+          [style.background]="periodoGrafico==='diario' ? 'var(--color-primario,#3b82f6)' : 'transparent'"
+          [style.color]="periodoGrafico==='diario' ? '#fff' : 'var(--color-texto-suave)'"
+          (click)="cambiarPeriodoGrafico('diario')">Hoy</button>
+        <button
+          style="padding:4px 14px;border-radius:6px;border:none;font-size:0.8rem;cursor:pointer;transition:background .15s"
+          [style.background]="periodoGrafico==='semanal' ? 'var(--color-primario,#3b82f6)' : 'transparent'"
+          [style.color]="periodoGrafico==='semanal' ? '#fff' : 'var(--color-texto-suave)'"
+          (click)="cambiarPeriodoGrafico('semanal')">Semana</button>
+        <button
+          style="padding:4px 14px;border-radius:6px;border:none;font-size:0.8rem;cursor:pointer;transition:background .15s"
+          [style.background]="periodoGrafico==='mensual' ? 'var(--color-primario,#3b82f6)' : 'transparent'"
+          [style.color]="periodoGrafico==='mensual' ? '#fff' : 'var(--color-texto-suave)'"
+          (click)="cambiarPeriodoGrafico('mensual')">Mes</button>
+      </div>
+    </div>
+
+    @if (cargandoGrafico) {
+      <p style="color:var(--color-texto-suave);font-size:0.85rem;text-align:center;padding:20px 0">Cargando...</p>
+    } @else if (ingresosGrafico.length === 0 || ingresosGrafico.every(d => d.total === 0)) {
+      <p style="color:var(--color-texto-suave);font-size:0.85rem;text-align:center;padding:20px 0">Sin ingresos registrados en este período</p>
+    } @else {
+      <div style="display:flex;align-items:flex-end;gap:3px;height:140px;overflow-x:auto;padding-top:24px;position:relative">
+        @for (bar of ingresosGrafico; track bar.label) {
+          <div
+            style="flex:1;min-width:24px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;position:relative"
+            [title]="bar.label + ': ' + formatPrecio(bar.total)"
+          >
+            @if (bar.total > 0) {
+              <span style="position:absolute;top:-20px;font-size:0.65rem;color:var(--color-texto-suave);white-space:nowrap">
+                {{ formatPrecio(bar.total) }}
+              </span>
+            }
+            <div
+              style="width:100%;background:var(--color-primario,#3b82f6);border-radius:3px 3px 0 0;min-height:2px;transition:height .3s"
+              [style.height]="(bar.total / maxIngresoGrafico * 100) + 'px'"
+              [style.opacity]="bar.total === 0 ? '0.2' : '1'"
+            ></div>
+            <span style="font-size:0.65rem;color:var(--color-texto-suave);white-space:nowrap">{{ bar.label }}</span>
+          </div>
+        }
+      </div>
+    }
   </div>
 
   <!-- En proceso + En espera -->
@@ -371,29 +466,72 @@
 <app-modal titulo="Nueva orden" [visible]="mostrarFormOrden" ancho="540px" (cerrar)="cerrarFormOrden()">
   @if (errorFormOrden) { <div class="alerta-error">{{ errorFormOrden }}</div> }
   <form (ngSubmit)="guardarOrden()">
+
+    <!-- Búsqueda por placa -->
     <div class="form-grupo">
-      <label class="form-label">Cliente</label>
-      <select class="form-select" [(ngModel)]="formOrden.clienteId" name="clienteId" (change)="onClienteOrdenChange()" required>
-        <option value="">Seleccioná un cliente...</option>
-        @for (c of clientesOrden; track c.id) {
-          <option [value]="c.id">{{ c.apellido }}, {{ c.nombre }}</option>
+      <label class="form-label">Buscar por placa</label>
+      <div style="position:relative">
+        <input
+          class="form-input"
+          style="text-transform:uppercase;padding-right:36px"
+          [(ngModel)]="busquedaPlacaOrden"
+          name="busquedaPlacaOrden"
+          placeholder="Ej: ABC123"
+          autocomplete="off"
+          (ngModelChange)="onBusquedaPlacaOrdenChange()"
+        />
+        @if (buscandoPlacaOrden) {
+          <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:0.8rem;color:var(--color-texto-suave)">…</span>
+        } @else if (busquedaPlacaOrden) {
+          <button type="button" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-texto-suave)" (click)="limpiarBusquedaPlacaOrden()">✕</button>
         }
-      </select>
-    </div>
-    <div class="form-grupo">
-      <label class="form-label">Vehículo</label>
-      <select class="form-select" [(ngModel)]="formOrden.vehiculoId" name="vehiculoId" required>
-        @if (!formOrden.clienteId) {
-          <option value="">Seleccioná primero un cliente</option>
-        } @else if (vehiculosOrden.length === 0) {
-          <option value="">Este cliente no tiene vehículos</option>
-        } @else {
-          @for (v of vehiculosOrden; track v.id) {
-            <option [value]="v.id">{{ v.placa }} — {{ v.marca }} {{ v.modelo }}</option>
+      </div>
+
+      @if (vehiculoEncontradoOrden) {
+        <div style="margin-top:8px;padding:10px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-weight:700;font-size:0.9rem">{{ vehiculoEncontradoOrden.placa }} · {{ vehiculoEncontradoOrden.marca }} {{ vehiculoEncontradoOrden.modelo }}</div>
+            <div style="font-size:0.8rem;color:#15803d">{{ vehiculoEncontradoOrden.cliente?.nombre }} {{ vehiculoEncontradoOrden.cliente?.apellido }}</div>
+          </div>
+          @if (vehiculoEncontradoOrden.cliente?.telefono) {
+            <a [href]="'tel:' + vehiculoEncontradoOrden.cliente!.telefono"
+               style="display:flex;align-items:center;gap:5px;color:#15803d;font-weight:700;font-size:0.82rem;text-decoration:none;white-space:nowrap">
+              📞 {{ vehiculoEncontradoOrden.cliente!.telefono }}
+            </a>
           }
-        }
-      </select>
+        </div>
+      } @else if (placaNoEncontradaOrden && busquedaPlacaOrden.trim().length >= 3) {
+        <div style="margin-top:6px;font-size:0.8rem;color:#dc2626">Placa no encontrada — seleccioná el cliente manualmente</div>
+      }
     </div>
+
+    <!-- Cliente / Vehículo manual (se oculta si se encontró por placa) -->
+    @if (!vehiculoEncontradoOrden) {
+      <div class="form-grupo">
+        <label class="form-label">Cliente</label>
+        <select class="form-select" [(ngModel)]="formOrden.clienteId" name="clienteId" (change)="onClienteOrdenSelectChange()" required>
+          <option value="">Seleccioná un cliente...</option>
+          <option value="__nuevo__">➕ Crear cliente nuevo...</option>
+          @for (c of clientesOrden; track c.id) {
+            <option [value]="c.id">{{ c.apellido }}, {{ c.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Vehículo</label>
+        <select class="form-select" [(ngModel)]="formOrden.vehiculoId" name="vehiculoId" (ngModelChange)="onVehiculoOrdenSelectChange()" required>
+          @if (!formOrden.clienteId) {
+            <option value="">Seleccioná primero un cliente</option>
+          } @else {
+            <option value="">Seleccioná un vehículo</option>
+            @for (v of vehiculosOrden; track v.id) {
+              <option [value]="v.id">{{ v.placa }} — {{ v.marca }} {{ v.modelo }}</option>
+            }
+            <option value="__nuevo_vehiculo__">➕ Crear vehículo nuevo...</option>
+          }
+        </select>
+      </div>
+    }
     <div class="form-grupo">
       <label class="form-label">Servicio</label>
       <select class="form-select" [(ngModel)]="formOrden.servicioId" name="servicioId" required>
@@ -528,6 +666,98 @@
     </div>
   </div>
 }
+
+<!-- Modal nuevo cliente (desde nueva orden del panel) -->
+<app-modal
+  titulo="Crear cliente"
+  [visible]="mostrarModalNuevoClienteOrden"
+  ancho="520px"
+  (cerrar)="mostrarModalNuevoClienteOrden = false"
+>
+  @if (errorNuevoClienteOrden) { <div class="alerta-error">{{ errorNuevoClienteOrden }}</div> }
+  <form (ngSubmit)="guardarNuevoClienteOrden()">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Nombre <span style="color:#dc2626">*</span></label>
+        <input class="form-input" [(ngModel)]="formNuevoClienteOrden.nombre" name="dnc_nombre" placeholder="Juan" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Apellido <span style="color:#dc2626">*</span></label>
+        <input class="form-input" [(ngModel)]="formNuevoClienteOrden.apellido" name="dnc_apellido" placeholder="Pérez" required />
+      </div>
+    </div>
+    <div class="form-grupo">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" [(ngModel)]="formNuevoClienteOrden.email" name="dnc_email" placeholder="email@ejemplo.com" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Teléfono <span style="color:#dc2626">*</span></label>
+        <input class="form-input" [(ngModel)]="formNuevoClienteOrden.telefono" name="dnc_telefono" placeholder="311 234-5678" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Cédula / Documento</label>
+        <input class="form-input" [(ngModel)]="formNuevoClienteOrden.cedula" name="dnc_cedula" placeholder="12345678" />
+      </div>
+    </div>
+    <div class="modal-footer" style="margin-top:20px">
+      <button class="btn btn-primario" type="submit" [disabled]="guardandoNuevoClienteOrden">
+        {{ guardandoNuevoClienteOrden ? 'Creando...' : 'Crear cliente' }}
+      </button>
+      <button class="btn btn-secundario" type="button" (click)="mostrarModalNuevoClienteOrden = false">Cancelar</button>
+    </div>
+  </form>
+</app-modal>
+
+<!-- Modal nuevo vehículo (desde nueva orden del panel) -->
+<app-modal
+  titulo="Crear vehículo"
+  [visible]="mostrarModalNuevoVehiculoOrden"
+  ancho="460px"
+  (cerrar)="mostrarModalNuevoVehiculoOrden = false"
+>
+  @if (errorNuevoVehiculoOrden) { <div class="alerta-error">{{ errorNuevoVehiculoOrden }}</div> }
+  <form (ngSubmit)="guardarNuevoVehiculoOrden()">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Patente / Placa <span style="color:#dc2626">*</span></label>
+        <input class="form-input" [(ngModel)]="formNuevoVehiculoDirectoOrden.placa" name="nvd_placa" placeholder="ABC123" style="text-transform:uppercase" required />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Tipo</label>
+        <select class="form-input" [(ngModel)]="formNuevoVehiculoDirectoOrden.tipo" name="nvd_tipo">
+          @for (t of TIPOS_VEHICULO; track t.valor) {
+            <option [value]="t.valor">{{ t.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-grupo">
+        <label class="form-label">Marca</label>
+        <input class="form-input" [(ngModel)]="formNuevoVehiculoDirectoOrden.marca" name="nvd_marca" placeholder="Toyota" />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label">Modelo</label>
+        <input class="form-input" [(ngModel)]="formNuevoVehiculoDirectoOrden.modelo" name="nvd_modelo" placeholder="Corolla" />
+      </div>
+    </div>
+
+    <div class="form-grupo">
+      <label class="form-label">Color <span style="color:#dc2626">*</span></label>
+      <input class="form-input" [(ngModel)]="formNuevoVehiculoDirectoOrden.color" name="nvd_color" placeholder="Blanco" required />
+    </div>
+
+    <div class="modal-footer" style="margin-top:20px">
+      <button class="btn btn-primario" type="submit" [disabled]="guardandoNuevoVehiculoOrden || !vehiculoDirectoOrdenCompleto()">
+        {{ guardandoNuevoVehiculoOrden ? 'Creando...' : 'Crear vehículo' }}
+      </button>
+      <button class="btn btn-secundario" type="button" (click)="mostrarModalNuevoVehiculoOrden = false">Cancelar</button>
+    </div>
+  </form>
+</app-modal>
 
 <!-- Modal abrir caja -->
 <app-modal [visible]="modalAbrirCaja" titulo="Abrir caja del día" ancho="400px" (cerrar)="modalAbrirCaja = false">

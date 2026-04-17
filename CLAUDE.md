@@ -12,12 +12,13 @@ Antes de hacer cualquier cosa, leé la carpeta `docs/`. Tiene todo lo que necesi
 | `docs/03 - Las páginas.md` | Qué hace cada pantalla del frontend |
 | `docs/04 - El backend.md` | Cada módulo de NestJS explicado |
 | `docs/05 - La base de datos.md` | Tablas, columnas y relaciones |
-| `docs/06 - Estado actual.md` | Qué está listo, qué falta, qué hay pendiente |
+| `docs/06 - Estado actual.md` | Qué está listo y funciona (solo lo completado) |
 | `docs/07 - Cómo agregar cosas.md` | Guía para agregar módulos y páginas nuevas |
 | `docs/08 - El frontend en detalle.md` | Angular: servicios, lazy loading, WebSockets, types |
 | `docs/09 - Glosario.md` | Términos técnicos y del negocio explicados |
 | `docs/10 - Bugs encontrados y resueltos.md` | Bugs detectados en revisión de código, fix aplicado y descartados |
 | `docs/11 - Administración del servidor.md` | SSH, Docker, Nginx, deploy de backend y frontend en Oracle Cloud |
+| `docs/12 - Pendientes.md` | Todo lo que falta construir: producto base, deuda técnica, planes y retención |
 
 ---
 

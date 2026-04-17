@@ -16,6 +16,15 @@ export interface RegistrarPayload {
 
 export interface AuthResponse {
   accessToken: string;
+  config?: {
+    colorPrimario:   string | null;
+    colorSidebar:    string | null;
+    colorFondo:      string | null;
+    colorSuperficie: string | null;
+    nombreComercial: string | null;
+    moneda:          string;
+    zonaHoraria:     string;
+  };
 }
 
 // ── Usuario ───────────────────────────────────────────────────────────────────
@@ -55,11 +64,21 @@ export interface Cliente {
   fechaRegistro: string;
 }
 
+export interface VehiculoEnClientePayload {
+  placa: string;
+  tipo: TipoVehiculo;
+  marca: string;
+  modelo: string;
+  color: string;
+}
+
 export interface CrearClientePayload {
   nombre: string;
   apellido: string;
   telefono: string;
   email?: string;
+  cedula?: string;
+  vehiculo?: VehiculoEnClientePayload;
 }
 
 // ── Vehículo ──────────────────────────────────────────────────────────────────
@@ -308,6 +327,44 @@ export interface UsuarioConTenant {
   tenantId: string;
   tenantNombre: string;
   tenantSlug: string;
+}
+
+// ── Reportes ──────────────────────────────────────────────────────────────────
+
+export interface ReporteMetricas {
+  ingresosPeriodo: number;
+  turnosTotales: number;
+  gananciaNeta: number;
+  clientesNuevos: number;
+}
+
+export interface IngresoDiario {
+  fecha: string;
+  total: number;
+}
+
+export interface ServicioReporte {
+  nombre: string;
+  cantidad: number;
+  total: number;
+  porcentaje: number;
+}
+
+export interface ReporteData {
+  metricas: ReporteMetricas;
+  ingresosDiarios: IngresoDiario[];
+  distribucionServicios: ServicioReporte[];
+  rankingServicios: ServicioReporte[];
+  tendencia: {
+    periodoActual: number;
+    periodoAnterior: number;
+    variacion: number;
+  };
+  pl: {
+    ingresos: number;
+    gastos: number;
+    gananciaNeta: number;
+  };
 }
 
 // ── Errores de la API ─────────────────────────────────────────────────────────

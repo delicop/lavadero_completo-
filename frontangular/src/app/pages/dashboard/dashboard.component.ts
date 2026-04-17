@@ -16,7 +16,7 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { FormsModule } from '@angular/forms';
 import { formatPrecio } from '../../shared/utils/formatters';
 import { mostrarToastWhatsApp, mensajeTurnoCompletado, mensajeTurnoCreado } from '../../shared/utils/whatsapp';
-import type { CajaDia, Turno, Usuario, Factura, MetodoPago, Cliente, Vehiculo, Servicio } from '../../shared/types';
+import type { CajaDia, Turno, Usuario, Factura, MetodoPago, Cliente, Vehiculo, Servicio, TipoVehiculo } from '../../shared/types';
 
 const METODO_LABEL: Record<MetodoPago, string> = {
   efectivo: 'Efectivo', transferencia: 'Transferencia',
@@ -71,6 +71,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   trabajadores:   Usuario[] = [];
   ingresos      = 0;
   ultimoUpdate  = '';
+  turnosSemana: { label: string; count: number }[] = [];
+
+  // Gráfica de ingresos
+  periodoGrafico: 'diario' | 'semanal' | 'mensual' = 'semanal';
+  ingresosGrafico: { label: string; total: number }[] = [];
+  cargandoGrafico = false;
 
   // Trabajador
   misPendientes:      Turno[] = [];
@@ -108,9 +114,101 @@ export class DashboardComponent implements OnInit, OnDestroy {
     trabajadorId: '', fechaHora: '', observaciones: '',
   };
 
+  // Búsqueda por placa en nueva orden del panel
+  busquedaPlacaOrden     = '';
+  buscandoPlacaOrden     = false;
+  placaNoEncontradaOrden = false;
+  vehiculoEncontradoOrden: Vehiculo | null = null;
+  private placaTimerOrden: ReturnType<typeof setTimeout> | null = null;
+
+  // Modal nuevo cliente (desde nueva orden del panel)
+  mostrarModalNuevoClienteOrden = false;
+  errorNuevoClienteOrden        = '';
+  guardandoNuevoClienteOrden    = false;
+  agregarVehiculoNuevoOrden     = false;
+  formNuevoClienteOrden  = { nombre: '', apellido: '', telefono: '', email: '', cedula: '' };
+  formNuevoVehiculoOrden = { placa: '', tipo: 'auto' as TipoVehiculo, marca: '', modelo: '', color: '' };
+  readonly TIPOS_VEHICULO: { valor: TipoVehiculo; label: string }[] = [
+    { valor: 'auto',      label: 'Auto' },
+    { valor: 'camioneta', label: 'Camioneta / SUV' },
+    { valor: 'moto',      label: 'Moto' },
+  ];
+
+  // Modal nuevo vehículo (desde nueva orden del panel)
+  mostrarModalNuevoVehiculoOrden = false;
+  errorNuevoVehiculoOrden        = '';
+  guardandoNuevoVehiculoOrden    = false;
+  formNuevoVehiculoDirectoOrden  = { placa: '', tipo: 'auto' as TipoVehiculo, marca: '', modelo: '', color: '' };
+
   private intervalo: ReturnType<typeof setInterval> | null = null;
   private sub:        Subscription | null = null;
   private subUsuario: Subscription | null = null;
+
+  get maxIngresoGrafico(): number {
+    return Math.max(...this.ingresosGrafico.map(d => d.total), 1);
+  }
+
+  async cambiarPeriodoGrafico(p: 'diario' | 'semanal' | 'mensual'): Promise<void> {
+    this.periodoGrafico = p;
+    await this.cargarIngresosGrafico();
+  }
+
+  async cargarIngresosGrafico(): Promise<void> {
+    this.cargandoGrafico = true;
+    try {
+      const hoy      = new Date();
+      const fmtDay   = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+      const diaHoy   = fmtDay(hoy);
+      const horaCol  = (iso: string) => {
+        // UTC-5 fijo (Colombia)
+        return Math.floor(((new Date(iso).getTime() / 1000) - 5 * 3600) / 3600) % 24;
+      };
+
+      if (this.periodoGrafico === 'diario') {
+        const horaActual = horaCol(new Date().toISOString());
+        const porHora = new Array(horaActual + 1).fill(0);
+        for (const f of this.facturasHoy) {
+          const h = horaCol(f.fechaEmision);
+          if (h >= 0 && h <= horaActual) porHora[h] += Number(f.total);
+        }
+        this.ingresosGrafico = porHora.map((total, h) => ({ label: `${h}h`, total }));
+
+      } else if (this.periodoGrafico === 'semanal') {
+        const lunes = new Date(hoy);
+        lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+        const facturas = await this.facturaSvc.listar(fmtDay(lunes), diaHoy);
+        const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        const result: { label: string; total: number }[] = [];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(lunes);
+          d.setDate(lunes.getDate() + i);
+          if (d > hoy) break;
+          const key   = fmtDay(d);
+          const total = facturas
+            .filter(f => fmtDay(new Date(f.fechaEmision)) === key)
+            .reduce((s, f) => s + Number(f.total), 0);
+          result.push({ label: DIAS[i], total });
+        }
+        this.ingresosGrafico = result;
+
+      } else {
+        const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        const facturas  = await this.facturaSvc.listar(fmtDay(primerDia), diaHoy);
+        const result: { label: string; total: number }[] = [];
+        for (let dia = 1; dia <= hoy.getDate(); dia++) {
+          const d     = new Date(hoy.getFullYear(), hoy.getMonth(), dia);
+          const key   = fmtDay(d);
+          const total = facturas
+            .filter(f => fmtDay(new Date(f.fechaEmision)) === key)
+            .reduce((s, f) => s + Number(f.total), 0);
+          result.push({ label: String(dia), total });
+        }
+        this.ingresosGrafico = result;
+      }
+    } finally {
+      this.cargandoGrafico = false;
+    }
+  }
 
   get hoy(): string {
     return new Date().toLocaleDateString('es-CO', {
@@ -127,6 +225,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       tareas.push(this.cargarSelectsOrden());
     }
     await Promise.all(tareas);
+    if (this.esAdmin) void this.cargarIngresosGrafico();
     this.intervalo  = setInterval(() => this.cargar(), 60_000);
     this.sub        = this.realtime.onTurnoActualizado$.subscribe(() => this.cargar());
     this.subUsuario = this.realtime.onUsuarioActualizado$.subscribe(
@@ -154,12 +253,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private async cargarAdmin(): Promise<void> {
     const cajaCerrada = this.cajaHoy?.estado === 'cerrada';
 
-    const [ep, pe, co, todasFacturas, usuarios] = await Promise.all([
+    const hoy   = new Date();
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+    const fmtDate = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+    const periodoSemana = { fechaDesde: fmtDate(lunes), fechaHasta: fmtDate(hoy) };
+
+    const [ep, pe, co, todasFacturas, usuarios, turnosSem] = await Promise.all([
       this.turnoSvc.listar('en_proceso'),
       this.turnoSvc.listar('pendiente'),
       cajaCerrada ? Promise.resolve([]) : this.turnoSvc.listar('completado'),
       cajaCerrada ? Promise.resolve([]) : this.facturaSvc.listar(),
       this.usuarioSvc.listar(),
+      this.turnoSvc.listar(undefined, periodoSemana),
     ]);
 
     this.enProceso           = ep;
@@ -173,6 +279,38 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.ingresos    = this.facturasHoy.reduce((s, f) => s + Number(f.total), 0);
     this.trabajadores    = usuarios.filter(u => u.rol === 'trabajador' && u.activo);
     this.ultimoUpdate    = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+
+    // Trabajos de la semana — agrupar por día
+    const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    this.turnosSemana = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(lunes);
+      d.setDate(lunes.getDate() + i);
+      if (d > hoy) break;
+      const key = fmtDate(d);
+      const count = turnosSem.filter(t =>
+        new Date(t.fechaHora).toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }) === key
+      ).length;
+      this.turnosSemana.push({ label: DIAS[i], count });
+    }
+  }
+
+  get maxTurnoSemana(): number {
+    return Math.max(...this.turnosSemana.map(d => d.count), 1);
+  }
+
+  get porCobrarHoy(): number {
+    return this.completadosHoy.filter(t => !this.turnosFacturadosSet.has(t.id)).length;
+  }
+
+  get ingresosPorMetodo(): { label: string; total: number }[] {
+    const mapa = new Map<MetodoPago, number>();
+    for (const f of this.facturasHoy) {
+      mapa.set(f.metodoPago, (mapa.get(f.metodoPago) ?? 0) + Number(f.total));
+    }
+    return (Object.keys(METODO_LABEL) as MetodoPago[])
+      .filter(m => mapa.has(m))
+      .map(m => ({ label: METODO_LABEL[m], total: mapa.get(m)! }));
   }
 
   private async cargarTrabajador(): Promise<void> {
@@ -285,12 +423,72 @@ export class DashboardComponent implements OnInit, OnDestroy {
       trabajadorId: '', fechaHora: this.ahoraLocal(), observaciones: '',
     };
     this.vehiculosOrden = [];
+    this.busquedaPlacaOrden = '';
+    this.buscandoPlacaOrden = false;
+    this.placaNoEncontradaOrden = false;
+    this.vehiculoEncontradoOrden = null;
     this.errorFormOrden = '';
     this.mostrarFormOrden = true;
   }
 
   cerrarFormOrden(): void {
     this.mostrarFormOrden = false;
+  }
+
+  onBusquedaPlacaOrdenChange(): void {
+    if (this.placaTimerOrden) clearTimeout(this.placaTimerOrden);
+    this.vehiculoEncontradoOrden = null;
+    this.placaNoEncontradaOrden  = false;
+    const placa = this.busquedaPlacaOrden.trim();
+    if (placa.length < 3) return;
+    this.buscandoPlacaOrden = true;
+    this.placaTimerOrden = setTimeout(() => void this.buscarPlacaOrden(placa), 500);
+  }
+
+  private async buscarPlacaOrden(placa: string): Promise<void> {
+    try {
+      const v = await this.vehiculoSvc.buscarPorPlaca(placa);
+      if (v && v.cliente) {
+        this.vehiculoEncontradoOrden = v;
+        this.formOrden.clienteId  = v.clienteId;
+        this.formOrden.vehiculoId = v.id;
+        this.vehiculosOrden = [v];
+        this.clientesMap.set(v.clienteId, v.cliente);
+        this.vehiculosMap.set(v.id, v);
+        this.placaNoEncontradaOrden = false;
+      } else {
+        this.vehiculoEncontradoOrden = null;
+        this.placaNoEncontradaOrden  = true;
+      }
+    } catch {
+      this.vehiculoEncontradoOrden = null;
+      this.placaNoEncontradaOrden  = true;
+    } finally {
+      this.buscandoPlacaOrden = false;
+    }
+  }
+
+  limpiarBusquedaPlacaOrden(): void {
+    this.busquedaPlacaOrden = '';
+    this.vehiculoEncontradoOrden = null;
+    this.placaNoEncontradaOrden = false;
+    this.buscandoPlacaOrden = false;
+    this.formOrden.clienteId = '';
+    this.formOrden.vehiculoId = '';
+    this.vehiculosOrden = [];
+  }
+
+  async onClienteOrdenSelectChange(): Promise<void> {
+    if (this.formOrden.clienteId === '__nuevo__') {
+      this.formOrden.clienteId = '';
+      this.formNuevoClienteOrden  = { nombre: '', apellido: '', telefono: '', email: '', cedula: '' };
+      this.formNuevoVehiculoOrden = { placa: '', tipo: 'auto', marca: '', modelo: '', color: '' };
+      this.agregarVehiculoNuevoOrden = false;
+      this.errorNuevoClienteOrden = '';
+      this.mostrarModalNuevoClienteOrden = true;
+      return;
+    }
+    await this.onClienteOrdenChange();
   }
 
   async onClienteOrdenChange(): Promise<void> {
@@ -300,6 +498,88 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const vs = await this.vehiculoSvc.listarPorCliente(this.formOrden.clienteId);
     vs.forEach(v => this.vehiculosMap.set(v.id, v));
     this.vehiculosOrden = vs;
+  }
+
+  onVehiculoOrdenSelectChange(): void {
+    if (this.formOrden.vehiculoId === '__nuevo_vehiculo__') {
+      this.formOrden.vehiculoId = '';
+      this.formNuevoVehiculoDirectoOrden = { placa: '', tipo: 'auto', marca: '', modelo: '', color: '' };
+      this.errorNuevoVehiculoOrden = '';
+      this.mostrarModalNuevoVehiculoOrden = true;
+    }
+  }
+
+  vehiculoDirectoOrdenCompleto(): boolean {
+    const v = this.formNuevoVehiculoDirectoOrden;
+    return !!(v.placa && v.color);
+  }
+
+  async guardarNuevoVehiculoOrden(): Promise<void> {
+    if (!this.formOrden.clienteId) return;
+    this.errorNuevoVehiculoOrden = '';
+    this.guardandoNuevoVehiculoOrden = true;
+    try {
+      const nuevoVehiculo = await this.vehiculoSvc.crear({
+        clienteId: this.formOrden.clienteId,
+        placa:  this.formNuevoVehiculoDirectoOrden.placa.toUpperCase(),
+        tipo:   this.formNuevoVehiculoDirectoOrden.tipo,
+        marca:  this.formNuevoVehiculoDirectoOrden.marca,
+        modelo: this.formNuevoVehiculoDirectoOrden.modelo,
+        color:  this.formNuevoVehiculoDirectoOrden.color,
+      });
+      this.vehiculosMap.set(nuevoVehiculo.id, nuevoVehiculo);
+      this.vehiculosOrden = [...this.vehiculosOrden, nuevoVehiculo];
+      this.formOrden.vehiculoId = nuevoVehiculo.id;
+      this.mostrarModalNuevoVehiculoOrden = false;
+    } catch (err) {
+      this.errorNuevoVehiculoOrden = err instanceof Error ? err.message : 'Error al crear el vehículo';
+    } finally {
+      this.guardandoNuevoVehiculoOrden = false;
+    }
+  }
+
+  vehiculoNuevoOrdenCompleto(): boolean {
+    const v = this.formNuevoVehiculoOrden;
+    return !!(v.placa && v.marca && v.modelo && v.color);
+  }
+
+  async guardarNuevoClienteOrden(): Promise<void> {
+    this.errorNuevoClienteOrden    = '';
+    this.guardandoNuevoClienteOrden = true;
+    try {
+      const conVehiculo = this.agregarVehiculoNuevoOrden && this.vehiculoNuevoOrdenCompleto();
+      const nuevoCliente = await this.clienteSvc.crear({
+        nombre:   this.formNuevoClienteOrden.nombre,
+        apellido: this.formNuevoClienteOrden.apellido,
+        telefono: this.formNuevoClienteOrden.telefono,
+        email:    this.formNuevoClienteOrden.email   || undefined,
+        cedula:   this.formNuevoClienteOrden.cedula  || undefined,
+      });
+      if (conVehiculo) {
+        await this.vehiculoSvc.crear({
+          clienteId: nuevoCliente.id,
+          placa:  this.formNuevoVehiculoOrden.placa.toUpperCase(),
+          tipo:   this.formNuevoVehiculoOrden.tipo,
+          marca:  this.formNuevoVehiculoOrden.marca,
+          modelo: this.formNuevoVehiculoOrden.modelo,
+          color:  this.formNuevoVehiculoOrden.color,
+        });
+      }
+      // Agregar cliente a la lista sin recargar todo
+      this.clientesOrden = [...this.clientesOrden, nuevoCliente];
+      this.clientesMap.set(nuevoCliente.id, nuevoCliente);
+      this.formOrden.clienteId = nuevoCliente.id;
+      // Cargar solo los vehículos del nuevo cliente
+      await this.onClienteOrdenChange();
+      if (conVehiculo && this.vehiculosOrden.length > 0) {
+        this.formOrden.vehiculoId = this.vehiculosOrden[0].id;
+      }
+      this.mostrarModalNuevoClienteOrden = false;
+    } catch (err) {
+      this.errorNuevoClienteOrden = err instanceof Error ? err.message : 'Error al crear el cliente';
+    } finally {
+      this.guardandoNuevoClienteOrden = false;
+    }
   }
 
   async guardarOrden(): Promise<void> {

@@ -13,7 +13,7 @@ import { FacturacionService } from '../../core/services/facturacion.service';
 import { CajaService } from '../../core/services/caja.service';
 import { formatFecha, formatPrecio, fechaLocal } from '../../shared/utils/formatters';
 import { mostrarToastWhatsApp, mensajeTurnoCreado, mensajeTurnoCompletado } from '../../shared/utils/whatsapp';
-import type { Turno, Cliente, Vehiculo, Servicio, Usuario, EstadoTurno, MetodoPago, Factura } from '../../shared/types';
+import type { Turno, Cliente, Vehiculo, Servicio, Usuario, EstadoTurno, MetodoPago, Factura, TipoVehiculo } from '../../shared/types';
 
 const TRANSICIONES: Record<EstadoTurno, EstadoTurno[]> = {
   pendiente: ['en_proceso', 'cancelado'],
@@ -100,6 +100,25 @@ export class TurnosComponent implements OnInit, OnDestroy {
   // Factura generada (mostrar después del cobro)
   facturaGenerada: Factura | null = null;
 
+  // Modal nuevo cliente (desde la orden)
+  mostrarModalNuevoCliente = false;
+  errorNuevoCliente = '';
+  guardandoNuevoCliente = false;
+  agregarVehiculoNuevo = false;
+  formNuevoCliente = { nombre: '', apellido: '', telefono: '', email: '', cedula: '' };
+  formNuevoVehiculo = { placa: '', tipo: 'auto' as TipoVehiculo, marca: '', modelo: '', color: '' };
+  readonly TIPOS_VEHICULO: { valor: TipoVehiculo; label: string }[] = [
+    { valor: 'auto',      label: 'Auto' },
+    { valor: 'camioneta', label: 'Camioneta / SUV' },
+    { valor: 'moto',      label: 'Moto' },
+  ];
+
+  // Modal nuevo vehículo (desde la orden)
+  mostrarModalNuevoVehiculo = false;
+  errorNuevoVehiculo = '';
+  guardandoNuevoVehiculo = false;
+  formNuevoVehiculoDirecto = { placa: '', tipo: 'auto' as TipoVehiculo, marca: '', modelo: '', color: '' };
+
   // Set de turnoIds que ya tienen factura (para ocultar botón Cobrar)
   turnosConFactura = new Set<string>();
 
@@ -107,6 +126,13 @@ export class TurnosComponent implements OnInit, OnDestroy {
     clienteId: '', vehiculoId: '', servicioId: '',
     trabajadorId: '', fechaHora: '', observaciones: '',
   };
+
+  // Búsqueda por placa en nueva orden
+  busquedaPlaca     = '';
+  buscandoPlaca     = false;
+  placaNoEncontrada = false;
+  vehiculoEncontrado: import('../../shared/types').Vehiculo | null = null;
+  private placaTimer: ReturnType<typeof setTimeout> | null = null;
 
   get turnosVisibles(): Turno[] {
     let lista = this.turnos;
@@ -178,6 +204,58 @@ export class TurnosComponent implements OnInit, OnDestroy {
     this.trabajadores = usuarios.filter(u => u.rol === 'trabajador' && u.activo);
   }
 
+  onBusquedaPlacaChange(): void {
+    if (this.placaTimer) clearTimeout(this.placaTimer);
+    this.vehiculoEncontrado = null;
+    this.placaNoEncontrada  = false;
+    const placa = this.busquedaPlaca.trim();
+    if (placa.length < 3) return;
+    this.buscandoPlaca = true;
+    this.placaTimer = setTimeout(() => void this.buscarPlaca(placa), 500);
+  }
+
+  private async buscarPlaca(placa: string): Promise<void> {
+    try {
+      const v = await this.vehiculoSvc.buscarPorPlaca(placa);
+      if (v && v.cliente) {
+        this.vehiculoEncontrado = v;
+        this.form.clienteId  = v.clienteId;
+        this.form.vehiculoId = v.id;
+        this.vehiculosCliente = [v];
+        this.clientesMap.set(v.clienteId, v.cliente);
+        this.vehiculosMap.set(v.id, v);
+        this.placaNoEncontrada = false;
+      } else {
+        this.vehiculoEncontrado = null;
+        this.placaNoEncontrada  = true;
+      }
+    } catch {
+      this.vehiculoEncontrado = null;
+      this.placaNoEncontrada  = true;
+    } finally {
+      this.buscandoPlaca = false;
+    }
+  }
+
+  limpiarBusquedaPlaca(): void {
+    this.busquedaPlaca = '';
+    this.vehiculoEncontrado = null;
+    this.placaNoEncontrada = false;
+    this.buscandoPlaca = false;
+    this.form.clienteId = '';
+    this.form.vehiculoId = '';
+    this.vehiculosCliente = [];
+  }
+
+  async onClienteSelectChange(): Promise<void> {
+    if (this.form.clienteId === '__nuevo__') {
+      this.form.clienteId = '';
+      this.abrirModalNuevoCliente();
+      return;
+    }
+    await this.onClienteChange();
+  }
+
   async onClienteChange(): Promise<void> {
     this.form.vehiculoId = '';
     this.vehiculosCliente = [];
@@ -187,14 +265,110 @@ export class TurnosComponent implements OnInit, OnDestroy {
     this.vehiculosCliente = vs;
   }
 
+  onVehiculoSelectChange(): void {
+    if (this.form.vehiculoId === '__nuevo_vehiculo__') {
+      this.form.vehiculoId = '';
+      this.abrirModalNuevoVehiculo();
+    }
+  }
+
+  abrirModalNuevoVehiculo(): void {
+    this.formNuevoVehiculoDirecto = { placa: '', tipo: 'auto', marca: '', modelo: '', color: '' };
+    this.errorNuevoVehiculo = '';
+    this.mostrarModalNuevoVehiculo = true;
+  }
+
+  vehiculoDirectoCompleto(): boolean {
+    const v = this.formNuevoVehiculoDirecto;
+    return !!(v.placa && v.color);
+  }
+
+  async guardarNuevoVehiculo(): Promise<void> {
+    if (!this.form.clienteId) return;
+    this.errorNuevoVehiculo = '';
+    this.guardandoNuevoVehiculo = true;
+    try {
+      const nuevoVehiculo = await this.vehiculoSvc.crear({
+        clienteId: this.form.clienteId,
+        placa:  this.formNuevoVehiculoDirecto.placa.toUpperCase(),
+        tipo:   this.formNuevoVehiculoDirecto.tipo,
+        marca:  this.formNuevoVehiculoDirecto.marca,
+        modelo: this.formNuevoVehiculoDirecto.modelo,
+        color:  this.formNuevoVehiculoDirecto.color,
+      });
+      this.vehiculosMap.set(nuevoVehiculo.id, nuevoVehiculo);
+      this.vehiculosCliente = [...this.vehiculosCliente, nuevoVehiculo];
+      this.form.vehiculoId = nuevoVehiculo.id;
+      this.mostrarModalNuevoVehiculo = false;
+    } catch (err) {
+      this.errorNuevoVehiculo = err instanceof Error ? err.message : 'Error al crear el vehículo';
+    } finally {
+      this.guardandoNuevoVehiculo = false;
+    }
+  }
+
   abrirForm(): void {
     this.form = { clienteId: '', vehiculoId: '', servicioId: '', trabajadorId: '', fechaHora: '', observaciones: '' };
     this.vehiculosCliente = [];
+    this.busquedaPlaca = '';
+    this.buscandoPlaca = false;
+    this.placaNoEncontrada = false;
+    this.vehiculoEncontrado = null;
     this.errorForm = '';
     this.mostrarForm = true;
   }
 
   cerrarForm(): void { this.mostrarForm = false; }
+
+  abrirModalNuevoCliente(): void {
+    this.formNuevoCliente = { nombre: '', apellido: '', telefono: '', email: '', cedula: '' };
+    this.formNuevoVehiculo = { placa: '', tipo: 'auto', marca: '', modelo: '', color: '' };
+    this.agregarVehiculoNuevo = false;
+    this.errorNuevoCliente = '';
+    this.mostrarModalNuevoCliente = true;
+  }
+
+  vehiculoNuevoCompleto(): boolean {
+    const v = this.formNuevoVehiculo;
+    return !!(v.placa && v.marca && v.modelo && v.color);
+  }
+
+  async guardarNuevoCliente(): Promise<void> {
+    this.errorNuevoCliente = '';
+    this.guardandoNuevoCliente = true;
+    try {
+      const conVehiculo = this.agregarVehiculoNuevo && this.vehiculoNuevoCompleto();
+      const nuevoCliente = await this.clienteSvc.crear({
+        nombre:   this.formNuevoCliente.nombre,
+        apellido: this.formNuevoCliente.apellido,
+        telefono: this.formNuevoCliente.telefono,
+        email:    this.formNuevoCliente.email  || undefined,
+        cedula:   this.formNuevoCliente.cedula || undefined,
+      });
+      if (conVehiculo) {
+        await this.vehiculoSvc.crear({
+          clienteId: nuevoCliente.id,
+          placa:  this.formNuevoVehiculo.placa.toUpperCase(),
+          tipo:   this.formNuevoVehiculo.tipo,
+          marca:  this.formNuevoVehiculo.marca,
+          modelo: this.formNuevoVehiculo.modelo,
+          color:  this.formNuevoVehiculo.color,
+        });
+      }
+      this.clientes = [...this.clientes, nuevoCliente];
+      this.clientesMap.set(nuevoCliente.id, nuevoCliente);
+      this.form.clienteId = nuevoCliente.id;
+      await this.onClienteChange();
+      if (conVehiculo && this.vehiculosCliente.length > 0) {
+        this.form.vehiculoId = this.vehiculosCliente[0].id;
+      }
+      this.mostrarModalNuevoCliente = false;
+    } catch (err) {
+      this.errorNuevoCliente = err instanceof Error ? err.message : 'Error al crear el cliente';
+    } finally {
+      this.guardandoNuevoCliente = false;
+    }
+  }
 
   async guardar(): Promise<void> {
     this.errorForm = '';

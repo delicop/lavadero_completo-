@@ -45,6 +45,13 @@ export class VehiculosService {
     return vehiculo;
   }
 
+  async buscarPorPlaca(placa: string, tenantId: string): Promise<Vehiculo | null> {
+    return this.repo.findOne({
+      where: { placa: placa.toUpperCase(), tenantId },
+      relations: ['cliente'],
+    });
+  }
+
   async buscarPorCliente(clienteId: string, tenantId: string): Promise<Vehiculo[]> {
     await this.clientesService.buscarPorId(clienteId, tenantId);
     return this.repo.find({
