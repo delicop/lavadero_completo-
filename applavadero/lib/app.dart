@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'core/auth/auth_provider.dart';
 import 'core/auth/token_storage.dart';
@@ -35,6 +37,7 @@ import 'features/personal/personal_provider.dart';
 import 'features/servicios/servicios_screen.dart';
 import 'features/servicios/servicios_provider.dart';
 import 'features/negocio/negocio_screen.dart';
+import 'shared/theme/colores.dart';
 import 'shared/theme/tema.dart';
 
 class AppLavadero extends StatefulWidget {
@@ -45,7 +48,6 @@ class AppLavadero extends StatefulWidget {
 }
 
 class _AppLavaderoState extends State<AppLavadero> {
-  // Servicios singleton
   late final TokenStorage _tokenStorage;
   late final ApiClient _apiClient;
   late final AuthService _authService;
@@ -57,12 +59,17 @@ class _AppLavaderoState extends State<AppLavadero> {
   late final FacturacionService _facturacionService;
   late final RealtimeService _realtimeService;
   late final TenantService _tenantService;
-
   late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: colorSuperficie,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ));
     _tokenStorage = TokenStorage();
     _apiClient = ApiClient(_tokenStorage);
     _authService = AuthService(_apiClient);
@@ -75,7 +82,6 @@ class _AppLavaderoState extends State<AppLavadero> {
     _tenantService = TenantService(_apiClient);
     _realtimeService = RealtimeService();
     _realtimeService.conectar();
-
     _router = _buildRouter();
   }
 
@@ -95,105 +101,63 @@ class _AppLavaderoState extends State<AppLavadero> {
         return null;
       },
       routes: [
-        GoRoute(
-          path: '/login',
-          builder: (_, __) => const LoginScreen(),
-        ),
+        GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
 
-        // Shell con bottom nav (admin)
+        // Shell admin
         ShellRoute(
           builder: (context, state, child) => _NavShell(
             child: child,
             location: state.matchedLocation,
             items: const [
-              (path: '/dashboard', label: 'Inicio', icon: Icons.home),
-              (path: '/turnos', label: 'Turnos', icon: Icons.assignment),
-              (path: '/caja', label: 'Caja', icon: Icons.point_of_sale),
-              (path: '/clientes', label: 'Clientes', icon: Icons.people),
-              (path: '/perfil', label: 'Perfil', icon: Icons.person),
+              (path: '/dashboard', label: 'Inicio',   icon: Icons.home_rounded),
+              (path: '/turnos',    label: 'Turnos',   icon: Icons.assignment_rounded),
+              (path: '/caja',      label: 'Caja',     icon: Icons.point_of_sale_rounded),
+              (path: '/clientes',  label: 'Clientes', icon: Icons.people_rounded),
+              (path: '/perfil',    label: 'Perfil',   icon: Icons.person_rounded),
             ],
           ),
           routes: [
-            GoRoute(
-              path: '/dashboard',
-              builder: (_, __) => const DashboardScreen(),
-            ),
-            GoRoute(
-              path: '/turnos',
-              builder: (_, __) => const TurnosScreen(),
-            ),
-            GoRoute(
-              path: '/caja',
-              builder: (_, __) => const CajaScreen(),
-            ),
-            GoRoute(
-              path: '/clientes',
-              builder: (_, __) => const ClientesScreen(),
-            ),
-            GoRoute(
-              path: '/perfil',
-              builder: (_, __) => const PerfilScreen(),
-            ),
+            GoRoute(path: '/dashboard', builder: (_, __) => const DashboardScreen()),
+            GoRoute(path: '/turnos',    builder: (_, __) => const TurnosScreen()),
+            GoRoute(path: '/caja',      builder: (_, __) => const CajaScreen()),
+            GoRoute(path: '/clientes',  builder: (_, __) => const ClientesScreen()),
+            GoRoute(path: '/perfil',    builder: (_, __) => const PerfilScreen()),
           ],
         ),
 
-        // Shell con bottom nav (trabajador)
+        // Shell trabajador
         ShellRoute(
           builder: (context, state, child) => _NavShell(
             child: child,
             location: state.matchedLocation,
             items: const [
-              (path: '/mis-turnos', label: 'Mis Turnos', icon: Icons.assignment),
-              (path: '/perfil-trabajador', label: 'Perfil', icon: Icons.person),
+              (path: '/mis-turnos',       label: 'Mis Turnos', icon: Icons.assignment_rounded),
+              (path: '/perfil-trabajador', label: 'Perfil',    icon: Icons.person_rounded),
             ],
           ),
           routes: [
-            GoRoute(
-              path: '/mis-turnos',
-              builder: (_, __) => const MisTurnosScreen(),
-            ),
-            GoRoute(
-              path: '/perfil-trabajador',
-              builder: (_, __) => const PerfilScreen(),
-            ),
+            GoRoute(path: '/mis-turnos',        builder: (_, __) => const MisTurnosScreen()),
+            GoRoute(path: '/perfil-trabajador', builder: (_, __) => const PerfilScreen()),
           ],
         ),
 
-        // Rutas sin shell (pantallas completas)
-        GoRoute(
-          path: '/turnos/nuevo',
-          builder: (_, __) => const NuevoTurnoScreen(),
-        ),
+        // Pantallas completas
+        GoRoute(path: '/turnos/nuevo', builder: (_, __) => const NuevoTurnoScreen()),
         GoRoute(
           path: '/turnos/:id',
-          builder: (_, state) => DetalleTurnoScreen(
-              turnoId: state.pathParameters['id']!),
+          builder: (_, state) => DetalleTurnoScreen(turnoId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/turnos/:id/cobrar',
-          builder: (_, state) => CobrarScreen(
-              turnoId: state.pathParameters['id']!),
+          builder: (_, state) => CobrarScreen(turnoId: state.pathParameters['id']!),
         ),
-        GoRoute(
-          path: '/personal',
-          builder: (_, __) => const PersonalScreen(),
-        ),
-        GoRoute(
-          path: '/servicios',
-          builder: (_, __) => const ServiciosScreen(),
-        ),
-        GoRoute(
-          path: '/negocio',
-          builder: (_, __) => const NegocioScreen(),
-        ),
-        GoRoute(
-          path: '/clientes/nuevo',
-          builder: (_, __) => const NuevoClienteScreen(),
-        ),
+        GoRoute(path: '/personal',       builder: (_, __) => const PersonalScreen()),
+        GoRoute(path: '/servicios',      builder: (_, __) => const ServiciosScreen()),
+        GoRoute(path: '/negocio',        builder: (_, __) => const NegocioScreen()),
+        GoRoute(path: '/clientes/nuevo', builder: (_, __) => const NuevoClienteScreen()),
         GoRoute(
           path: '/clientes/:id',
-          builder: (_, state) => ClienteDetalleScreen(
-              clienteId: state.pathParameters['id']!),
+          builder: (_, state) => ClienteDetalleScreen(clienteId: state.pathParameters['id']!),
         ),
       ],
     );
@@ -203,7 +167,6 @@ class _AppLavaderoState extends State<AppLavadero> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Servicios (accesibles desde cualquier pantalla)
         Provider.value(value: _authService),
         Provider.value(value: _turnoService),
         Provider.value(value: _clienteService),
@@ -212,42 +175,26 @@ class _AppLavaderoState extends State<AppLavadero> {
         Provider.value(value: _cajaService),
         Provider.value(value: _facturacionService),
         Provider.value(value: _realtimeService),
-
         Provider.value(value: _tenantService),
-
-        // Auth
         ChangeNotifierProvider(
           create: (_) => AuthProvider(_tokenStorage, _authService, _tenantService),
         ),
-
-        // Providers con estado
         ChangeNotifierProvider(
-          create: (_) =>
-              DashboardProvider(_turnoService, _realtimeService),
+          create: (_) => DashboardProvider(_turnoService, _realtimeService),
         ),
         ChangeNotifierProvider(
-          create: (_) =>
-              TurnosProvider(_turnoService, _realtimeService),
+          create: (_) => TurnosProvider(_turnoService, _realtimeService),
         ),
+        ChangeNotifierProvider(create: (_) => CajaProvider(_cajaService)),
         ChangeNotifierProvider(
-          create: (_) => CajaProvider(_cajaService),
-        ),
-        ChangeNotifierProvider(
-          create: (_) =>
-              ClientesProvider(_clienteService, _vehiculoService),
+          create: (_) => ClientesProvider(_clienteService, _vehiculoService),
         ),
         ChangeNotifierProxyProvider<AuthProvider, PerfilProvider>(
-          create: (ctx) => PerfilProvider(
-              ctx.read<AuthProvider>(), _authService),
-          update: (ctx, auth, prev) =>
-              prev ?? PerfilProvider(auth, _authService),
+          create: (ctx) => PerfilProvider(ctx.read<AuthProvider>(), _authService),
+          update: (ctx, auth, prev) => prev ?? PerfilProvider(auth, _authService),
         ),
-        ChangeNotifierProvider(
-          create: (_) => PersonalProvider(_authService),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ServiciosProvider(_servicioService),
-        ),
+        ChangeNotifierProvider(create: (_) => PersonalProvider(_authService)),
+        ChangeNotifierProvider(create: (_) => ServiciosProvider(_servicioService)),
       ],
       child: Consumer<AuthProvider>(
         builder: (_, auth, __) => MaterialApp.router(
@@ -265,9 +212,11 @@ class _AppLavaderoState extends State<AppLavadero> {
   }
 }
 
-// ─── Bottom Nav Shell genérico ─────────────────────────────────────────────
+// ─── Nav Item type ─────────────────────────────────────────────────────────
 
 typedef _NavItem = ({String path, String label, IconData icon});
+
+// ─── Shell con floating nav ────────────────────────────────────────────────
 
 class _NavShell extends StatelessWidget {
   final Widget child;
@@ -290,16 +239,104 @@ class _NavShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: _FloatingNav(
+        items: items,
         currentIndex: _currentIndex,
         onTap: (i) => context.go(items[i].path),
-        items: items
-            .map((item) => BottomNavigationBarItem(
-                  icon: Icon(item.icon),
-                  label: item.label,
-                ))
-            .toList(),
+      ),
+    );
+  }
+}
+
+class _FloatingNav extends StatelessWidget {
+  final List<_NavItem> items;
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const _FloatingNav({
+    required this.items,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorSuperficie,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: colorDivisor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.45),
+                blurRadius: 28,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: colorPrimario.withValues(alpha: 0.06),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: items.asMap().entries.map((entry) {
+              final i = entry.key;
+              final item = entry.value;
+              final selected = i == currentIndex;
+              return GestureDetector(
+                onTap: () => onTap(i),
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: selected ? 18 : 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? colorPrimario.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: selected
+                        ? Border.all(
+                            color: colorPrimario.withValues(alpha: 0.3))
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        item.icon,
+                        size: 22,
+                        color: selected ? colorPrimario : colorSubtexto,
+                      ),
+                      if (selected) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          item.label,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: colorPrimario,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }

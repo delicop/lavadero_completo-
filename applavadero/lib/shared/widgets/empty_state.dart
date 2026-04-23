@@ -10,17 +10,37 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icono ?? Icons.inbox_outlined, size: 64, color: colorSubtexto),
-          const SizedBox(height: 16),
-          Text(
-            mensaje,
-            style: const TextStyle(color: colorSubtexto, fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: colorSuperficieAlta,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: colorDivisor),
+              ),
+              child: Icon(
+                icono ?? Icons.inbox_outlined,
+                size: 36,
+                color: colorSubtexto,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              mensaje,
+              style: const TextStyle(
+                color: colorSubtexto,
+                fontSize: 15,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

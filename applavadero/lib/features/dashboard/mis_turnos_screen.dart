@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../shared/theme/colores.dart';
@@ -32,58 +33,103 @@ class _MisTurnosScreenState extends State<MisTurnosScreen> {
     final usuario = context.read<AuthProvider>().usuario;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Mis Turnos — ${usuario?.nombre ?? ''}'),
-        automaticallyImplyLeading: false,
-      ),
       body: Consumer<DashboardProvider>(
         builder: (_, provider, __) => LoadingOverlay(
           loading: provider.loading && provider.turnos.isEmpty,
           child: RefreshIndicator(
+            color: colorPrimario,
+            backgroundColor: colorSuperficie,
             onRefresh: () => provider.cargar(trabajadorId: usuario?.id),
-            child: Column(
-              children: [
-                if (provider.turnos.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+            child: CustomScrollView(
+              slivers: [
+                // ── Header personal ──────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: EdgeInsets.fromLTRB(
+                        16, MediaQuery.of(context).padding.top + 16, 16, 20),
+                    decoration: const BoxDecoration(
+                      color: colorSuperficie,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _MiniStat(
-                          label: 'Turnos',
-                          valor: provider.turnos.length.toString(),
+                        Text(
+                          'MIS TURNOS',
+                          style: GoogleFonts.barlowCondensed(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: colorTexto,
+                            letterSpacing: 1.5,
+                          ),
                         ),
-                        const SizedBox(width: 12),
-                        _MiniStat(
-                          label: 'Mi ganancia',
-                          valor: formatearPesos(provider.totalDia *
-                              (usuario?.comisionPorcentaje ?? 0) /
-                              100),
-                        ),
+                        if (usuario != null)
+                          Text(
+                            usuario.nombreCompleto,
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              color: colorSubtexto,
+                            ),
+                          ),
+                        if (provider.turnos.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatTrabajador(
+                                  label: 'Turnos',
+                                  valor: provider.turnos.length.toString(),
+                                  icono: Icons.assignment_rounded,
+                                  color: colorEnProceso,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _StatTrabajador(
+                                  label: 'Mi ganancia',
+                                  valor: formatearPesos(
+                                    provider.totalDia *
+                                        (usuario?.comisionPorcentaje ?? 0) /
+                                        100,
+                                  ),
+                                  icono: Icons.monetization_on_rounded,
+                                  color: colorCompletado,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                Expanded(
-                  child: provider.turnos.isEmpty && !provider.loading
-                      ? const EmptyState(
-                          mensaje: 'No tenés turnos para hoy',
-                          icono: Icons.assignment_outlined,
-                        )
-                      : ListView.builder(
-                          padding:
-                              const EdgeInsets.fromLTRB(16, 0, 16, 80),
-                          itemCount: provider.turnos.length,
-                          itemBuilder: (ctx, i) {
-                            final t = provider.turnos[i];
-                            return CardTurno(
-                              turno: t,
-                              onTap: () =>
-                                  context.push('/turnos/${t.id}'),
-                              onAvanzar: () =>
-                                  context.push('/turnos/${t.id}'),
-                            );
-                          },
-                        ),
                 ),
+
+                // ── Lista de turnos ───────────────────────────────────
+                if (provider.turnos.isEmpty && !provider.loading)
+                  const SliverFillRemaining(
+                    child: EmptyState(
+                      mensaje: 'No tenés turnos para hoy',
+                      icono: Icons.assignment_outlined,
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding:
+                        const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) {
+                          final t = provider.turnos[i];
+                          return CardTurno(
+                            turno: t,
+                            onTap: () => context.push('/turnos/${t.id}'),
+                            onAvanzar: () =>
+                                context.push('/turnos/${t.id}'),
+                          );
+                        },
+                        childCount: provider.turnos.length,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -93,31 +139,56 @@ class _MisTurnosScreenState extends State<MisTurnosScreen> {
   }
 }
 
-class _MiniStat extends StatelessWidget {
+class _StatTrabajador extends StatelessWidget {
   final String label;
   final String valor;
-  const _MiniStat({required this.label, required this.valor});
+  final IconData icono;
+  final Color color;
+
+  const _StatTrabajador({
+    required this.label,
+    required this.valor,
+    required this.icono,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colorSuperficie,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: colorDivisor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(valor,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w800)),
-            Text(label,
-                style: const TextStyle(color: colorSubtexto, fontSize: 12)),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(icono, color: color, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  valor,
+                  style: GoogleFonts.barlowCondensed(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: colorTexto,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  label,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 11,
+                    color: colorSubtexto,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
