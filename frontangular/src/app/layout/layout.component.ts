@@ -5,6 +5,7 @@ import { SesionService } from '../core/services/sesion.service';
 import { AuthService } from '../core/services/auth.service';
 import { RealtimeService } from '../core/services/realtime.service';
 import { TenantService } from '../core/services/tenant.service';
+import { ThemeService } from '../core/services/theme.service';
 import type { Usuario } from '../shared/types';
 
 interface ItemMenu {
@@ -33,11 +34,10 @@ const ITEMS_ADMIN: ItemMenu[] = [
 
 // Subitems del grupo Operación
 const ITEMS_OPERACION: ItemMenu[] = [
-  { ruta: '/turnos',       label: 'Turnos',       icono: '◷' },
-  { ruta: '/caja',         label: 'Caja',         icono: '◫' },
-  { ruta: '/cotizaciones', label: 'Cotizaciones', icono: '📄' },
+  { ruta: '/turnos',        label: 'Turnos',        icono: '◷' },
+  { ruta: '/caja',          label: 'Caja',          icono: '◫' },
   { ruta: '/liquidaciones', label: 'Liquidaciones', icono: '◎' },
-  { ruta: '/asistencia',   label: 'Asistencia',   icono: '◑' },
+  { ruta: '/asistencia',    label: 'Asistencia',    icono: '◑' },
 ];
 
 const RUTAS_GRUPO_ADMIN = new Set(ITEMS_ADMIN.map(i => i.ruta));
@@ -48,12 +48,14 @@ const RUTAS_GRUPO_OPERACION = new Set(ITEMS_OPERACION.map(i => i.ruta));
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
   templateUrl: './layout.component.html',
+  styleUrl: './layout.component.css',
 })
 export class LayoutComponent implements OnInit, OnDestroy {
   private readonly sesion = inject(SesionService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly realtime = inject(RealtimeService);
+  private readonly tema = inject(ThemeService);
   readonly tenantSvc = inject(TenantService);
 
   usuario: Usuario | null = null;
@@ -76,6 +78,19 @@ export class LayoutComponent implements OnInit, OnDestroy {
       this.operacionAbierto = RUTAS_GRUPO_OPERACION.has(rutaActual);
     }
     this.realtime.conectar();
+    void this.aplicarTemaGuardado();
+  }
+
+  private async aplicarTemaGuardado(): Promise<void> {
+    try {
+      const config = await this.tenantSvc.obtenerConfig();
+      this.tema.aplicar({
+        colorPrimario:   config.colorPrimario   ?? '#3b82f6',
+        colorSidebar:    config.colorSidebar    ?? '#1e293b',
+        colorFondo:      config.colorFondo      ?? '#f1f5f9',
+        colorSuperficie: config.colorSuperficie ?? '#ffffff',
+      });
+    } catch { /* usa los defaults de styles.css */ }
   }
 
   ngOnDestroy(): void {

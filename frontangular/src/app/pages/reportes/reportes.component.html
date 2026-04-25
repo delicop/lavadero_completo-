@@ -184,15 +184,51 @@
     @if (tab === 'pl') {
       <div class="card">
         <h3 class="card-titulo">Estado de resultados</h3>
-        <p class="card-subtitulo">Resumen financiero del período</p>
+        <p class="card-subtitulo">Resumen financiero del período seleccionado</p>
+
         <div class="pl-tabla">
-          <div class="pl-fila">
-            <span class="pl-concepto">Ingresos</span>
+
+          <!-- INGRESOS -->
+          <div class="pl-seccion-titulo">Ingresos</div>
+          <div class="pl-fila pl-subitem">
+            <span class="pl-concepto">Ventas (facturas)</span>
+            <span class="pl-monto">{{ formatPrecio(datos.pl.ingresosPorVentas) }}</span>
+          </div>
+          <div class="pl-fila pl-subitem">
+            <span class="pl-concepto">Ingresos manuales</span>
+            <span class="pl-monto">{{ formatPrecio(datos.pl.ingresosManuales) }}</span>
+          </div>
+          <div class="pl-separador"></div>
+          <div class="pl-fila pl-subtotal">
+            <span class="pl-concepto">Total ingresos</span>
             <span class="pl-monto positivo">{{ formatPrecio(datos.pl.ingresos) }}</span>
           </div>
-          <div class="pl-fila">
+
+          <div class="pl-espacio"></div>
+
+          <!-- GASTOS OPERATIVOS -->
+          <div class="pl-seccion-titulo">Egresos operativos</div>
+          <div class="pl-fila pl-subitem">
             <span class="pl-concepto">Gastos</span>
-            <span class="pl-monto negativo">− {{ formatPrecio(datos.pl.gastos) }}</span>
+            <span class="pl-monto negativo">− {{ formatPrecio(datos.pl.gastosOperativos) }}</span>
+          </div>
+          <div class="pl-separador"></div>
+          <div class="pl-fila pl-subtotal">
+            <span class="pl-concepto">Ganancia bruta</span>
+            <span
+              class="pl-monto"
+              [class.positivo]="datos.pl.gananciaBruta >= 0"
+              [class.negativo]="datos.pl.gananciaBruta < 0"
+            >{{ formatPrecio(datos.pl.gananciaBruta) }}</span>
+          </div>
+
+          <div class="pl-espacio"></div>
+
+          <!-- COMISIONES -->
+          <div class="pl-seccion-titulo">Comisiones empleados</div>
+          <div class="pl-fila pl-subitem">
+            <span class="pl-concepto">Devengadas en el período</span>
+            <span class="pl-monto negativo">− {{ formatPrecio(datos.pl.comisionesDevengadas) }}</span>
           </div>
           <div class="pl-separador"></div>
           <div class="pl-fila pl-total">
@@ -203,6 +239,20 @@
               [class.negativo]="datos.pl.gananciaNeta < 0"
             >{{ formatPrecio(datos.pl.gananciaNeta) }}</span>
           </div>
+
+          <div class="pl-espacio"></div>
+
+          <!-- LIQUIDACIONES -->
+          <div class="pl-seccion-titulo">Liquidaciones</div>
+          <div class="pl-fila pl-subitem">
+            <span class="pl-concepto">Pagadas en el período</span>
+            <span class="pl-monto negativo">− {{ formatPrecio(datos.pl.liquidacionesPagadas) }}</span>
+          </div>
+          <div class="pl-fila pl-subitem">
+            <span class="pl-concepto pl-pendiente">Pendientes de pago</span>
+            <span class="pl-monto pl-pendiente">{{ formatPrecio(comisionesPendientes) }}</span>
+          </div>
+
         </div>
       </div>
     }
@@ -379,15 +429,33 @@
 .pl-tabla {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
   margin-top: 1.5rem;
-  max-width: 400px;
+  max-width: 440px;
+}
+
+.pl-seccion-titulo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-texto-dim, #888);
+  margin-top: 0.25rem;
 }
 
 .pl-fila {
   display: flex;
   justify-content: space-between;
   font-size: 1rem;
+}
+
+.pl-fila.pl-subitem {
+  font-size: 0.9rem;
+  padding-left: 0.75rem;
+}
+
+.pl-fila.pl-subtotal {
+  font-weight: 600;
 }
 
 .pl-fila.pl-total {
@@ -399,8 +467,12 @@
 
 .pl-separador {
   border-top: 1px solid rgba(255,255,255,0.12);
-  margin: 0.25rem 0;
+  margin: 0.1rem 0;
 }
+
+.pl-espacio { height: 0.5rem; }
+
+.pl-pendiente { color: #fb923c; }
 
 /* Colores resultado */
 .positivo { color: #4ade80; }

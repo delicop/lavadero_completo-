@@ -136,6 +136,7 @@ El admin configura qué secciones puede ver/usar cada rol.
 
 - ~~Quitar `console.log` de performance en el backend (`[PERF]`)~~ ✅ ya no existen
 - ~~Quitar `console.log` de debug en `caja.component.ts`~~ ✅ eliminados
+- ~~`console.log` de arranque en `main.ts` expone el puerto en producción~~ ✅ protegido con `NODE_ENV !== 'production'`
 - Login multi-tenant: si dos lavaderos tienen el mismo email de empleado, hay que identificar el tenant por slug o subdominio
 - `tenantId` es nullable en la DB (para que `synchronize: true` no rompa filas existentes); en producción debería ser NOT NULL
 

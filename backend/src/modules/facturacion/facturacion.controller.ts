@@ -27,13 +27,13 @@ export class FacturacionController {
     return this.facturacionService.buscarTodas(usuario.tenantId!, fechaDesde, fechaHasta);
   }
 
-  @Get(':id')
-  buscarPorId(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
-    return this.facturacionService.buscarPorId(id, usuario.tenantId!);
-  }
-
   @Get('turno/:turnoId')
   buscarPorTurno(@Param('turnoId') turnoId: string, @UsuarioActual() usuario: Usuario) {
     return this.facturacionService.buscarPorTurno(turnoId, usuario.tenantId!);
+  }
+
+  @Get(':id')
+  buscarPorId(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
+    return this.facturacionService.buscarPorId(id, usuario.tenantId!);
   }
 }

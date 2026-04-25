@@ -13,6 +13,9 @@
       <button class="sa-tab-btn" [class.sa-tab-btn--active]="vista === 'usuarios'" (click)="cambiarVista('usuarios')">
         Usuarios
       </button>
+      <button class="sa-tab-btn" [class.sa-tab-btn--active]="vista === 'logs'" (click)="cambiarVista('logs')">
+        Logs
+      </button>
     </div>
     <button class="sa-btn sa-btn--ghost" (click)="logout()">Cerrar sesión</button>
   </header>
@@ -177,6 +180,76 @@
               </tr>
               <tr *ngIf="usuariosFiltrados.length === 0">
                 <td colspan="7" class="sa-empty">No hay usuarios</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── Vista: Logs ── -->
+      <section class="sa-section" *ngIf="vista === 'logs'">
+        <div class="sa-section__header">
+          <h2 class="sa-section__title">Logs del sistema</h2>
+          <div class="sa-section__controls">
+            <select class="sa-select" [(ngModel)]="filtroLogResuelto" (ngModelChange)="cargarLogs()">
+              <option value="false">Pendientes</option>
+              <option value="true">Resueltos</option>
+              <option value="">Todos</option>
+            </select>
+            <select class="sa-select" [(ngModel)]="filtroLogOrigen" (ngModelChange)="cargarLogs()">
+              <option value="">Todo origen</option>
+              <option value="frontend">Frontend</option>
+              <option value="backend">Backend</option>
+            </select>
+            <button class="sa-btn sa-btn--secondary" (click)="cargarLogs()">Actualizar</button>
+          </div>
+        </div>
+
+        <div class="sa-loading" *ngIf="cargandoLogs">Cargando logs...</div>
+
+        <div class="sa-table-wrap" *ngIf="!cargandoLogs">
+          <table class="sa-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Origen</th>
+                <th>Mensaje</th>
+                <th>Ruta</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of logs" [class.sa-row--inactive]="log.resuelto">
+                <td class="sa-date" style="white-space:nowrap">{{ log.fechaCreacion | date:'dd/MM/yy HH:mm' }}</td>
+                <td>
+                  <span class="sa-badge"
+                    [class.sa-badge--blue]="log.origen === 'frontend'"
+                    [class.sa-badge--gray]="log.origen === 'backend'">
+                    {{ log.origen }}
+                  </span>
+                </td>
+                <td class="sa-log-msg" [title]="log.detalle || ''">{{ log.mensaje }}</td>
+                <td class="sa-email">{{ log.ruta || '—' }}</td>
+                <td>
+                  <span class="sa-badge"
+                    [class.sa-badge--green]="log.resuelto"
+                    [class.sa-badge--red]="!log.resuelto">
+                    {{ log.resuelto ? 'Resuelto' : 'Pendiente' }}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    *ngIf="!log.resuelto"
+                    class="sa-btn sa-btn--sm sa-btn--success"
+                    [disabled]="procesando === log.id"
+                    (click)="resolverLog(log)"
+                  >{{ procesando === log.id ? '...' : 'Resolver' }}</button>
+                  <span *ngIf="log.resuelto" class="sa-sub">—</span>
+                </td>
+              </tr>
+              <tr *ngIf="logs.length === 0">
+                <td colspan="6" class="sa-empty">No hay logs con ese filtro</td>
               </tr>
             </tbody>
           </table>

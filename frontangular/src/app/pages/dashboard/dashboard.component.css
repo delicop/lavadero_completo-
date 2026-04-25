@@ -1,0 +1,231 @@
+:host { display: block; }
+
+/* ── CARDS ───────────────────────────────────────────────────────────── */
+.dark-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.dark-card-titulo {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+/* ── STAT CARDS ──────────────────────────────────────────────────────── */
+.dark-stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 18px 14px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.dark-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.dark-stat-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 14px 14px 0 0;
+}
+
+.dark-stat-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.dark-stat-valor {
+  font-family: 'Urbanist', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  margin-bottom: 6px;
+  color: #0f172a;
+}
+
+.dark-stat-sub {
+  font-size: 0.68rem;
+  color: #64748b;
+}
+
+/* ── SECTION HEADERS ─────────────────────────────────────────────────── */
+.dark-section-header {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── SECTION DOTS ────────────────────────────────────────────────────── */
+.section-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.section-dot--proceso     { background: #3b82f6; animation: pulse-blue 2s infinite; }
+.section-dot--espera      { background: #f59e0b; }
+.section-dot--completados { background: #8b5cf6; }
+.section-dot--trabajadores{ background: #8b5cf6; }
+.section-dot--exito       { background: #22c55e; animation: pulse-green 2s infinite; }
+
+@keyframes pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+  50%       { box-shadow: 0 0 0 5px rgba(59,130,246,0); }
+}
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+  50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+}
+
+/* ── TABLE ───────────────────────────────────────────────────────────── */
+.dark-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.dark-tabla thead th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.dark-tabla tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.1s;
+}
+
+.dark-tabla tbody tr:last-child { border-bottom: none; }
+
+.dark-tabla tbody tr:hover {
+  background: #f8fafc;
+}
+
+.dark-tabla tbody td {
+  padding: 12px 16px;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.row-facturado-dark { background: rgba(34,197,94,0.05) !important; }
+.row-cobrar-dark    { background: rgba(245,158,11,0.05) !important; }
+
+/* ── BAR CHART ───────────────────────────────────────────────────────── */
+.barchart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 120px;
+  padding-top: 8px;
+}
+
+.barchart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+}
+
+.barchart-count {
+  font-family: 'Urbanist', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #475569;
+}
+
+.barchart-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  min-height: 3px;
+  transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+}
+
+.barchart-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ── INGRESO BAR ─────────────────────────────────────────────────────── */
+.ingreso-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  transition: height 0.4s ease;
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+}
+
+/* ── PERIODO TABS ────────────────────────────────────────────────────── */
+.periodo-tab {
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #64748b;
+  background: transparent;
+}
+
+.periodo-tab--activo {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* ── ANIMATIONS ──────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── TRABAJADOR DOTS ─────────────────────────────────────────────────── */
+.trabajador-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.trabajador-dot--disponible    { background: #22c55e; animation: pulse-green 2s infinite; }
+.trabajador-dot--no-disponible { background: #cbd5e1; }
+
+/* ── TABLA texto ─────────────────────────────────────────────────────────── */
+.dark-tabla tbody td { color: #1e293b; }
+

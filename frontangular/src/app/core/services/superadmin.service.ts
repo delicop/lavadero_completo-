@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import type { TenantConStats, MetricasGlobales, TenantConfig, UsuarioConTenant } from '../../shared/types';
+import type { TenantConStats, MetricasGlobales, TenantConfig, UsuarioConTenant, LogSistema, TipoLog, OrigenLog } from '../../shared/types';
 
 @Injectable({ providedIn: 'root' })
 export class SuperadminService {
@@ -44,5 +44,20 @@ export class SuperadminService {
 
   eliminarUsuario(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`/api/superadmin/usuarios/${id}`));
+  }
+
+  // ── Logs ──────────────────────────────────────────────────────────────────────
+
+  listarLogs(filtros: { resuelto?: boolean; tipo?: TipoLog; origen?: OrigenLog } = {}): Promise<LogSistema[]> {
+    const params = new URLSearchParams();
+    if (filtros.resuelto !== undefined) params.set('resuelto', String(filtros.resuelto));
+    if (filtros.tipo)    params.set('tipo', filtros.tipo);
+    if (filtros.origen)  params.set('origen', filtros.origen);
+    const qs = params.toString();
+    return firstValueFrom(this.http.get<LogSistema[]>(`/api/superadmin/logs${qs ? '?' + qs : ''}`));
+  }
+
+  resolverLog(id: string): Promise<LogSistema> {
+    return firstValueFrom(this.http.patch<LogSistema>(`/api/superadmin/logs/${id}/resolver`, {}));
   }
 }

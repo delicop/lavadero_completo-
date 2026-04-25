@@ -40,11 +40,6 @@ export class TurnosController {
     return this.turnosService.buscarTodos(usuario.tenantId!, estado, fechaDesde, fechaHasta);
   }
 
-  @Get(':id')
-  buscarPorId(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
-    return this.turnosService.buscarPorId(id, usuario.tenantId!);
-  }
-
   @Get('trabajador/:trabajadorId')
   buscarPorTrabajador(
     @Param('trabajadorId') trabajadorId: string,
@@ -53,6 +48,11 @@ export class TurnosController {
     @Query('fechaHasta') fechaHasta?: string,
   ) {
     return this.turnosService.buscarPorTrabajador(trabajadorId, usuario.tenantId!, fechaDesde, fechaHasta);
+  }
+
+  @Get(':id')
+  buscarPorId(@Param('id') id: string, @UsuarioActual() usuario: Usuario) {
+    return this.turnosService.buscarPorId(id, usuario.tenantId!);
   }
 
   @Patch(':id')

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -15,14 +15,12 @@ export class ReportesController {
   @Get()
   obtener(
     @UsuarioActual() usuario: Usuario,
-    @Query('desde') desde: string,
-    @Query('hasta') hasta: string,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
   ) {
-    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
-    return this.reportesService.obtenerReporte(
-      usuario.tenantId!,
-      desde ?? hoy,
-      hasta ?? hoy,
-    );
+    const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+    if (desde && !ISO_DATE.test(desde)) throw new BadRequestException('El parámetro "desde" debe tener formato YYYY-MM-DD');
+    if (hasta && !ISO_DATE.test(hasta)) throw new BadRequestException('El parámetro "hasta" debe tener formato YYYY-MM-DD');
+    return this.reportesService.obtenerReporte(usuario.tenantId!, desde, hasta);
   }
 }

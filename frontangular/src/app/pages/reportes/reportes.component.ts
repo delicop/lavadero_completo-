@@ -2,13 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReporteService } from '../../core/services/reporte.service';
+import { TenantService } from '../../core/services/tenant.service';
 import { formatPrecio } from '../../shared/utils/formatters';
 import type { ReporteData } from '../../shared/types';
 
 type TabReporte = 'ingresos' | 'servicios' | 'tendencia' | 'pl';
 type Periodo = 'semana' | 'mes' | 'personalizado';
-
-const fmt = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 
 @Component({
   selector: 'app-reportes',
@@ -18,6 +17,7 @@ const fmt = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogo
 })
 export class ReportesComponent implements OnInit {
   private readonly reporteSvc = inject(ReporteService);
+  private readonly tenantSvc  = inject(TenantService);
 
   readonly formatPrecio = formatPrecio;
 
@@ -30,6 +30,14 @@ export class ReportesComponent implements OnInit {
   desde = '';
   hasta = '';
 
+  private get zona(): string {
+    return this.tenantSvc.configActual?.zonaHoraria ?? 'America/Bogota';
+  }
+
+  private fmt(d: Date): string {
+    return d.toLocaleDateString('en-CA', { timeZone: this.zona });
+  }
+
   async ngOnInit(): Promise<void> {
     this.seleccionarPeriodo('mes');
   }
@@ -41,12 +49,12 @@ export class ReportesComponent implements OnInit {
     if (p === 'semana') {
       const lunes = new Date(hoy);
       lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
-      this.desde = fmt(lunes);
-      this.hasta = fmt(hoy);
+      this.desde = this.fmt(lunes);
+      this.hasta = this.fmt(hoy);
       this.cargar();
     } else if (p === 'mes') {
-      this.desde = fmt(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
-      this.hasta = fmt(hoy);
+      this.desde = this.fmt(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+      this.hasta = this.fmt(hoy);
       this.cargar();
     }
     // 'personalizado' no carga automáticamente — el usuario aplica con el botón
@@ -82,5 +90,10 @@ export class ReportesComponent implements OnInit {
 
   signoVariacion(v: number): string {
     return v > 0 ? '+' : '';
+  }
+
+  get comisionesPendientes(): number {
+    if (!this.datos) return 0;
+    return this.datos.pl.comisionesDevengadas - this.datos.pl.liquidacionesPagadas;
   }
 }

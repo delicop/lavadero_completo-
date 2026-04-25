@@ -8,6 +8,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { RolUsuario } from '../usuarios/entities/usuario.entity';
 import { SuperadminService } from './superadmin.service';
 import { TenantsService } from '../tenants/tenants.service';
+import { LogsService } from '../logs/logs.service';
+import { TipoLog, OrigenLog } from '../logs/entities/log.entity';
 
 @Controller('superadmin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -16,6 +18,7 @@ export class SuperadminController {
   constructor(
     private readonly superadminService: SuperadminService,
     private readonly tenantsService: TenantsService,
+    private readonly logsService: LogsService,
   ) {}
 
   // ── Métricas ──────────────────────────────────────────────────────────────────
@@ -67,5 +70,28 @@ export class SuperadminController {
   @HttpCode(HttpStatus.NO_CONTENT)
   eliminarUsuario(@Param('id') id: string) {
     return this.superadminService.eliminarUsuario(id);
+  }
+
+  // ── Logs ──────────────────────────────────────────────────────────────────────
+
+  @Get('logs')
+  listarLogs(
+    @Query('resuelto') resuelto?: string,
+    @Query('tipo') tipo?: TipoLog,
+    @Query('origen') origen?: OrigenLog,
+    @Query('limite') limite?: string,
+  ) {
+    return this.logsService.listar({
+      resuelto: resuelto === 'true' ? true : resuelto === 'false' ? false : undefined,
+      tipo,
+      origen,
+      limite: limite ? parseInt(limite, 10) : undefined,
+    });
+  }
+
+  @Patch('logs/:id/resolver')
+  @HttpCode(HttpStatus.OK)
+  resolverLog(@Param('id') id: string) {
+    return this.logsService.marcarResuelto(id);
   }
 }

@@ -46,6 +46,33 @@ export class TenantsService {
     return this.repo.save(tenant);
   }
 
+  fechaDesdeZona(zonaHoraria: string): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: zonaHoraria }).format(new Date());
+  }
+
+  offsetDesdeZona(zonaHoraria: string): string {
+    const partes = new Intl.DateTimeFormat('en-US', {
+      timeZone: zonaHoraria,
+      timeZoneName: 'shortOffset',
+    }).formatToParts(new Date());
+    const offsetStr = partes.find(p => p.type === 'timeZoneName')?.value ?? 'GMT+0';
+    const match = offsetStr.match(/GMT([+-])(\d+)(?::(\d+))?/);
+    if (!match) return '+00:00';
+    const horas = match[2].padStart(2, '0');
+    const minutos = (match[3] ?? '00').padStart(2, '0');
+    return `${match[1]}${horas}:${minutos}`;
+  }
+
+  async fechaHoyParaTenant(tenantId: string): Promise<string> {
+    const tenant = await this.buscarPorId(tenantId);
+    return this.fechaDesdeZona(tenant.zonaHoraria);
+  }
+
+  async offsetParaTenant(tenantId: string): Promise<string> {
+    const tenant = await this.buscarPorId(tenantId);
+    return this.offsetDesdeZona(tenant.zonaHoraria);
+  }
+
   async eliminar(id: string): Promise<void> {
     await this.buscarPorId(id);
     // Eliminar todas las tablas relacionadas al tenant usando el tenantId

@@ -25,6 +25,10 @@ export class FacturacionService {
     return firstValueFrom(this.http.get<Factura>(`/api/facturacion/${id}`));
   }
 
+  buscarPorTurno(turnoId: string): Promise<Factura> {
+    return firstValueFrom(this.http.get<Factura>(`/api/facturacion/turno/${turnoId}`));
+  }
+
   crear(payload: CrearFacturaPayload): Promise<Factura> {
     return firstValueFrom(this.http.post<Factura>('/api/facturacion', payload));
   }
