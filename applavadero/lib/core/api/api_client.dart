@@ -15,8 +15,9 @@ class ApiException implements Exception {
 class ApiClient {
   final Dio _dio;
   final TokenStorage _tokenStorage;
+  final VoidCallback? onUnauthorized;
 
-  ApiClient(this._tokenStorage)
+  ApiClient(this._tokenStorage, {this.onUnauthorized})
       : _dio = Dio(BaseOptions(
           baseUrl: kBaseUrl,
           connectTimeout: const Duration(seconds: 10),
@@ -32,18 +33,22 @@ class ApiClient {
           }
           handler.next(options);
         },
-        onError: (error, handler) {
+        onError: (error, handler) async {
           final statusCode = error.response?.statusCode ?? 0;
+
+          if (statusCode == 401) {
+            await _tokenStorage.delete();
+            onUnauthorized?.call();
+          }
+
           final raw = error.response?.data?['message'];
-          // Incluimos error.error.toString() para ver el SocketException real
-          // en lugar de perderlo con el genérico 'Error de conexión'
           final message = raw is List
               ? raw.first.toString()
               : raw?.toString() ??
                   error.error?.toString() ??
                   error.message ??
                   'Error de conexión';
-          debugPrint('[ApiClient] Error ${error.type}: $message');
+          debugPrint('[ApiClient] Error $statusCode: ${error.type}');
           handler.reject(
             DioException(
               requestOptions: error.requestOptions,
@@ -58,8 +63,7 @@ class ApiClient {
   Future<dynamic> get(String path,
       {Map<String, dynamic>? queryParameters}) async {
     try {
-      final res =
-          await _dio.get(path, queryParameters: queryParameters);
+      final res = await _dio.get(path, queryParameters: queryParameters);
       return res.data;
     } on DioException catch (e) {
       throw e.error ?? ApiException('Error de conexión', 0);

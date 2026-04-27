@@ -29,7 +29,8 @@ export class AuthController {
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { accessToken, rol, config } = await this.authService.login(dto);
     res.cookie('access_token', accessToken, COOKIE_OPTIONS);
-    return { rol, config };
+    // accessToken incluido en el body para compatibilidad con la app móvil
+    return { accessToken, rol, config };
   }
 
   @Post('registrar')
@@ -38,7 +39,7 @@ export class AuthController {
   async registrar(@Body() dto: RegistrarTenantDto, @Res({ passthrough: true }) res: Response) {
     const { accessToken, rol } = await this.authService.registrar(dto);
     res.cookie('access_token', accessToken, COOKIE_OPTIONS);
-    return { rol };
+    return { accessToken, rol };
   }
 
   @Post('logout')

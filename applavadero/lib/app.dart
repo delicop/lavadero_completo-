@@ -61,7 +61,11 @@ class _AppLavaderoState extends State<AppLavadero> {
   void initState() {
     super.initState();
     _tokenStorage = TokenStorage();
-    _apiClient = ApiClient(_tokenStorage);
+    _router = _buildRouter();
+    _apiClient = ApiClient(
+      _tokenStorage,
+      onUnauthorized: () => _router.go('/login'),
+    );
     _authService = AuthService(_apiClient);
     _turnoService = TurnoService(_apiClient);
     _clienteService = ClienteService(_apiClient);
@@ -69,10 +73,8 @@ class _AppLavaderoState extends State<AppLavadero> {
     _servicioService = ServicioService(_apiClient);
     _cajaService = CajaService(_apiClient);
     _facturacionService = FacturacionService(_apiClient);
-    _realtimeService = RealtimeService();
+    _realtimeService = RealtimeService(_tokenStorage);
     _realtimeService.conectar();
-
-    _router = _buildRouter();
   }
 
   @override

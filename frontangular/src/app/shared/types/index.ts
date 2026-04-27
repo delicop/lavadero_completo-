@@ -15,6 +15,7 @@ export interface RegistrarPayload {
 }
 
 export interface AuthResponse {
+  accessToken?: string; // presente en el body para la app móvil; el web usa la cookie
   rol: string;
   config?: {
     colorPrimario:   string | null;
