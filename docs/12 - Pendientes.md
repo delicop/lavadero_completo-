@@ -346,6 +346,155 @@ Luego documentar los valores en `docs/11 - Administración del servidor.md`.
 
 ---
 
+## Críticos — producción en riesgo
+
+### WebSocket sin autenticación ni aislamiento por tenant — CRÍTICO
+
+`backend/src/modules/events/events.gateway.ts` tiene `cors: { origin: '*' }` y no valida ningún JWT al conectarse. Cualquier persona en internet puede abrir una conexión WebSocket a `/eventos` y recibir todos los eventos del sistema. Además, `server.emit()` hace broadcast a **todos** los clientes conectados sin filtrar por tenant: los eventos de un lavadero los reciben los clientes de otro.
+
+**Fixes necesarios:**
+1. Cambiar `cors: { origin: process.env['ALLOWED_ORIGINS'] }` en el decorator `@WebSocketGateway`
+2. Implementar `handleConnection(client)` que valide el JWT del handshake y desconecte si no es válido
+3. Usar rooms por tenant: `client.join(tenantId)` al conectar y `server.to(tenantId).emit(...)` al emitir
+
+---
+
+### Sin backup de base de datos — CRÍTICO
+
+No existe ningún script de backup, cron job ni procedimiento documentado. Si el volumen Docker de PostgreSQL falla o se borra accidentalmente, **todos los datos del sistema se pierden sin recuperación posible**.
+
+**Fix mínimo:**
+Crear script en el servidor que ejecute `pg_dump` diariamente y suba el resultado a un bucket de Object Storage (Oracle Cloud lo ofrece gratis en tier free):
+```bash
+# /home/ubuntu/backup.sh
+pg_dump -U postgres lavadero | gzip > /backups/lavadero_$(date +%Y%m%d).sql.gz
+# Rotar: borrar backups de más de 7 días
+find /backups -mtime +7 -delete
+```
+Agregar al crontab: `0 3 * * * /home/ubuntu/backup.sh`
+
+---
+
+### Sin migraciones de base de datos — ALTO
+
+El proyecto usa `synchronize: true` en desarrollo (TypeORM crea/modifica tablas automáticamente). En producción está desactivado, pero **no existen archivos de migración**. Si se agrega una columna nueva a una entity, el backend en producción arrancará pero la columna no existirá en la BD hasta que se ejecute una migración manual.
+
+Con la arquitectura actual, un deploy de una nueva versión con cambios de schema puede romper producción silenciosamente.
+
+**Fix:** Configurar el sistema de migraciones de TypeORM:
+```bash
+# Generar migración desde los cambios de entities
+npx typeorm migration:generate src/database/migrations/NombreCambio -d src/database/data-source.ts
+# Correr migraciones
+npx typeorm migration:run -d src/database/data-source.ts
+```
+Crear `backend/src/database/data-source.ts` como DataSource standalone para usar con el CLI.
+
+---
+
+### Credenciales en `docker-compose.prod.yml` — ALTO
+
+`docker-compose.prod.yml` tiene `POSTGRES_PASSWORD: password` en texto plano dentro del archivo versionado. Cualquiera con acceso al repositorio tiene la contraseña de la base de datos de producción.
+
+**Fix:** Usar Docker secrets o variables de entorno inyectadas desde el servidor, no hardcodeadas en el archivo:
+```yaml
+environment:
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+```
+Y en el servidor: `export POSTGRES_PASSWORD=...` en `/etc/environment` o en un `.env` local no commiteado.
+
+---
+
+### Flutter — build de release sin signing configurado — ALTO
+
+`applavadero/android/app/build.gradle.kts` tiene un comentario `// TODO: Add your own signing config for the release build.` y usa `signingConfig = signingConfigs.getByName("debug")` incluso en el build de release. La app **no puede subirse a Google Play Store** así. iOS tiene el mismo problema (sin provisioning profile configurado).
+
+**Fix:** Generar un keystore de release, configurarlo en `build.gradle.kts` y documentar el proceso en `docs/11`.
+
+---
+
+### Flutter — URL del servidor hardcodeada — MEDIO
+
+`applavadero/lib/core/api/api_endpoints.dart`:
+```dart
+const String kBaseUrl = 'http://129.80.17.68:3000';
+```
+La IP está hardcodeada en el código. Si el servidor cambia de IP o se pasa a HTTPS con dominio, hay que rebuildar y redistribuir la app.
+
+**Fix:** Usar `--dart-define` en el build para inyectar la URL por entorno:
+```dart
+const String kBaseUrl = String.fromEnvironment('API_URL', defaultValue: 'http://localhost:3000');
+```
+
+---
+
+## Tests — cobertura 0%
+
+El proyecto no tiene ningún test real en ninguna de las tres capas:
+
+- **Backend:** `app.controller.spec.ts` y `app.e2e-spec.ts` son plantillas dummy de NestJS que no testean nada del sistema
+- **Angular:** 0 archivos `.spec.ts` en `src/app`
+- **Flutter:** `test/widget_test.dart` tiene `expect(true, isTrue)` — no testea nada
+
+**Qué testear primero (por impacto):**
+1. `auth.service.ts` — lógica de login, hash de contraseña, generación de JWT
+2. `turnos.service.ts` — creación de turno, validaciones de estado
+3. `caja.service.ts` — cálculo de resumen (lógica con aritmética, propenso a bugs)
+4. Guards `JwtAuthGuard`, `RolesGuard` — que rechacen correctamente
+5. `FechaFiltroPipe` — validación de formato de fecha
+
+---
+
+## CI/CD — deploy manual sin validaciones
+
+No existe ningún pipeline de integración continua (no hay `.github/workflows/`). El deploy a producción es manual vía SSH. Esto significa que:
+- Nadie verifica que el código compile antes de mergear
+- No se corren tests en cada PR (aunque tampoco hay tests)
+- Un error de tipado puede llegar a producción sin que nadie lo note
+
+**Fix mínimo con GitHub Actions:**
+```yaml
+# .github/workflows/ci.yml
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd backend && npm ci && npm run build
+      - run: cd frontangular && npm ci && npm run build
+```
+
+---
+
+## Ruta 404 redirige a `/dashboard` — UX rota
+
+`frontangular/src/app/app.routes.ts` línea 124:
+```typescript
+{ path: '**', redirectTo: '/dashboard', pathMatch: 'full' },
+```
+Si un usuario escribe una URL incorrecta o llega con un link roto, se lo manda al dashboard sin ningún mensaje. Si no está autenticado, el guard lo manda al login sin explicar qué pasó.
+
+**Fix:** Crear `pages/not-found/not-found.component.ts` con mensaje claro y botón "Volver al inicio". Registrar como `{ path: '**', loadComponent: () => import('./pages/not-found/...) }`.
+
+---
+
+## Variables de entorno — `.env.example` desactualizado
+
+`backend/.env.example` no incluye `ALLOWED_ORIGINS` ni las variables `SEED_*_EMAIL` / `SEED_*_PASSWORD` que sí se usan en el código. Un desarrollador nuevo que copie `.env.example` como `.env` tendrá el CORS bloqueado sin saber por qué.
+
+**Fix:** Sincronizar `.env.example` con todas las variables usadas en el código, con comentarios explicativos para cada una.
+
+---
+
+## Seed sin datos de prueba
+
+`backend/src/database/seed.ts` solo crea el usuario admin y el superadmin. Para probar el sistema desde cero hace falta crear servicios, clientes, vehículos y turnos manualmente.
+
+**Fix opcional:** Crear un segundo script `seed:demo` que agregue datos ficticios realistas (3 servicios, 5 clientes, 10 turnos en distintos estados) para facilitar el desarrollo y las demos.
+
+---
+
 ## Bugs conocidos
 
 - **`logs.service.ts:52`** — error de tipos TypeScript: `tenantId` puede ser `null` pero el método espera `string`. Causa error en runtime si un superadmin genera un log sin tenant.
@@ -455,20 +604,29 @@ Para cuando el producto base y la monetización estén funcionando.
 ## Orden de implementación recomendado
 
 ```
+── críticos de producción ──
+ C1. WebSocket — autenticación + rooms por tenant
+ C2. Backup de BD — script + cron en servidor
+ C3. Credenciales BD fuera de docker-compose.prod.yml
+ C4. Migraciones TypeORM — configurar data-source.ts
 ── bugs urgentes ──
  0. Arreglar bugs conocidos (logs.service.ts, console.error, nuevo_turno Flutter)
-── refactorización (no bloquea features, hacerlo en paralelo) ──
- R3. date.helper.ts en backend (riesgo de zona horaria)
- R4+R5. BaseCrudService + FormHelpers en Angular
- R1+R2. BaseCrudService + validators en backend
- R7+R8+R9. BaseProvider, initState y ConfirmDialog en Flutter
 ── guards y performance ──
- G0a. Pool DB max:10 → max:30 (5 minutos, CRÍTICO)
- G0b. pm2 cluster en producción (10 minutos, CRÍTICO)
+ G0a. Pool DB max:10 → max:30 (5 minutos)
+ G0b. pm2 cluster en producción (10 minutos)
  G0c. adminGuard en Angular para rutas solo-admin
  G0d. TenantGuard en backend
  G0e. Interceptor de timeout (15s)
  G0f. Interceptor de logging de requests
+── infraestructura ──
+ I1. .env.example sincronizar con variables reales
+ I2. GitHub Actions CI mínimo (build + typecheck)
+ I3. Página 404 en Angular
+── refactorización (en paralelo) ──
+ R3. date.helper.ts en backend
+ R4+R5. BaseCrudService + FormHelpers en Angular
+ R1+R2. BaseCrudService + validators en backend
+ R7+R8+R9. BaseProvider, initState y ConfirmDialog en Flutter
 ── producto base ──
  A. Reorganizar sidebar + ocultar placeholders
  B. Módulo Trabajos
