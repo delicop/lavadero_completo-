@@ -506,6 +506,38 @@ jobs:
 
 ---
 
+## Deuda visual — HTML y modales
+
+### Modales custom duplicados en dashboard y turnos
+
+`dashboard.component.html` (línea ~589) y `turnos.component.html` (línea ~257) tienen modales construidos a mano con `<div class="modal-backdrop">` + `<div class="modal-contenedor">` copiando la estructura del componente `<app-modal>`. Deberían usar `<app-modal>` como el resto de las páginas. Al no usarlo: z-index puede entrar en conflicto, el scroll del body no se bloquea y el diseño puede diferir.
+
+**Fix:** Reemplazar los dos modales custom (el de "Factura generada" en dashboard y turnos) por `<app-modal [visible]="..." titulo="..." (cerrar)="...">`.
+
+### Labels sin `for` e inputs sin `id` en caja
+
+`caja.component.html` tiene varios `<label class="form-label">` sin atributo `for` y los inputs correspondientes sin `id`. Esto rompe la accesibilidad (hacer click en el label no activa el input).
+
+**Fix:** Agregar `id="campo-concepto"` al input y `for="campo-concepto"` al label en los formularios de apertura de caja, gasto e ingreso manual.
+
+### Mensajes de error pueden mostrar `undefined`
+
+En todos los componentes el error se muestra así:
+```html
+<div class="alerta-error">{{ errorForm }}</div>
+```
+Si `errorForm` es `undefined` (no se inicializó), muestra la palabra "undefined" en pantalla.
+
+**Fix:** Cambiar a `@if (errorForm) { <div class="alerta-error">{{ errorForm }}</div> }` — o inicializar siempre a `''` en el componente.
+
+### Clase CSS `alerta-error` vs `alert alert-error`
+
+Algunos componentes usan `class="alerta-error"` y caja usa `class="alert alert-error"`. Una de las dos no existe como clase global y el estilo se aplica diferente.
+
+**Fix:** Verificar en `styles.css` cuál es la clase correcta y estandarizar en todos los componentes.
+
+---
+
 ## Ruta 404 redirige a `/dashboard` — UX rota
 
 `frontangular/src/app/app.routes.ts` línea 124:

@@ -1,6 +1,6 @@
 @if (visible) {
   <div class="modal-backdrop" (click)="onBackdropClick($event)">
-    <div class="modal-contenedor" [style.maxWidth]="ancho">
+    <div class="modal-contenedor" [style.maxWidth]="ancho" style="width:90vw">
       <div class="modal-header">
         <h2 class="modal-titulo">{{ titulo }}</h2>
         <button class="modal-cerrar" (click)="cerrar.emit()" type="button">✕</button>
