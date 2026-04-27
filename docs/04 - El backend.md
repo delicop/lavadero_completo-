@@ -76,8 +76,21 @@ Cuando un usuario pone su email y contraseña:
 
 El token contiene: `{ userId, rol, tenantId }`. Así el sistema sabe quién sos y a qué lavadero pertenecés sin preguntarte cada vez.
 
+**Cómo viaja el JWT según el cliente:**
+
+| Cliente | Mecanismo | Por qué |
+|---------|-----------|---------|
+| Web (Angular) | Cookie `access_token` (httpOnly, secure, sameSite:strict) | El navegador la manda automáticamente; JavaScript nunca la ve |
+| App móvil (Flutter) | Header `Authorization: Bearer <token>` | Las apps no usan cookies de navegador |
+
+El backend acepta ambos. La estrategia JWT lee primero la cookie y si no hay, lee el header Bearer.
+
 **Endpoints:**
-- `POST /api/auth/login` → recibe email+contraseña, devuelve el token
+- `POST /api/auth/login` → devuelve `{ accessToken, rol, config }` + setea la cookie (rate limit: 10/min)
+- `POST /api/auth/logout` → limpia la cookie del servidor
+- `GET /api/auth/me` → devuelve datos del usuario + config del tenant
+- `PATCH /api/auth/cambiar-password` → cambia contraseña (requiere la actual)
+- `PATCH /api/auth/disponibilidad` → marca al trabajador como disponible/no disponible
 
 ---
 

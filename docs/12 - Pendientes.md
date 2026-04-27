@@ -4,6 +4,45 @@
 
 ---
 
+## Para arrancar — en este orden
+
+Lista limpia de qué hacer primero. Cada punto tiene su sección detallada más abajo.
+
+### Hoy (producción en riesgo)
+
+- [ ] **Pool DB** `max: 10` → `max: 30` en `backend/src/app.module.ts` — 5 min
+- [ ] **pm2 cluster** en el servidor: `pm2 start dist/main.js -i max` — 10 min
+- [ ] **Credenciales BD** fuera de `docker-compose.prod.yml` — usar `${POSTGRES_PASSWORD}` — 10 min
+- [ ] **Backup diario** — script `pg_dump` + cron en el servidor — 30 min
+- [ ] **WebSocket** — autenticación + rooms por tenant en `events.gateway.ts` — 2h
+
+### Esta semana (seguridad y calidad)
+
+- [ ] **`adminGuard`** en Angular — proteger rutas `/clientes`, `/servicios`, `/personal`, `/liquidaciones`, `/configuracion-negocio` — 1h
+- [ ] **`TenantGuard`** en backend — validación central de tenantId — 1h
+- [ ] **Interceptor de timeout** (15s) en backend — 30 min
+- [ ] **Página 404** en Angular (ruta `**` actualmente redirige al dashboard) — 30 min
+- [ ] **`.env.example`** sincronizar con variables reales — 15 min
+- [ ] **Migraciones TypeORM** — crear `data-source.ts` y primer migration — 2h
+
+### Cuando arranques features nuevas
+
+- [ ] **GitHub Actions CI** mínimo — build + typecheck en cada push — 1h
+- [ ] **Flutter signing** para release (Play Store) — 1-2h
+- [ ] **Flutter URL configurable** via `--dart-define` (hoy tiene IP hardcodeada) — 30 min
+- [ ] **Redis + caché** para sesiones y config de tenant — 3h
+
+### Producto base (features)
+
+- [ ] **A.** Reorganizar sidebar + ocultar placeholders
+- [ ] **B.** Módulo Trabajos
+- [ ] **C.** Cotizaciones
+- [ ] **D.** Gastos con categorías
+- [ ] **G.** Permisos por Rol
+- [ ] **H.** Recuperar contraseña + email transaccional
+
+---
+
 ## Producto base — corto plazo
 
 Lo siguiente completa el sistema operativo del lavadero antes de pensar en monetización.
