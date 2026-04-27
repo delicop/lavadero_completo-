@@ -106,7 +106,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.auth.logout();
+    void this.auth.logout();
   }
 
   get iniciales(): string {

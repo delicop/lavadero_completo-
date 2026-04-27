@@ -14,6 +14,11 @@ const dataSource = new DataSource({
   synchronize: true,
 });
 
+const ADMIN_EMAIL       = process.env['SEED_ADMIN_EMAIL']       ?? 'admin@lavadero.com';
+const ADMIN_PASSWORD    = process.env['SEED_ADMIN_PASSWORD']    ?? 'Admin1234!';
+const SUPERADMIN_EMAIL  = process.env['SEED_SUPERADMIN_EMAIL']  ?? 'superadmin@lavadero.com';
+const SUPERADMIN_PASSWORD = process.env['SEED_SUPERADMIN_PASSWORD'] ?? 'Super1234!';
+
 async function seed() {
   await dataSource.initialize();
 
@@ -31,21 +36,21 @@ async function seed() {
   }
 
   // 2. Crear o reactivar el usuario admin
-  const passwordHash = await bcrypt.hash('Admin1234', 10);
-  const existe = await usuarioRepo.findOne({ where: { email: 'admin@lavadero.com' } });
+  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  const existe = await usuarioRepo.findOne({ where: { email: ADMIN_EMAIL } });
 
   if (existe) {
-    existe.activo      = true;
-    existe.rol         = RolUsuario.ADMIN;
+    existe.activo       = true;
+    existe.rol          = RolUsuario.ADMIN;
     existe.passwordHash = passwordHash;
-    existe.tenantId    = tenant.id;
+    existe.tenantId     = tenant.id;
     await usuarioRepo.save(existe);
     console.log('✓ Usuario admin reactivado y asignado al tenant');
   } else {
     const admin = usuarioRepo.create({
       nombre:       'Admin',
       apellido:     'Lavadero',
-      email:        'admin@lavadero.com',
+      email:        ADMIN_EMAIL,
       passwordHash,
       rol:          RolUsuario.ADMIN,
       activo:       true,
@@ -55,14 +60,14 @@ async function seed() {
     console.log('✓ Usuario admin creado');
   }
 
-  console.log('\n  Email:    admin@lavadero.com');
-  console.log('  Password: Admin1234');
+  console.log(`\n  Email:    ${ADMIN_EMAIL}`);
   console.log('  Rol:      admin');
   console.log(`  Tenant:   ${tenant.nombre} (slug: ${tenant.slug})`);
+  console.log('  ⚠ Cambiá la contraseña en el primer login.');
 
   // 3. Crear o reactivar el usuario superadmin (sin tenant)
-  const superPasswordHash = await bcrypt.hash('Super1234', 10);
-  const superExiste = await usuarioRepo.findOne({ where: { email: 'superadmin@lavadero.com' } });
+  const superPasswordHash = await bcrypt.hash(SUPERADMIN_PASSWORD, 10);
+  const superExiste = await usuarioRepo.findOne({ where: { email: SUPERADMIN_EMAIL } });
 
   if (superExiste) {
     superExiste.activo       = true;
@@ -75,7 +80,7 @@ async function seed() {
     const superAdmin = usuarioRepo.create({
       nombre:       'Super',
       apellido:     'Admin',
-      email:        'superadmin@lavadero.com',
+      email:        SUPERADMIN_EMAIL,
       passwordHash: superPasswordHash,
       rol:          RolUsuario.SUPERADMIN,
       activo:       true,
@@ -85,8 +90,7 @@ async function seed() {
     console.log('\n✓ Superadmin creado');
   }
 
-  console.log('  Email:    superadmin@lavadero.com');
-  console.log('  Password: Super1234');
+  console.log(`  Email:    ${SUPERADMIN_EMAIL}`);
   console.log('  Rol:      superadmin');
   console.log('\n  ⚠ Cambiá las contraseñas después del primer login.');
 

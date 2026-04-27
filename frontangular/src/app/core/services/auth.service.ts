@@ -15,7 +15,8 @@ export class AuthService {
     const res = await firstValueFrom(
       this.http.post<AuthResponse>('/api/auth/login', payload),
     );
-    localStorage.setItem('token', res.accessToken);
+    localStorage.setItem('isLoggedIn', '1');
+    localStorage.setItem('rol', res.rol);
     if (res.config) {
       this.tema.aplicar({
         colorPrimario:   res.config.colorPrimario   ?? '#2563eb',
@@ -30,7 +31,8 @@ export class AuthService {
     const res = await firstValueFrom(
       this.http.post<AuthResponse>('/api/auth/registrar', payload),
     );
-    localStorage.setItem('token', res.accessToken);
+    localStorage.setItem('isLoggedIn', '1');
+    localStorage.setItem('rol', res.rol);
   }
 
   async cambiarPassword(passwordActual: string, passwordNueva: string): Promise<void> {
@@ -52,25 +54,24 @@ export class AuthService {
     );
   }
 
-  logout(): void {
-    localStorage.removeItem('token');
-    this.sesion.limpiar();
-    window.location.href = '/login';
+  async logout(): Promise<void> {
+    try {
+      await firstValueFrom(this.http.post<void>('/api/auth/logout', {}));
+    } catch {
+      // best effort — si falla igual limpiamos el estado local
+    } finally {
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('rol');
+      this.sesion.limpiar();
+      window.location.href = '/login';
+    }
   }
 
   estaAutenticado(): boolean {
-    return !!localStorage.getItem('token');
+    return localStorage.getItem('isLoggedIn') === '1';
   }
 
-  /** Decodifica el payload del JWT para leer el rol sin llamada HTTP */
   getRolDelToken(): string | null {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1])) as { rol?: string };
-      return payload.rol ?? null;
-    } catch {
-      return null;
-    }
+    return localStorage.getItem('rol');
   }
 }

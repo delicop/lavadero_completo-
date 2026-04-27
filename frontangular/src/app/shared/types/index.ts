@@ -15,7 +15,7 @@ export interface RegistrarPayload {
 }
 
 export interface AuthResponse {
-  accessToken: string;
+  rol: string;
   config?: {
     colorPrimario:   string | null;
     colorSidebar:    string | null;

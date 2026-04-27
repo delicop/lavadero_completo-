@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UsuarioActual } from '../../common/decorators/usuario-actual.decorator';
+import { FechaFiltroPipe } from '../../common/pipes/fecha-filtro.pipe';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
 import { EstadoTurno } from './entities/turno.entity';
 import { TurnosService } from './turnos.service';
@@ -34,8 +35,8 @@ export class TurnosController {
   buscarTodos(
     @UsuarioActual() usuario: Usuario,
     @Query('estado') estado?: EstadoTurno,
-    @Query('fechaDesde') fechaDesde?: string,
-    @Query('fechaHasta') fechaHasta?: string,
+    @Query('fechaDesde', FechaFiltroPipe) fechaDesde?: string,
+    @Query('fechaHasta', FechaFiltroPipe) fechaHasta?: string,
   ) {
     return this.turnosService.buscarTodos(usuario.tenantId!, estado, fechaDesde, fechaHasta);
   }
@@ -44,8 +45,8 @@ export class TurnosController {
   buscarPorTrabajador(
     @Param('trabajadorId') trabajadorId: string,
     @UsuarioActual() usuario: Usuario,
-    @Query('fechaDesde') fechaDesde?: string,
-    @Query('fechaHasta') fechaHasta?: string,
+    @Query('fechaDesde', FechaFiltroPipe) fechaDesde?: string,
+    @Query('fechaHasta', FechaFiltroPipe) fechaHasta?: string,
   ) {
     return this.turnosService.buscarPorTrabajador(trabajadorId, usuario.tenantId!, fechaDesde, fechaHasta);
   }

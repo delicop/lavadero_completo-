@@ -215,6 +215,6 @@ export class SuperadminComponent implements OnInit {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   logout(): void {
-    this.auth.logout();
+    void this.auth.logout();
   }
 }

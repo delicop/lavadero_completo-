@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -22,6 +23,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -56,7 +58,8 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     EventsModule,
   ],
   providers: [
-    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_FILTER,  useClass: AllExceptionsFilter },
+    { provide: APP_GUARD,   useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

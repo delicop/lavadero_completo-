@@ -48,20 +48,38 @@ export function mostrarToastWhatsApp(telefono: string, mensaje: string, titulo: 
     'font-family:Inter,system-ui,sans-serif',
   ].join(';');
 
-  toast.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <span style="font-weight:700;font-size:0.85rem;color:#0f172a">${titulo}</span>
-      <button id="wa-toast-close" style="background:none;border:none;cursor:pointer;font-size:1.2rem;line-height:1;color:#64748b;padding:0">×</button>
-    </div>
-    <a href="${url}" target="_blank" rel="noopener"
-       style="display:flex;align-items:center;gap:8px;background:#25d366;color:white;
-              padding:9px 14px;border-radius:8px;text-decoration:none;
-              font-weight:700;font-size:0.85rem;justify-content:center">
-      ${WA_ICON}
-      Enviar WhatsApp
-    </a>
-    <p style="font-size:0.75rem;color:#64748b;margin:0;line-height:1.4">${mensaje.slice(0, 80)}…</p>
-  `;
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px';
+
+  const tituloSpan = document.createElement('span');
+  tituloSpan.style.cssText = 'font-weight:700;font-size:0.85rem;color:#0f172a';
+  tituloSpan.textContent = titulo;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.id = 'wa-toast-close';
+  closeBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1.2rem;line-height:1;color:#64748b;padding:0';
+  closeBtn.textContent = '×';
+
+  header.appendChild(tituloSpan);
+  header.appendChild(closeBtn);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.style.cssText = 'display:flex;align-items:center;gap:8px;background:#25d366;color:white;padding:9px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.85rem;justify-content:center';
+  link.innerHTML = WA_ICON; // WA_ICON es SVG estático definido en este archivo
+  const linkText = document.createElement('span');
+  linkText.textContent = 'Enviar WhatsApp';
+  link.appendChild(linkText);
+
+  const preview = document.createElement('p');
+  preview.style.cssText = 'font-size:0.75rem;color:#64748b;margin:0;line-height:1.4';
+  preview.textContent = `${mensaje.slice(0, 80)}…`;
+
+  toast.appendChild(header);
+  toast.appendChild(link);
+  toast.appendChild(preview);
 
   document.body.appendChild(toast);
   document.getElementById('wa-toast-close')?.addEventListener('click', () => toast.remove());

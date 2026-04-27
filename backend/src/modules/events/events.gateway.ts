@@ -1,6 +1,8 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Server } from 'socket.io';
 
+@SkipThrottle()
 @WebSocketGateway({
   cors: { origin: '*' },
   namespace: '/eventos',
