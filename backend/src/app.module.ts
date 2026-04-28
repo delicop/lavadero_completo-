@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -15,10 +17,13 @@ import { EventsModule } from './modules/events/events.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { SuperadminModule } from './modules/superadmin/superadmin.module';
 import { ReportesModule } from './modules/reportes/reportes.module';
+import { LogsModule } from './modules/logs/logs.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -40,6 +45,7 @@ import { ReportesModule } from './modules/reportes/reportes.module';
     TenantsModule,
     SuperadminModule,
     ReportesModule,
+    LogsModule,
     AuthModule,
     UsuariosModule,
     ClientesModule,
@@ -50,6 +56,10 @@ import { ReportesModule } from './modules/reportes/reportes.module';
     LiquidacionesModule,
     CajaModule,
     EventsModule,
+  ],
+  providers: [
+    { provide: APP_FILTER,  useClass: AllExceptionsFilter },
+    { provide: APP_GUARD,   useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

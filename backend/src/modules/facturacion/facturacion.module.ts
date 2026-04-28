@@ -5,9 +5,10 @@ import { CajaDia } from '../caja/entities/caja-dia.entity';
 import { FacturacionController } from './facturacion.controller';
 import { FacturacionService } from './facturacion.service';
 import { TurnosModule } from '../turnos/turnos.module';
+import { TenantsModule } from '../tenants/tenants.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Factura, CajaDia]), TurnosModule],
+  imports: [TypeOrmModule.forFeature([Factura, CajaDia]), TurnosModule, TenantsModule],
   controllers: [FacturacionController],
   providers: [FacturacionService],
 })

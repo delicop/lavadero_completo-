@@ -5,9 +5,9 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
   Max,
   Min,
-  MinLength,
 } from 'class-validator';
 import { RolUsuario } from '../entities/usuario.entity';
 
@@ -24,7 +24,9 @@ export class CrearUsuarioDto {
   email!: string;
 
   @IsString()
-  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-#])[A-Za-z\d@$!%*?&_\-#]{8,}$/, {
+    message: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo (@$!%*?&_-#)',
+  })
   password!: string;
 
   @IsEnum(RolUsuario)

@@ -1,397 +1,183 @@
 @if (esAdmin) {
-  <!-- ── Vista Admin ───────────────────────────────────── -->
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-    <div>
-      <h1 class="pagina-titulo" style="margin:0">Panel del día</h1>
-      <p style="color:var(--color-texto-suave);font-size:0.875rem;text-transform:capitalize;margin-top:3px">{{ hoy }}</p>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      @if (ultimoUpdate) {
-        <span style="font-size:0.78rem;color:var(--color-texto-suave)">Actualizado {{ ultimoUpdate }}</span>
-      }
-      <button class="btn btn-secundario btn-sm" (click)="cargar()">↻ Actualizar</button>
-    </div>
+<!-- ══ VISTA ADMIN ══════════════════════════════════════════════════════ -->
+
+<!-- Header -->
+<div class="flex items-start justify-between mb-7 flex-wrap gap-3" style="animation:fadeUp .3s ease both">
+  <div>
+    <h1 class="font-display text-3xl font-extrabold tracking-tight leading-none" style="color:var(--color-texto)">Panel del día</h1>
+    <p class="text-slate-500 text-xs mt-1.5 capitalize">{{ hoy }}</p>
   </div>
-
-  <!-- Widget caja + botón nueva orden -->
-  <div style="display:flex;align-items:stretch;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-    <div class="caja-widget" style="flex:1;margin:0">
-      @if (cajaSinCerrar) {
-        <div class="caja-widget-alerta">
-          <span>⚠️ Caja del {{ cajaSinCerrar.fecha }} pendiente de cierre</span>
-          <div style="display:flex;gap:8px">
-            <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
-            <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCajaAnterior()">
-              Cerrar caja anterior
-            </button>
-          </div>
-        </div>
-      } @else if (!cajaHoy) {
-        <div class="caja-widget-neutral">
-          <span>Caja del día no abierta</span>
-          <button class="btn btn-primario btn-sm" (click)="modalAbrirCaja = true">Abrir caja</button>
-        </div>
-      } @else if (cajaHoy.estado === 'abierta') {
-        <div class="caja-widget-ok">
-          <span>Caja abierta · inicio {{ cajaHoy.fechaApertura | date:'h:mm a' }}</span>
-          <div style="display:flex;gap:8px">
-            <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
-            <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCaja()">
-              Cerrar caja
-            </button>
-          </div>
-        </div>
-      } @else {
-        <div class="caja-widget-cerrada">
-          <span>Caja cerrada · {{ cajaHoy.fechaCierre | date:'h:mm a' }}</span>
-          <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver resumen</a>
-        </div>
-      }
-    </div>
-    <button class="btn btn-primario" style="white-space:nowrap;align-self:stretch;padding:0 20px;font-size:0.9rem"
-            [disabled]="cajaHoy?.estado !== 'abierta'"
-            [title]="cajaHoy?.estado !== 'abierta' ? 'Abrí la caja para crear órdenes' : ''"
-            (click)="abrirFormOrden()">
-      + Nueva orden
-    </button>
+  <div class="flex items-center gap-2">
+    @if (ultimoUpdate) {
+      <span class="text-[0.7rem] text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-full">↻ {{ ultimoUpdate }}</span>
+    }
+    <button class="btn btn-secundario btn-sm" (click)="cargar()">Actualizar</button>
   </div>
+</div>
 
-  <!-- Stats -->
-  <div class="stats-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
-    <div class="stat-card">
-      <div class="stat-label">En espera</div>
-      <div class="stat-valor" style="color:#f59e0b">{{ pendientes.length }}</div>
-      <div class="stat-unidad">vehículos</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">En proceso</div>
-      <div class="stat-valor" style="color:#2563eb">{{ enProceso.length }}</div>
-      <div class="stat-unidad">vehículos</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Completados hoy</div>
-      <div class="stat-valor" style="color:#8b5cf6">{{ completadosHoy.length }}</div>
-      <div class="stat-unidad">{{ facturasHoy.length }} cobrados</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Por cobrar hoy</div>
-      <div class="stat-valor" style="color:#f59e0b">{{ porCobrarHoy }}</div>
-      <div class="stat-unidad">{{ porCobrarHoy === 0 ? 'Todo al día' : 'pendientes de cobro' }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Ingresos del día</div>
-      <div class="stat-valor" style="font-size:1.4rem;color:#16a34a">{{ formatPrecio(ingresos) }}</div>
-      <div class="stat-unidad">cobrado en facturas</div>
-    </div>
-  </div>
-
-  <!-- Trabajos de la semana + Métodos de pago -->
-  <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px">
-    <div class="card">
-      <h3 style="font-size:0.875rem;font-weight:700;margin:0 0 16px">Trabajos de la semana</h3>
-      @if (turnosSemana.length === 0) {
-        <p style="color:var(--color-texto-suave);font-size:0.875rem;text-align:center;padding:20px 0">Sin datos esta semana</p>
-      } @else {
-        <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:8px">
-          @for (dia of turnosSemana; track dia.label) {
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px">
-              <span style="font-size:0.7rem;color:var(--color-texto-suave)">{{ dia.count }}</span>
-              <div
-                style="width:100%;background:var(--color-primario,#3b82f6);border-radius:4px 4px 0 0;min-height:2px;transition:height .3s"
-                [style.height]="(dia.count / maxTurnoSemana * 90) + 'px'"
-              ></div>
-              <span style="font-size:0.75rem;color:var(--color-texto-suave)">{{ dia.label }}</span>
-            </div>
-          }
+<!-- Caja bar + Nueva orden -->
+<div class="flex items-stretch gap-3 mb-6 flex-wrap" style="animation:fadeUp .35s .05s ease both">
+  <div class="flex-1" style="min-width:200px">
+    @if (cajaSinCerrar) {
+      <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex-wrap">
+        <span class="text-amber-700 text-sm font-medium">⚠ Caja del {{ cajaSinCerrar.fecha }} pendiente de cierre</span>
+        <div class="flex gap-2">
+          <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
+          <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCajaAnterior()">Cerrar anterior</button>
         </div>
-      }
-    </div>
-
-    <div class="card">
-      <h3 style="font-size:0.875rem;font-weight:700;margin:0 0 16px">Métodos de pago</h3>
-      @if (ingresosPorMetodo.length === 0) {
-        <p style="color:var(--color-texto-suave);font-size:0.875rem;text-align:center;padding:20px 0">Sin cobros registrados hoy</p>
-      } @else {
-        <div style="display:flex;flex-direction:column;gap:12px">
-          @for (m of ingresosPorMetodo; track m.label) {
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:0.875rem;color:var(--color-texto-suave)">{{ m.label }}</span>
-              <span style="font-weight:700;font-size:0.95rem">{{ formatPrecio(m.total) }}</span>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  </div>
-
-  <!-- Gráfica de ingresos -->
-  <div class="card" style="margin-bottom:20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-      <h3 style="font-size:0.875rem;font-weight:700;margin:0">Ingresos del lavadero</h3>
-      <div style="display:flex;gap:4px;background:var(--color-fondo);padding:3px;border-radius:8px">
-        <button
-          style="padding:4px 14px;border-radius:6px;border:none;font-size:0.8rem;cursor:pointer;transition:background .15s"
-          [style.background]="periodoGrafico==='diario' ? 'var(--color-primario,#3b82f6)' : 'transparent'"
-          [style.color]="periodoGrafico==='diario' ? '#fff' : 'var(--color-texto-suave)'"
-          (click)="cambiarPeriodoGrafico('diario')">Hoy</button>
-        <button
-          style="padding:4px 14px;border-radius:6px;border:none;font-size:0.8rem;cursor:pointer;transition:background .15s"
-          [style.background]="periodoGrafico==='semanal' ? 'var(--color-primario,#3b82f6)' : 'transparent'"
-          [style.color]="periodoGrafico==='semanal' ? '#fff' : 'var(--color-texto-suave)'"
-          (click)="cambiarPeriodoGrafico('semanal')">Semana</button>
-        <button
-          style="padding:4px 14px;border-radius:6px;border:none;font-size:0.8rem;cursor:pointer;transition:background .15s"
-          [style.background]="periodoGrafico==='mensual' ? 'var(--color-primario,#3b82f6)' : 'transparent'"
-          [style.color]="periodoGrafico==='mensual' ? '#fff' : 'var(--color-texto-suave)'"
-          (click)="cambiarPeriodoGrafico('mensual')">Mes</button>
       </div>
-    </div>
-
-    @if (cargandoGrafico) {
-      <p style="color:var(--color-texto-suave);font-size:0.85rem;text-align:center;padding:20px 0">Cargando...</p>
-    } @else if (ingresosGrafico.length === 0 || ingresosGrafico.every(d => d.total === 0)) {
-      <p style="color:var(--color-texto-suave);font-size:0.85rem;text-align:center;padding:20px 0">Sin ingresos registrados en este período</p>
+    } @else if (!cajaHoy) {
+      <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-100 border border-slate-200">
+        <span class="text-slate-500 text-sm">Caja del día no abierta</span>
+        <button class="btn btn-primario btn-sm" (click)="modalAbrirCaja = true">Abrir caja</button>
+      </div>
+    } @else if (cajaHoy.estado === 'abierta') {
+      <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20">
+        <span class="text-green-700 text-sm font-medium">● Caja abierta · inicio {{ cajaHoy.fechaApertura | date:'h:mm a' }}</span>
+        <div class="flex gap-2">
+          <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver detalle</a>
+          <button class="btn btn-peligro btn-sm" [disabled]="guardandoCaja" (click)="cerrarCaja()">Cerrar caja</button>
+        </div>
+      </div>
     } @else {
-      <div style="display:flex;align-items:flex-end;gap:3px;height:140px;overflow-x:auto;padding-top:24px;position:relative">
-        @for (bar of ingresosGrafico; track bar.label) {
-          <div
-            style="flex:1;min-width:24px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;position:relative"
-            [title]="bar.label + ': ' + formatPrecio(bar.total)"
-          >
-            @if (bar.total > 0) {
-              <span style="position:absolute;top:-20px;font-size:0.65rem;color:var(--color-texto-suave);white-space:nowrap">
-                {{ formatPrecio(bar.total) }}
-              </span>
-            }
-            <div
-              style="width:100%;background:var(--color-primario,#3b82f6);border-radius:3px 3px 0 0;min-height:2px;transition:height .3s"
-              [style.height]="(bar.total / maxIngresoGrafico * 100) + 'px'"
-              [style.opacity]="bar.total === 0 ? '0.2' : '1'"
-            ></div>
-            <span style="font-size:0.65rem;color:var(--color-texto-suave);white-space:nowrap">{{ bar.label }}</span>
+      <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-100 border border-slate-200">
+        <span class="text-slate-500 text-sm">Caja cerrada · {{ cajaHoy.fechaCierre | date:'h:mm a' }}</span>
+        <a routerLink="/caja" class="btn btn-secundario btn-sm">Ver resumen</a>
+      </div>
+    }
+  </div>
+  <button class="btn btn-primario"
+          style="white-space:nowrap;padding:0 20px;font-size:0.9rem"
+          [disabled]="cajaHoy?.estado !== 'abierta'"
+          [title]="cajaHoy?.estado !== 'abierta' ? 'Abrí la caja para crear órdenes' : ''"
+          (click)="abrirFormOrden()">
+    + Nueva orden
+  </button>
+</div>
+
+<!-- Stats row -->
+<div class="grid gap-3 mb-6" style="grid-template-columns:repeat(5,1fr);animation:fadeUp .4s .1s ease both">
+  <div class="dark-stat-card">
+    <div class="dark-stat-bar" style="background:#f59e0b"></div>
+    <div class="dark-stat-label">En espera</div>
+    <div class="dark-stat-valor" style="color:#d97706">{{ pendientes.length }}</div>
+    <div class="dark-stat-sub">vehículos</div>
+  </div>
+  <div class="dark-stat-card">
+    <div class="dark-stat-bar" style="background:#3b82f6"></div>
+    <div class="dark-stat-label">En proceso</div>
+    <div class="dark-stat-valor" style="color:#3b82f6">{{ enProceso.length }}</div>
+    <div class="dark-stat-sub">vehículos</div>
+  </div>
+  <div class="dark-stat-card">
+    <div class="dark-stat-bar" style="background:#8b5cf6"></div>
+    <div class="dark-stat-label">Completados hoy</div>
+    <div class="dark-stat-valor" style="color:#8b5cf6">{{ completadosHoy.length }}</div>
+    <div class="dark-stat-sub">{{ facturasHoy.length }} cobrados</div>
+  </div>
+  <div class="dark-stat-card">
+    <div class="dark-stat-bar" style="background:#f59e0b"></div>
+    <div class="dark-stat-label">Por cobrar hoy</div>
+    <div class="dark-stat-valor" style="color:#d97706">{{ porCobrarHoy }}</div>
+    <div class="dark-stat-sub">{{ porCobrarHoy === 0 ? 'Todo al día ✓' : 'pendientes' }}</div>
+  </div>
+  <div class="dark-stat-card">
+    <div class="dark-stat-bar" style="background:#16a34a"></div>
+    <div class="dark-stat-label">Ingresos del día</div>
+    <div class="dark-stat-valor" style="color:#22c55e;font-size:1.5rem">{{ formatPrecio(ingresos) }}</div>
+    <div class="dark-stat-sub">cobrado en facturas</div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="grid gap-4 mb-4" style="grid-template-columns:2fr 1fr;animation:fadeUp .4s .15s ease both">
+
+  <!-- Trabajos semana -->
+  <div class="dark-card p-5">
+    <div class="dark-card-titulo">Trabajos de la semana</div>
+    @if (turnosSemana.length === 0) {
+      <p class="text-slate-600 text-xs text-center py-6">Sin datos esta semana</p>
+    } @else {
+      <div class="barchart">
+        @for (dia of turnosSemana; track dia.label) {
+          <div class="barchart-col">
+            <span class="barchart-count">{{ dia.count }}</span>
+            <div class="barchart-bar" [style.height]="(dia.count / maxTurnoSemana * 90) + 'px'"></div>
+            <span class="barchart-label">{{ dia.label }}</span>
           </div>
         }
       </div>
     }
   </div>
 
-  <!-- En proceso + En espera -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
-    <div>
-      <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-        <span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block"></span>
-        En proceso ahora
-      </h2>
-      <div class="card" style="padding:0;overflow:hidden">
-        @if (enProceso.length === 0) {
-          <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">Ningún vehículo en proceso</p>
-        } @else {
-          <table class="tabla">
-            <thead>
-              <tr><th>Vehículo</th><th>Servicio</th><th>Trabajador</th><th></th></tr>
-            </thead>
-            <tbody>
-              @for (t of enProceso; track t.id) {
-                <tr>
-                  <td>
-                    <strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
-                    <small style="color:var(--color-texto-suave)">{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</small>
-                  </td>
-                  <td>{{ t.servicio?.nombre ?? '—' }}</td>
-                  <td>{{ t.trabajador?.nombre }} {{ t.trabajador?.apellido }}</td>
-                  <td>
-                    <button class="btn btn-primario btn-sm" (click)="finalizarTurno(t)">✓ Finalizar</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </div>
-    </div>
+  <!-- Métodos de pago -->
+  <div class="dark-card p-5">
+    <div class="dark-card-titulo">Métodos de pago</div>
+    @if (ingresosPorMetodo.length === 0) {
+      <p class="text-slate-600 text-xs text-center py-6">Sin cobros hoy</p>
+    } @else {
+      @for (m of ingresosPorMetodo; track m.label) {
+        <div class="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
+          <span class="text-slate-400 text-xs">{{ m.label }}</span>
+          <span class="font-display font-bold text-white text-sm">{{ formatPrecio(m.total) }}</span>
+        </div>
+      }
+    }
+  </div>
+</div>
 
-    <div>
-      <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-        <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
-        En espera
-      </h2>
-      <div class="card" style="padding:0;overflow:hidden">
-        @if (pendientes.length === 0) {
-          <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">No hay vehículos en espera</p>
-        } @else {
-          <table class="tabla">
-            <thead>
-              <tr><th>Hora</th><th>Vehículo</th><th>Servicio</th><th></th></tr>
-            </thead>
-            <tbody>
-              @for (t of pendientes; track t.id) {
-                <tr>
-                  <td style="font-weight:600;white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
-                  <td>
-                    <strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
-                    <small style="color:var(--color-texto-suave)">{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</small>
-                  </td>
-                  <td>{{ t.servicio?.nombre ?? '—' }}</td>
-                  <td>
-                    <button class="btn btn-secundario btn-sm" (click)="iniciarTurno(t.id)">→ Iniciar</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </div>
+<!-- Gráfica de ingresos -->
+<div class="dark-card p-5 mb-4" style="animation:fadeUp .4s .2s ease both">
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <div class="dark-card-titulo" style="margin:0">Ingresos del lavadero</div>
+    <div class="flex gap-1 bg-white/5 p-0.5 rounded-lg border border-white/8">
+      <button class="periodo-tab" [class.periodo-tab--activo]="periodoGrafico==='diario'"  (click)="cambiarPeriodoGrafico('diario')">Hoy</button>
+      <button class="periodo-tab" [class.periodo-tab--activo]="periodoGrafico==='semanal'" (click)="cambiarPeriodoGrafico('semanal')">Semana</button>
+      <button class="periodo-tab" [class.periodo-tab--activo]="periodoGrafico==='mensual'" (click)="cambiarPeriodoGrafico('mensual')">Mes</button>
     </div>
   </div>
+  @if (cargandoGrafico) {
+    <p class="text-slate-600 text-xs text-center py-5">Cargando...</p>
+  } @else if (ingresosGrafico.length === 0 || ingresosGrafico.every(d => d.total === 0)) {
+    <p class="text-slate-600 text-xs text-center py-5">Sin ingresos en este período</p>
+  } @else {
+    <div style="display:flex;align-items:flex-end;gap:3px;height:140px;overflow-x:auto;padding-top:24px;position:relative">
+      @for (bar of ingresosGrafico; track bar.label) {
+        <div style="flex:1;min-width:24px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;position:relative"
+             [title]="bar.label + ': ' + formatPrecio(bar.total)">
+          @if (bar.total > 0) {
+            <span style="position:absolute;top:-20px;font-size:0.6rem;color:#64748b;white-space:nowrap">{{ formatPrecio(bar.total) }}</span>
+          }
+          <div class="ingreso-bar" [style.height]="(bar.total / maxIngresoGrafico * 100) + 'px'" [style.opacity]="bar.total === 0 ? '0.1' : '1'"></div>
+          <span style="font-size:0.6rem;color:#475569;white-space:nowrap">{{ bar.label }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>
 
-  <!-- Completados hoy: pendientes de cobro y ya pagados en una sola tabla -->
-  <div style="margin-bottom:20px">
-    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-      <span style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>
-      Completados hoy
-    </h2>
-    <div class="card" style="padding:0;overflow:hidden">
-      @if (completadosHoy.length === 0) {
-        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">
-          Ningún vehículo completado todavía
-        </p>
+<!-- En proceso + En espera -->
+<div class="grid grid-cols-2 gap-4 mb-4" style="animation:fadeUp .4s .25s ease both">
+  <div>
+    <div class="dark-section-header">
+      <span class="section-dot section-dot--proceso"></span>
+      En proceso ahora
+    </div>
+    <div class="dark-card overflow-hidden p-0">
+      @if (enProceso.length === 0) {
+        <p class="text-slate-600 text-xs text-center py-5">Ningún vehículo en proceso</p>
       } @else {
-        <table class="tabla">
-          <thead>
-            <tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Trabajador</th><th>Total</th><th></th></tr>
-          </thead>
+        <table class="dark-tabla">
+          <thead><tr><th>Vehículo</th><th>Servicio</th><th>Trabajador</th><th></th></tr></thead>
           <tbody>
-            @for (t of completadosHoy; track t.id) {
-              <tr [style.background]="turnosFacturadosSet.has(t.id) ? '#f0fdf4' : '#fff7ed'">
-                <td style="font-weight:600;white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
+            @for (t of enProceso; track t.id) {
+              <tr>
                 <td>
-                  <strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
-                  <small style="color:var(--color-texto-suave)">{{ t.vehiculo?.marca }} {{ t.vehiculo?.modelo }}</small>
-                </td>
-                <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
-                <td>
-                  @if (t.cliente?.telefono) {
-                    <a [href]="'tel:' + t.cliente!.telefono" style="color:var(--color-primario);font-weight:600;text-decoration:none">
-                      {{ t.cliente!.telefono }}
-                    </a>
-                  } @else { — }
+                  <strong class="text-white">{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                  <small class="text-slate-500">{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</small>
                 </td>
                 <td>{{ t.servicio?.nombre ?? '—' }}</td>
                 <td>{{ t.trabajador?.nombre }} {{ t.trabajador?.apellido }}</td>
-                <td style="font-weight:700" [style.color]="turnosFacturadosSet.has(t.id) ? '#16a34a' : 'var(--color-texto-suave)'">
-                  @if (turnosFacturadosSet.has(t.id)) {
-                    {{ formatPrecio(totalFacturadoPorTurno(t.id)) }}
-                  } @else {
-                    {{ formatPrecio(t.servicio?.precio ?? 0) }}
-                  }
-                </td>
-                <td>
-                  @if (turnosFacturadosSet.has(t.id)) {
-                    <span style="font-size:0.75rem;color:#16a34a;font-weight:700;white-space:nowrap">✓ Facturado</span>
-                  } @else {
-                    <button class="btn btn-cobrar btn-sm" (click)="iniciarCobro(t)">💰 Pagar</button>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-    </div>
-  </div>
-
-  <!-- Trabajadores -->
-  <div>
-    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-      <span style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>
-      Trabajadores hoy
-    </h2>
-    <div class="card">
-      @if (trabajadores.length === 0) {
-        <p style="color:var(--color-texto-suave);text-align:center;font-size:0.875rem">No hay trabajadores registrados</p>
-      } @else {
-        <div style="display:flex;flex-wrap:wrap;gap:10px">
-          @for (u of trabajadores; track u.id) {
-            <div [style.background]="u.disponible ? '#f0fdf4' : '#f8fafc'"
-                 [style.border]="'1px solid ' + (u.disponible ? '#86efac' : '#e2e8f0')"
-                 style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px">
-              <span [style.background]="u.disponible ? '#22c55e' : '#d1d5db'"
-                    style="width:9px;height:9px;border-radius:50%;flex-shrink:0"></span>
-              <div>
-                <div style="font-size:0.85rem;font-weight:600">{{ u.nombre }} {{ u.apellido }}</div>
-                <div [style.color]="u.disponible ? '#15803d' : 'var(--color-texto-suave)'"
-                     style="font-size:0.75rem">
-                  {{ u.disponible ? 'Disponible' : 'No disponible' }}
-                </div>
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  </div>
-
-} @else {
-  <!-- ── Vista Trabajador ──────────────────────────────── -->
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-    <div>
-      <h1 class="pagina-titulo" style="margin:0">Mi panel</h1>
-      <p style="color:var(--color-texto-suave);font-size:0.875rem;text-transform:capitalize;margin-top:3px">{{ hoy }}</p>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      @if (usuario) {
-        <div [style.background]="usuario.disponible ? '#dcfce7' : '#fee2e2'"
-             [style.color]="usuario.disponible ? '#15803d' : '#dc2626'"
-             style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:0.8rem;font-weight:700">
-          <span [style.background]="usuario.disponible ? '#16a34a' : '#dc2626'"
-                style="width:7px;height:7px;border-radius:50%"></span>
-          {{ usuario.disponible ? 'Disponible' : 'No disponible' }}
-        </div>
-        <button [class]="usuario.disponible ? 'btn btn-secundario btn-sm' : 'btn btn-primario btn-sm'"
-                (click)="toggleDisponibilidad()">
-          {{ usuario.disponible ? 'Salir' : 'Entrar' }}
-        </button>
-      }
-      <button class="btn btn-secundario btn-sm" (click)="cargar()">↻</button>
-    </div>
-  </div>
-
-  <!-- Stats trabajador -->
-  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px">
-    <div class="stat-card" style="text-align:center">
-      <div class="stat-label">En espera</div>
-      <div class="stat-valor" style="color:#f59e0b">{{ misPendientes.length }}</div>
-    </div>
-    <div class="stat-card" style="text-align:center">
-      <div class="stat-label">Completados hoy</div>
-      <div class="stat-valor" style="color:#16a34a">{{ misCompletadosHoy.length }}</div>
-    </div>
-    <div class="stat-card" style="text-align:center">
-      <div class="stat-label">Ganado hoy</div>
-      <div class="stat-valor" style="font-size:1.3rem;color:#16a34a">{{ formatPrecio(gananciaHoy) }}</div>
-    </div>
-  </div>
-
-  <!-- En proceso -->
-  <div style="margin-bottom:20px">
-    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-      <span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block"></span>
-      En proceso ahora
-    </h2>
-    <div class="card" style="padding:0;overflow:hidden">
-      @if (misEnProceso.length === 0) {
-        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">Ningún vehículo en proceso</p>
-      } @else {
-        <table class="tabla">
-          <thead><tr><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th></th></tr></thead>
-          <tbody>
-            @for (t of misEnProceso; track t.id) {
-              <tr>
-                <td><strong>{{ t.vehiculo?.placa ?? '—' }}</strong><br>
-                  <small style="color:var(--color-texto-suave)">{{ t.vehiculo?.marca }} {{ t.vehiculo?.modelo }}</small>
-                </td>
-                <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
-                <td>{{ t.servicio?.nombre ?? '—' }}</td>
                 <td><button class="btn btn-primario btn-sm" (click)="finalizarTurno(t)">✓ Finalizar</button></td>
               </tr>
             }
@@ -401,24 +187,25 @@
     </div>
   </div>
 
-  <!-- Pendientes trabajador -->
-  <div style="margin-bottom:20px">
-    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-      <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
-      Turnos en espera
-    </h2>
-    <div class="card" style="padding:0;overflow:hidden">
-      @if (misPendientes.length === 0) {
-        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">No tenés turnos en espera</p>
+  <div>
+    <div class="dark-section-header">
+      <span class="section-dot section-dot--espera"></span>
+      En espera
+    </div>
+    <div class="dark-card overflow-hidden p-0">
+      @if (pendientes.length === 0) {
+        <p class="text-slate-600 text-xs text-center py-5">No hay vehículos en espera</p>
       } @else {
-        <table class="tabla">
-          <thead><tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th></th></tr></thead>
+        <table class="dark-tabla">
+          <thead><tr><th>Hora</th><th>Vehículo</th><th>Servicio</th><th></th></tr></thead>
           <tbody>
-            @for (t of misPendientes; track t.id) {
+            @for (t of pendientes; track t.id) {
               <tr>
-                <td style="font-weight:600;white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
-                <td><strong>{{ t.vehiculo?.placa ?? '—' }}</strong></td>
-                <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+                <td class="font-semibold whitespace-nowrap text-white">{{ horaStr(t.fechaHora) }}</td>
+                <td>
+                  <strong class="text-white">{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                  <small class="text-slate-500">{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</small>
+                </td>
                 <td>{{ t.servicio?.nombre ?? '—' }}</td>
                 <td><button class="btn btn-secundario btn-sm" (click)="iniciarTurno(t.id)">→ Iniciar</button></td>
               </tr>
@@ -428,46 +215,226 @@
       }
     </div>
   </div>
+</div>
 
-  <!-- Completados trabajador -->
-  <div>
-    <h2 style="font-size:0.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-      <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span>
-      Completados hoy
-    </h2>
-    <div class="card" style="padding:0;overflow:hidden">
-      @if (misCompletadosHoy.length === 0) {
-        <p style="color:var(--color-texto-suave);text-align:center;padding:20px;font-size:0.875rem">Todavía no completaste ningún turno hoy</p>
-      } @else {
-        <table class="tabla">
-          <thead><tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th>Tu ganancia</th></tr></thead>
-          <tbody>
-            @for (t of misCompletadosHoy; track t.id) {
-              <tr>
-                <td style="white-space:nowrap">{{ horaStr(t.fechaHora) }}</td>
-                <td><strong>{{ t.vehiculo?.placa ?? '—' }}</strong></td>
-                <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
-                <td>{{ t.servicio?.nombre ?? '—' }}</td>
-                <td>
-                  <strong style="color:#16a34a">
-                    {{ formatPrecio(+(t.servicio?.precio ?? 0) * ((usuario?.comisionPorcentaje ?? 0) / 100)) }}
-                  </strong>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-    </div>
+<!-- Completados hoy -->
+<div class="mb-4" style="animation:fadeUp .4s .3s ease both">
+  <div class="dark-section-header">
+    <span class="section-dot section-dot--completados"></span>
+    Completados hoy
   </div>
+  <div class="dark-card overflow-hidden p-0">
+    @if (completadosHoy.length === 0) {
+      <p class="text-slate-600 text-xs text-center py-5">Ningún vehículo completado todavía</p>
+    } @else {
+      <table class="dark-tabla">
+        <thead>
+          <tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Trabajador</th><th>Total</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (t of completadosHoy; track t.id) {
+            <tr [class]="turnosFacturadosSet.has(t.id) ? 'row-facturado-dark' : 'row-cobrar-dark'">
+              <td class="font-semibold whitespace-nowrap text-white">{{ horaStr(t.fechaHora) }}</td>
+              <td>
+                <strong class="text-white">{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                <small class="text-slate-500">{{ t.vehiculo?.marca }} {{ t.vehiculo?.modelo }}</small>
+              </td>
+              <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+              <td>
+                @if (t.cliente?.telefono) {
+                  <a [href]="'tel:' + t.cliente!.telefono" class="text-blue-400 font-semibold no-underline">{{ t.cliente!.telefono }}</a>
+                } @else { — }
+              </td>
+              <td>{{ t.servicio?.nombre ?? '—' }}</td>
+              <td>{{ t.trabajador?.nombre }} {{ t.trabajador?.apellido }}</td>
+              <td class="font-bold" [style.color]="turnosFacturadosSet.has(t.id) ? '#22c55e' : '#64748b'">
+                @if (turnosFacturadosSet.has(t.id)) {
+                  {{ formatPrecio(totalFacturadoPorTurno(t.id)) }}
+                } @else {
+                  {{ formatPrecio(t.servicio?.precio ?? 0) }}
+                }
+              </td>
+              <td>
+                @if (turnosFacturadosSet.has(t.id)) {
+                  <span class="text-[0.72rem] text-green-400 font-bold whitespace-nowrap">✓ Facturado</span>
+                } @else {
+                  <button class="btn btn-cobrar btn-sm" (click)="iniciarCobro(t)">💰 Pagar</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>
+
+<!-- Trabajadores -->
+<div style="animation:fadeUp .4s .35s ease both">
+  <div class="dark-section-header">
+    <span class="section-dot section-dot--trabajadores"></span>
+    Trabajadores hoy
+  </div>
+  <div class="dark-card">
+    @if (trabajadores.length === 0) {
+      <p class="text-slate-600 text-xs text-center">No hay trabajadores registrados</p>
+    } @else {
+      <div class="flex flex-wrap gap-2.5">
+        @for (u of trabajadores; track u.id) {
+          <div class="flex items-center gap-2.5 px-4 py-3 rounded-xl border transition-all hover:-translate-y-0.5"
+               [style]="u.disponible ? 'background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.2)' : 'background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)'">
+            <span class="trabajador-dot" [class]="u.disponible ? 'trabajador-dot--disponible' : 'trabajador-dot--no-disponible'"></span>
+            <div>
+              <div class="text-sm font-semibold text-white leading-tight">{{ u.nombre }} {{ u.apellido }}</div>
+              <div class="text-[0.68rem] mt-0.5" [style.color]="u.disponible ? '#4ade80' : '#475569'">
+                {{ u.disponible ? 'Disponible' : 'No disponible' }}
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+} @else {
+<!-- ══ VISTA TRABAJADOR ══════════════════════════════════════════════════ -->
+
+<div class="flex items-start justify-between mb-7 flex-wrap gap-3" style="animation:fadeUp .3s ease both">
+  <div>
+    <h1 class="font-display text-3xl font-extrabold text-white tracking-tight leading-none">Mi panel</h1>
+    <p class="text-slate-500 text-xs mt-1.5 capitalize">{{ hoy }}</p>
+  </div>
+  <div class="flex gap-2 items-center">
+    @if (usuario) {
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+           [style]="usuario.disponible ? 'background:rgba(34,197,94,.12);color:#4ade80' : 'background:rgba(239,68,68,.12);color:#f87171'">
+        <span class="w-1.5 h-1.5 rounded-full" [style.background]="usuario.disponible ? '#4ade80' : '#f87171'"></span>
+        {{ usuario.disponible ? 'Disponible' : 'No disponible' }}
+      </div>
+      <button [class]="usuario.disponible ? 'btn btn-secundario btn-sm' : 'btn btn-primario btn-sm'" (click)="toggleDisponibilidad()">
+        {{ usuario.disponible ? 'Salir' : 'Entrar' }}
+      </button>
+    }
+    <button class="btn btn-secundario btn-sm" (click)="cargar()">↻</button>
+  </div>
+</div>
+
+<!-- Stats trabajador -->
+<div class="grid grid-cols-3 gap-3 mb-7" style="animation:fadeUp .4s .1s ease both">
+  <div class="dark-stat-card text-center">
+    <div class="dark-stat-bar" style="background:#f59e0b"></div>
+    <div class="dark-stat-label">En espera</div>
+    <div class="dark-stat-valor" style="color:#d97706">{{ misPendientes.length }}</div>
+  </div>
+  <div class="dark-stat-card text-center">
+    <div class="dark-stat-bar" style="background:#8b5cf6"></div>
+    <div class="dark-stat-label">Completados hoy</div>
+    <div class="dark-stat-valor" style="color:#8b5cf6">{{ misCompletadosHoy.length }}</div>
+  </div>
+  <div class="dark-stat-card text-center">
+    <div class="dark-stat-bar" style="background:#16a34a"></div>
+    <div class="dark-stat-label">Ganado hoy</div>
+    <div class="dark-stat-valor" style="color:#22c55e;font-size:1.5rem">{{ formatPrecio(gananciaHoy) }}</div>
+  </div>
+</div>
+
+<!-- En proceso -->
+<div class="mb-4" style="animation:fadeUp .4s .15s ease both">
+  <div class="dark-section-header">
+    <span class="section-dot section-dot--proceso"></span>
+    En proceso ahora
+  </div>
+  <div class="dark-card overflow-hidden p-0">
+    @if (misEnProceso.length === 0) {
+      <p class="text-slate-600 text-xs text-center py-5">Ningún vehículo en proceso</p>
+    } @else {
+      <table class="dark-tabla">
+        <thead><tr><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th></th></tr></thead>
+        <tbody>
+          @for (t of misEnProceso; track t.id) {
+            <tr>
+              <td>
+                <strong class="text-white">{{ t.vehiculo?.placa ?? '—' }}</strong><br>
+                <small class="text-slate-500">{{ t.vehiculo?.marca }} {{ t.vehiculo?.modelo }}</small>
+              </td>
+              <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+              <td>{{ t.servicio?.nombre ?? '—' }}</td>
+              <td><button class="btn btn-primario btn-sm" (click)="finalizarTurno(t)">✓ Finalizar</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>
+
+<!-- Pendientes trabajador -->
+<div class="mb-4" style="animation:fadeUp .4s .2s ease both">
+  <div class="dark-section-header">
+    <span class="section-dot section-dot--espera"></span>
+    Turnos en espera
+  </div>
+  <div class="dark-card overflow-hidden p-0">
+    @if (misPendientes.length === 0) {
+      <p class="text-slate-600 text-xs text-center py-5">No tenés turnos en espera</p>
+    } @else {
+      <table class="dark-tabla">
+        <thead><tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th></th></tr></thead>
+        <tbody>
+          @for (t of misPendientes; track t.id) {
+            <tr>
+              <td class="font-semibold whitespace-nowrap text-white">{{ horaStr(t.fechaHora) }}</td>
+              <td><strong class="text-white">{{ t.vehiculo?.placa ?? '—' }}</strong></td>
+              <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+              <td>{{ t.servicio?.nombre ?? '—' }}</td>
+              <td><button class="btn btn-secundario btn-sm" (click)="iniciarTurno(t.id)">→ Iniciar</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>
+
+<!-- Completados trabajador -->
+<div style="animation:fadeUp .4s .25s ease both">
+  <div class="dark-section-header">
+    <span class="section-dot section-dot--exito"></span>
+    Completados hoy
+  </div>
+  <div class="dark-card overflow-hidden p-0">
+    @if (misCompletadosHoy.length === 0) {
+      <p class="text-slate-600 text-xs text-center py-5">Todavía no completaste ningún turno hoy</p>
+    } @else {
+      <table class="dark-tabla">
+        <thead><tr><th>Hora</th><th>Vehículo</th><th>Cliente</th><th>Servicio</th><th>Tu ganancia</th></tr></thead>
+        <tbody>
+          @for (t of misCompletadosHoy; track t.id) {
+            <tr>
+              <td class="whitespace-nowrap text-white font-semibold">{{ horaStr(t.fechaHora) }}</td>
+              <td><strong class="text-white">{{ t.vehiculo?.placa ?? '—' }}</strong></td>
+              <td>{{ t.cliente?.nombre }} {{ t.cliente?.apellido }}</td>
+              <td>{{ t.servicio?.nombre ?? '—' }}</td>
+              <td class="font-bold text-green-400">
+                {{ formatPrecio(+(t.servicio?.precio ?? 0) * ((usuario?.comisionPorcentaje ?? 0) / 100)) }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>
+
 }
+
+<!-- ══ MODALES (no tocar — usan estilos globales) ════════════════════════ -->
 
 <!-- Modal nueva orden -->
 <app-modal titulo="Nueva orden" [visible]="mostrarFormOrden" ancho="540px" (cerrar)="cerrarFormOrden()">
   @if (errorFormOrden) { <div class="alerta-error">{{ errorFormOrden }}</div> }
   <form (ngSubmit)="guardarOrden()">
-
-    <!-- Búsqueda por placa -->
     <div class="form-grupo">
       <label class="form-label">Buscar por placa</label>
       <div style="position:relative">
@@ -486,7 +453,6 @@
           <button type="button" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-texto-suave)" (click)="limpiarBusquedaPlacaOrden()">✕</button>
         }
       </div>
-
       @if (vehiculoEncontradoOrden) {
         <div style="margin-top:8px;padding:10px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div>
@@ -505,7 +471,6 @@
       }
     </div>
 
-    <!-- Cliente / Vehículo manual (se oculta si se encontró por placa) -->
     @if (!vehiculoEncontradoOrden) {
       <div class="form-grupo">
         <label class="form-label">Cliente</label>
@@ -570,31 +535,24 @@
   </form>
 </app-modal>
 
-<!-- Modal cobro desde el panel -->
+<!-- Modal cobro -->
 <app-modal titulo="Registrar cobro" [visible]="mostrarModalCobro" ancho="420px" (cerrar)="cerrarModalCobro()">
   @if (ordenACobrar) {
     <div style="margin-bottom:16px;padding:12px;background:var(--color-fondo);border-radius:8px;font-size:0.875rem">
       <div><strong>{{ ordenACobrar.cliente?.apellido }}, {{ ordenACobrar.cliente?.nombre }}</strong></div>
-      <div style="color:var(--color-texto-suave)">
-        {{ ordenACobrar.vehiculo?.placa }} · {{ ordenACobrar.vehiculo?.marca }} {{ ordenACobrar.vehiculo?.modelo }}
-      </div>
+      <div style="color:var(--color-texto-suave)">{{ ordenACobrar.vehiculo?.placa }} · {{ ordenACobrar.vehiculo?.marca }} {{ ordenACobrar.vehiculo?.modelo }}</div>
       <div style="margin-top:4px">{{ ordenACobrar.servicio?.nombre }}</div>
     </div>
     <div class="form-grupo">
       <label class="form-label">Total a cobrar</label>
-      <input class="form-input" type="number" [(ngModel)]="totalFactura" min="0" step="100"
-             style="font-size:1.1rem;font-weight:600" />
-      <small style="color:var(--color-texto-suave)">
-        Precio del servicio: {{ formatPrecio(ordenACobrar.servicio?.precio ?? 0) }}
-      </small>
+      <input class="form-input" type="number" [(ngModel)]="totalFactura" min="0" step="100" style="font-size:1.1rem;font-weight:600" />
+      <small style="color:var(--color-texto-suave)">Precio del servicio: {{ formatPrecio(ordenACobrar.servicio?.precio ?? 0) }}</small>
     </div>
     <div class="form-grupo">
       <label class="form-label">Método de pago</label>
       <div class="metodos-pago-grid">
         @for (m of METODOS; track m) {
-          <button type="button" class="metodo-pago-btn" [class.seleccionado]="metodoPago === m" (click)="metodoPago = m">
-            {{ METODO_LABEL[m] }}
-          </button>
+          <button type="button" class="metodo-pago-btn" [class.seleccionado]="metodoPago === m" (click)="metodoPago = m">{{ METODO_LABEL[m] }}</button>
         }
       </div>
     </div>
@@ -608,7 +566,7 @@
   }
 </app-modal>
 
-<!-- Factura generada desde el panel -->
+<!-- Factura generada -->
 @if (facturaGenerada) {
   <div class="factura-print">
     <div class="factura-print-header">
@@ -619,14 +577,10 @@
       </div>
     </div>
     <table class="factura-print-tabla">
-      <tr><td class="factura-print-lbl">Cliente</td>
-          <td>{{ facturaGenerada.turno?.cliente?.apellido }}, {{ facturaGenerada.turno?.cliente?.nombre }}</td></tr>
-      <tr><td class="factura-print-lbl">Vehículo</td>
-          <td>{{ facturaGenerada.turno?.vehiculo?.placa }} · {{ facturaGenerada.turno?.vehiculo?.marca }} {{ facturaGenerada.turno?.vehiculo?.modelo }}</td></tr>
-      <tr><td class="factura-print-lbl">Servicio</td>
-          <td>{{ facturaGenerada.turno?.servicio?.nombre }}</td></tr>
-      <tr><td class="factura-print-lbl">Método de pago</td>
-          <td>{{ METODO_LABEL[facturaGenerada.metodoPago] }}</td></tr>
+      <tr><td class="factura-print-lbl">Cliente</td><td>{{ facturaGenerada.turno?.cliente?.apellido }}, {{ facturaGenerada.turno?.cliente?.nombre }}</td></tr>
+      <tr><td class="factura-print-lbl">Vehículo</td><td>{{ facturaGenerada.turno?.vehiculo?.placa }} · {{ facturaGenerada.turno?.vehiculo?.marca }} {{ facturaGenerada.turno?.vehiculo?.modelo }}</td></tr>
+      <tr><td class="factura-print-lbl">Servicio</td><td>{{ facturaGenerada.turno?.servicio?.nombre }}</td></tr>
+      <tr><td class="factura-print-lbl">Método de pago</td><td>{{ METODO_LABEL[facturaGenerada.metodoPago] }}</td></tr>
     </table>
     <div class="factura-print-total"><span>TOTAL</span><span>{{ formatPrecio(facturaGenerada.total) }}</span></div>
     <div class="factura-print-footer">¡Gracias por su visita!</div>
@@ -644,14 +598,10 @@
           <div style="font-weight:800;font-size:1.1rem">Lavadero</div>
         </div>
         <table style="width:100%;font-size:0.875rem;margin-bottom:16px">
-          <tr><td style="color:var(--color-texto-suave);padding:4px 0;width:40%">Cliente</td>
-              <td style="font-weight:500">{{ facturaGenerada.turno?.cliente?.apellido }}, {{ facturaGenerada.turno?.cliente?.nombre }}</td></tr>
-          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Vehículo</td>
-              <td>{{ facturaGenerada.turno?.vehiculo?.placa }} · {{ facturaGenerada.turno?.vehiculo?.marca }}</td></tr>
-          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Servicio</td>
-              <td>{{ facturaGenerada.turno?.servicio?.nombre }}</td></tr>
-          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Método de pago</td>
-              <td>{{ METODO_LABEL[facturaGenerada.metodoPago] }}</td></tr>
+          <tr><td style="color:var(--color-texto-suave);padding:4px 0;width:40%">Cliente</td><td style="font-weight:500">{{ facturaGenerada.turno?.cliente?.apellido }}, {{ facturaGenerada.turno?.cliente?.nombre }}</td></tr>
+          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Vehículo</td><td>{{ facturaGenerada.turno?.vehiculo?.placa }} · {{ facturaGenerada.turno?.vehiculo?.marca }}</td></tr>
+          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Servicio</td><td>{{ facturaGenerada.turno?.servicio?.nombre }}</td></tr>
+          <tr><td style="color:var(--color-texto-suave);padding:4px 0">Método de pago</td><td>{{ METODO_LABEL[facturaGenerada.metodoPago] }}</td></tr>
         </table>
         <div style="border-top:2px solid var(--color-texto);padding-top:12px;display:flex;justify-content:space-between;align-items:center">
           <span style="font-weight:700">TOTAL</span>
@@ -667,13 +617,8 @@
   </div>
 }
 
-<!-- Modal nuevo cliente (desde nueva orden del panel) -->
-<app-modal
-  titulo="Crear cliente"
-  [visible]="mostrarModalNuevoClienteOrden"
-  ancho="520px"
-  (cerrar)="mostrarModalNuevoClienteOrden = false"
->
+<!-- Modal nuevo cliente -->
+<app-modal titulo="Crear cliente" [visible]="mostrarModalNuevoClienteOrden" ancho="520px" (cerrar)="mostrarModalNuevoClienteOrden = false">
   @if (errorNuevoClienteOrden) { <div class="alerta-error">{{ errorNuevoClienteOrden }}</div> }
   <form (ngSubmit)="guardarNuevoClienteOrden()">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -701,24 +646,16 @@
       </div>
     </div>
     <div class="modal-footer" style="margin-top:20px">
-      <button class="btn btn-primario" type="submit" [disabled]="guardandoNuevoClienteOrden">
-        {{ guardandoNuevoClienteOrden ? 'Creando...' : 'Crear cliente' }}
-      </button>
+      <button class="btn btn-primario" type="submit" [disabled]="guardandoNuevoClienteOrden">{{ guardandoNuevoClienteOrden ? 'Creando...' : 'Crear cliente' }}</button>
       <button class="btn btn-secundario" type="button" (click)="mostrarModalNuevoClienteOrden = false">Cancelar</button>
     </div>
   </form>
 </app-modal>
 
-<!-- Modal nuevo vehículo (desde nueva orden del panel) -->
-<app-modal
-  titulo="Crear vehículo"
-  [visible]="mostrarModalNuevoVehiculoOrden"
-  ancho="460px"
-  (cerrar)="mostrarModalNuevoVehiculoOrden = false"
->
+<!-- Modal nuevo vehículo -->
+<app-modal titulo="Crear vehículo" [visible]="mostrarModalNuevoVehiculoOrden" ancho="460px" (cerrar)="mostrarModalNuevoVehiculoOrden = false">
   @if (errorNuevoVehiculoOrden) { <div class="alerta-error">{{ errorNuevoVehiculoOrden }}</div> }
   <form (ngSubmit)="guardarNuevoVehiculoOrden()">
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-grupo">
         <label class="form-label">Patente / Placa <span style="color:#dc2626">*</span></label>
@@ -727,13 +664,10 @@
       <div class="form-grupo">
         <label class="form-label">Tipo</label>
         <select class="form-input" [(ngModel)]="formNuevoVehiculoDirectoOrden.tipo" name="nvd_tipo">
-          @for (t of TIPOS_VEHICULO; track t.valor) {
-            <option [value]="t.valor">{{ t.label }}</option>
-          }
+          @for (t of TIPOS_VEHICULO; track t.valor) { <option [value]="t.valor">{{ t.label }}</option> }
         </select>
       </div>
     </div>
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-grupo">
         <label class="form-label">Marca</label>
@@ -744,16 +678,12 @@
         <input class="form-input" [(ngModel)]="formNuevoVehiculoDirectoOrden.modelo" name="nvd_modelo" placeholder="Corolla" />
       </div>
     </div>
-
     <div class="form-grupo">
       <label class="form-label">Color <span style="color:#dc2626">*</span></label>
       <input class="form-input" [(ngModel)]="formNuevoVehiculoDirectoOrden.color" name="nvd_color" placeholder="Blanco" required />
     </div>
-
     <div class="modal-footer" style="margin-top:20px">
-      <button class="btn btn-primario" type="submit" [disabled]="guardandoNuevoVehiculoOrden || !vehiculoDirectoOrdenCompleto()">
-        {{ guardandoNuevoVehiculoOrden ? 'Creando...' : 'Crear vehículo' }}
-      </button>
+      <button class="btn btn-primario" type="submit" [disabled]="guardandoNuevoVehiculoOrden || !vehiculoDirectoOrdenCompleto()">{{ guardandoNuevoVehiculoOrden ? 'Creando...' : 'Crear vehículo' }}</button>
       <button class="btn btn-secundario" type="button" (click)="mostrarModalNuevoVehiculoOrden = false">Cancelar</button>
     </div>
   </form>

@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SuperadminService } from '../../core/services/superadmin.service';
 import { AuthService } from '../../core/services/auth.service';
-import type { TenantConStats, MetricasGlobales, UsuarioConTenant } from '../../shared/types';
+import type { TenantConStats, MetricasGlobales, UsuarioConTenant, LogSistema, TipoLog, OrigenLog } from '../../shared/types';
 
-type Vista = 'empresas' | 'usuarios';
+type Vista = 'empresas' | 'usuarios' | 'logs';
 
 @Component({
   selector: 'app-superadmin',
@@ -31,6 +31,12 @@ export class SuperadminComponent implements OnInit {
 
   // Filtro usuarios
   filtroTenantId = '';
+
+  // Logs
+  logs: LogSistema[] = [];
+  filtroLogResuelto: '' | 'false' | 'true' = 'false';
+  filtroLogOrigen: OrigenLog | '' = '';
+  cargandoLogs = false;
 
   // Confirmación eliminar
   tenantAEliminar: TenantConStats | null = null;
@@ -67,6 +73,7 @@ export class SuperadminComponent implements OnInit {
   cambiarVista(v: Vista): void {
     this.vista = v;
     this.filtroTenantId = '';
+    if (v === 'logs') this.cargarLogs();
   }
 
   get usuariosFiltrados(): UsuarioConTenant[] {
@@ -175,9 +182,39 @@ export class SuperadminComponent implements OnInit {
     }
   }
 
+  // ── Logs ───────────────────────────────────────────────────────────────────
+
+  async cargarLogs(): Promise<void> {
+    this.cargandoLogs = true;
+    this.error = '';
+    try {
+      const filtros: { resuelto?: boolean; origen?: OrigenLog } = {};
+      if (this.filtroLogResuelto !== '') filtros.resuelto = this.filtroLogResuelto === 'true';
+      if (this.filtroLogOrigen)          filtros.origen   = this.filtroLogOrigen as OrigenLog;
+      this.logs = await this.svc.listarLogs(filtros);
+    } catch {
+      this.error = 'Error al cargar los logs';
+    } finally {
+      this.cargandoLogs = false;
+    }
+  }
+
+  async resolverLog(log: LogSistema): Promise<void> {
+    this.procesando = log.id;
+    try {
+      const actualizado = await this.svc.resolverLog(log.id);
+      const idx = this.logs.findIndex(l => l.id === log.id);
+      if (idx !== -1) this.logs[idx] = actualizado;
+    } catch {
+      this.error = 'Error al marcar el log como resuelto';
+    } finally {
+      this.procesando = null;
+    }
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   logout(): void {
-    this.auth.logout();
+    void this.auth.logout();
   }
 }

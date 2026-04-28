@@ -23,7 +23,7 @@ export class AuthService {
     private readonly loginLogRepo: Repository<LoginLog>,
   ) {}
 
-  async login(dto: LoginDto): Promise<{ accessToken: string; config: object }> {
+  async login(dto: LoginDto): Promise<{ accessToken: string; rol: string; config: object }> {
     const usuario = await this.usuariosService.buscarPorEmailConPassword(dto.email);
 
     if (!usuario || !usuario.activo) {
@@ -47,9 +47,13 @@ export class AuthService {
 
     const payload = { sub: usuario.id, rol: usuario.rol, tenantId: usuario.tenantId };
     const accessToken = this.jwtService.sign(payload);
-    const tenant = await this.tenantsService.buscarPorId(usuario.tenantId!);
-    const { id: _id, activo: _activo, fechaCreacion: _fc, ...config } = tenant;
-    return { accessToken, config };
+    let config = {};
+    if (usuario.tenantId) {
+      const tenant = await this.tenantsService.buscarPorId(usuario.tenantId);
+      const { id: _id, activo: _activo, fechaCreacion: _fc, ...rest } = tenant;
+      config = rest;
+    }
+    return { accessToken, rol: usuario.rol, config };
   }
 
   async obtenerConfigTenant(tenantId: string): Promise<object> {
@@ -74,7 +78,7 @@ export class AuthService {
     this.eventsGateway.emitirUsuarioActualizado(usuarioId, disponible);
   }
 
-  async registrar(dto: RegistrarTenantDto): Promise<{ accessToken: string }> {
+  async registrar(dto: RegistrarTenantDto): Promise<{ accessToken: string; rol: string }> {
     // Verificar que el slug no esté en uso
     const slugExiste = await this.tenantsService.buscarPorSlug(dto.slug);
     if (slugExiste) {
@@ -105,7 +109,7 @@ export class AuthService {
 
     // Login automático al terminar el registro
     const payload = { sub: admin.id, rol: admin.rol, tenantId: tenant.id };
-    return { accessToken: this.jwtService.sign(payload) };
+    return { accessToken: this.jwtService.sign(payload), rol: admin.rol };
   }
 
   async historialLogin(limit: number, tenantId: string): Promise<LoginLog[]> {

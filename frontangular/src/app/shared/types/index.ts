@@ -15,7 +15,8 @@ export interface RegistrarPayload {
 }
 
 export interface AuthResponse {
-  accessToken: string;
+  accessToken?: string; // presente en el body para la app móvil; el web usa la cookie
+  rol: string;
   config?: {
     colorPrimario:   string | null;
     colorSidebar:    string | null;
@@ -60,6 +61,7 @@ export interface Cliente {
   nombre: string;
   apellido: string;
   telefono: string;
+  cedula: string | null;
   email: string | null;
   fechaRegistro: string;
 }
@@ -362,9 +364,32 @@ export interface ReporteData {
   };
   pl: {
     ingresos: number;
-    gastos: number;
+    ingresosPorVentas: number;
+    ingresosManuales: number;
+    gastosOperativos: number;
+    comisionesDevengadas: number;
+    liquidacionesPagadas: number;
+    gananciaBruta: number;
     gananciaNeta: number;
   };
+}
+
+// ── Logs del sistema ──────────────────────────────────────────────────────────
+
+export type TipoLog    = 'error' | 'advertencia' | 'info';
+export type OrigenLog  = 'frontend' | 'backend';
+
+export interface LogSistema {
+  id: string;
+  tenantId: string | null;
+  usuarioId: string | null;
+  tipo: TipoLog;
+  origen: OrigenLog;
+  mensaje: string;
+  detalle: string | null;
+  ruta: string | null;
+  resuelto: boolean;
+  fechaCreacion: string;
 }
 
 // ── Errores de la API ─────────────────────────────────────────────────────────

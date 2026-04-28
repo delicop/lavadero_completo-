@@ -5,11 +5,13 @@ import { SuperadminService } from './superadmin.service';
 import { Tenant } from '../tenants/entities/tenant.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { TenantsModule } from '../tenants/tenants.module';
+import { LogsModule } from '../logs/logs.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Tenant, Usuario]),
     TenantsModule,
+    LogsModule,
   ],
   controllers: [SuperadminController],
   providers: [SuperadminService],

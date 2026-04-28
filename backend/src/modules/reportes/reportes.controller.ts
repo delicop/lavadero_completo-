@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UsuarioActual } from '../../common/decorators/usuario-actual.decorator';
+import { FechaFiltroPipe } from '../../common/pipes/fecha-filtro.pipe';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
 import { ReportesService } from './reportes.service';
 
@@ -15,14 +16,9 @@ export class ReportesController {
   @Get()
   obtener(
     @UsuarioActual() usuario: Usuario,
-    @Query('desde') desde: string,
-    @Query('hasta') hasta: string,
+    @Query('desde', FechaFiltroPipe) desde?: string,
+    @Query('hasta', FechaFiltroPipe) hasta?: string,
   ) {
-    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
-    return this.reportesService.obtenerReporte(
-      usuario.tenantId!,
-      desde ?? hoy,
-      hasta ?? hoy,
-    );
+    return this.reportesService.obtenerReporte(usuario.tenantId!, desde, hasta);
   }
 }

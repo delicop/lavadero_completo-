@@ -28,7 +28,7 @@
       </div>
       <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumenAnterior }"></ng-container>
       <div style="margin-top:1.5rem;text-align:right">
-        <button class="btn btn-primary" [disabled]="guardando" (click)="cerrarAnterior()">
+        <button class="btn btn-primario" [disabled]="guardando" (click)="cerrarAnterior()">
           {{ guardando ? 'Cerrando...' : 'Confirmar cierre del día anterior' }}
         </button>
       </div>
@@ -66,7 +66,7 @@
         />
       </div>
       <button
-        class="btn btn-primary"
+        class="btn btn-primario"
         style="width:100%"
         [disabled]="guardando || montoInicial < 0"
         (click)="abrirCaja()"
@@ -92,7 +92,7 @@
         </p>
       </div>
       @if (vista === 'abierta') {
-        <button class="btn btn-primary" [disabled]="!resumen" (click)="abrirModalCierre()">Cerrar caja</button>
+        <button class="btn btn-primario" [disabled]="!resumen" (click)="abrirModalCierre()">Cerrar caja</button>
       }
     </div>
 
@@ -101,7 +101,7 @@
     } @else {
 
       <!-- 3 tarjetas principales -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem">
 
         <div class="card" style="text-align:center;border-top:3px solid #16a34a">
           <div style="font-size:0.75rem;color:var(--color-texto-suave);text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.4rem">Ingresos</div>
@@ -224,6 +224,7 @@
         @if (movimientos(resumen).length === 0) {
           <p class="estado-vacio" style="padding:1.5rem 0">Sin movimientos registrados</p>
         } @else {
+          <div style="overflow-x:auto">
           <table class="tabla" style="margin:0">
             <thead>
               <tr>
@@ -268,6 +269,7 @@
               }
             </tbody>
           </table>
+          </div>
         }
       </div>
 
@@ -320,7 +322,7 @@
     <ng-container *ngTemplateOutlet="tplResumen; context: { $implicit: resumen }"></ng-container>
     <div style="margin-top:1.5rem;display:flex;justify-content:flex-end;gap:0.75rem">
       <button class="btn btn-secondary" (click)="modalCierre = false">Cancelar</button>
-      <button class="btn btn-primary" [disabled]="guardando" (click)="confirmarCierre()">
+      <button class="btn btn-primario" [disabled]="guardando" (click)="confirmarCierre()">
         {{ guardando ? 'Cerrando...' : 'Confirmar cierre' }}
       </button>
     </div>
@@ -329,7 +331,7 @@
 
 <!-- ══ TEMPLATE: RESUMEN PARA CIERRE ════════════════════════════════════════ -->
 <ng-template #tplResumen let-r>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1rem">
     <div style="padding:1rem;background:#f0fdf4;border-radius:8px;text-align:center">
       <div style="font-size:0.75rem;color:#15803d;font-weight:600;text-transform:uppercase;margin-bottom:0.25rem">Ingresos</div>
       <div style="font-size:1.4rem;font-weight:800;color:#16a34a">{{ formatPrecio(ingresosResumen(r)) }}</div>
@@ -392,7 +394,7 @@
   <div style="display:flex;justify-content:flex-end;gap:0.75rem">
     <button class="btn btn-secondary" (click)="modalGasto = false">Cancelar</button>
     <button
-      class="btn btn-primary"
+      class="btn btn-primario"
       [disabled]="guardando || !gastoConcepto || !gastoMonto"
       (click)="guardarGasto()"
     >
@@ -426,7 +428,7 @@
   <div style="display:flex;justify-content:flex-end;gap:0.75rem">
     <button class="btn btn-secondary" (click)="modalIngreso = false">Cancelar</button>
     <button
-      class="btn btn-primary"
+      class="btn btn-primario"
       [disabled]="guardando || !ingresoConcepto || !ingresoMonto"
       (click)="guardarIngreso()"
     >

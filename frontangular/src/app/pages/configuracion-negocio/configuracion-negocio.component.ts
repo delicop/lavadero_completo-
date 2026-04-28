@@ -110,9 +110,9 @@ export class ConfiguracionNegocioComponent implements OnInit {
   direccion        = '';
 
   // Campos de personalización visual
-  colorPrimario   = '#2563eb';
-  colorSidebar    = '#ffffff';
-  colorFondo      = '#f8fafc';
+  colorPrimario   = '#3b82f6';
+  colorSidebar    = '#1e293b';
+  colorFondo      = '#f1f5f9';
   colorSuperficie = '#ffffff';
 
   async ngOnInit(): Promise<void> {
@@ -125,9 +125,9 @@ export class ConfiguracionNegocioComponent implements OnInit {
       this.telefonoWhatsapp = this.config.telefonoWhatsapp ?? '';
       this.emailContacto    = this.config.emailContacto ?? '';
       this.direccion        = this.config.direccion ?? '';
-      this.colorPrimario    = this.config.colorPrimario   ?? '#2563eb';
-      this.colorSidebar     = this.config.colorSidebar   ?? '#ffffff';
-      this.colorFondo       = this.config.colorFondo     ?? '#f8fafc';
+      this.colorPrimario    = this.config.colorPrimario   ?? '#3b82f6';
+      this.colorSidebar     = this.config.colorSidebar    ?? '#1e293b';
+      this.colorFondo       = this.config.colorFondo      ?? '#f1f5f9';
       this.colorSuperficie  = this.config.colorSuperficie ?? '#ffffff';
     } catch {
       this.mensaje = 'No se pudo cargar la configuración';

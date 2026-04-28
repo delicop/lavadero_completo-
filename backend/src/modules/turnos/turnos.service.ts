@@ -14,6 +14,7 @@ import { CrearTurnoDto } from './dto/crear-turno.dto';
 import { ActualizarTurnoDto } from './dto/actualizar-turno.dto';
 import { ActualizarEstadoDto } from './dto/actualizar-estado.dto';
 import { EventsGateway } from '../events/events.gateway';
+import { TenantsService } from '../tenants/tenants.service';
 
 @Injectable()
 export class TurnosService {
@@ -25,6 +26,7 @@ export class TurnosService {
     private readonly serviciosService: ServiciosService,
     private readonly usuariosService: UsuariosService,
     private readonly eventsGateway: EventsGateway,
+    private readonly tenantsService: TenantsService,
   ) {}
 
   async crear(dto: CrearTurnoDto, tenantId: string): Promise<Turno> {
@@ -76,9 +78,10 @@ export class TurnosService {
     const where: Record<string, unknown> = { tenantId };
     if (estado) where['estado'] = estado;
     if (fechaDesde && fechaHasta) {
+      const offset = await this.tenantsService.offsetParaTenant(tenantId);
       where['fechaHora'] = Between(
-        new Date(`${fechaDesde}T00:00:00-05:00`),
-        new Date(`${fechaHasta}T23:59:59-05:00`),
+        new Date(`${fechaDesde}T00:00:00${offset}`),
+        new Date(`${fechaHasta}T23:59:59${offset}`),
       );
     }
     return this.repo.find({
@@ -107,9 +110,10 @@ export class TurnosService {
   ): Promise<Turno[]> {
     const where: Record<string, unknown> = { trabajadorId, tenantId };
     if (fechaDesde && fechaHasta) {
+      const offset = await this.tenantsService.offsetParaTenant(tenantId);
       where['fechaHora'] = Between(
-        new Date(`${fechaDesde}T00:00:00-05:00`),
-        new Date(`${fechaHasta}T23:59:59-05:00`),
+        new Date(`${fechaDesde}T00:00:00${offset}`),
+        new Date(`${fechaHasta}T23:59:59${offset}`),
       );
     }
     return this.repo.find({

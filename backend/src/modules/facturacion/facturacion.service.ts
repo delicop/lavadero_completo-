@@ -4,6 +4,7 @@ import { Between, Repository } from 'typeorm';
 import { Factura } from './entities/factura.entity';
 import { CajaDia, EstadoCajaDia } from '../caja/entities/caja-dia.entity';
 import { TurnosService } from '../turnos/turnos.service';
+import { TenantsService } from '../tenants/tenants.service';
 import { EstadoTurno } from '../turnos/entities/turno.entity';
 import { CrearFacturaDto } from './dto/crear-factura.dto';
 
@@ -15,6 +16,7 @@ export class FacturacionService {
     @InjectRepository(CajaDia)
     private readonly cajaDiaRepo: Repository<CajaDia>,
     private readonly turnosService: TurnosService,
+    private readonly tenantsService: TenantsService,
   ) {}
 
   async crear(dto: CrearFacturaDto, tenantId: string): Promise<Factura> {
@@ -49,9 +51,10 @@ export class FacturacionService {
   async buscarTodas(tenantId: string, fechaDesde?: string, fechaHasta?: string): Promise<Factura[]> {
     const where: Record<string, unknown> = { tenantId };
     if (fechaDesde && fechaHasta) {
+      const offset = await this.tenantsService.offsetParaTenant(tenantId);
       where['fechaEmision'] = Between(
-        new Date(`${fechaDesde}T00:00:00-05:00`),
-        new Date(`${fechaHasta}T23:59:59-05:00`),
+        new Date(`${fechaDesde}T00:00:00${offset}`),
+        new Date(`${fechaHasta}T23:59:59${offset}`),
       );
     }
     return this.repo.find({

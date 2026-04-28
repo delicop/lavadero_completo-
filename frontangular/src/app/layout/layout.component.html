@@ -1,93 +1,105 @@
-<div class="layout">
-  <nav class="sidebar">
-    <div class="sidebar-marca">
-      <div class="sidebar-marca-icono">🚗</div>
-      <span class="sidebar-marca-texto">{{ tenantSvc.configActual?.nombreComercial || tenantSvc.configActual?.nombre || 'Lavadero' }}</span>
+<div class="flex h-screen overflow-hidden" style="background: var(--color-fondo)">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════════════════ -->
+  <nav class="w-44 flex-shrink-0 flex flex-col overflow-y-auto" style="background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-borde)">
+
+    <!-- Marca -->
+    <div class="flex items-center gap-2.5 px-4 h-14 flex-shrink-0" style="border-bottom: 1px solid var(--sidebar-borde)">
+      <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#3b82f6"/>
+        <rect x="8" y="18" width="16" height="7" rx="2" fill="white" opacity="0.95"/>
+        <path d="M10 18L11.5 14.5H20.5L22 18" fill="white" opacity="0.95"/>
+        <circle cx="11.5" cy="25.5" r="2" fill="#3b82f6"/>
+        <circle cx="20.5" cy="25.5" r="2" fill="#3b82f6"/>
+      </svg>
+      <span class="font-display font-bold text-white text-xs leading-tight truncate">
+        {{ tenantSvc.configActual?.nombreComercial || tenantSvc.configActual?.nombre || 'Lavadero' }}
+      </span>
     </div>
 
-    <!-- Links directos (todos los roles) -->
-    @for (item of itemsDirectos; track item.ruta) {
-      <a
-        class="sidebar-link"
-        [routerLink]="item.ruta"
-        routerLinkActive="activo"
-      >
-        <span class="icono">{{ item.icono }}</span>
-        {{ item.label }}
-      </a>
-    }
+    <!-- Links -->
+    <div class="flex-1 px-2 py-3 space-y-0.5">
 
-    <!-- Sección solo admin -->
-    @if (esAdmin) {
+      @for (item of itemsDirectos; track item.ruta) {
+        <a class="nav-link flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 text-xs font-medium transition-all no-underline"
+           [routerLink]="item.ruta"
+           routerLinkActive="activo">
+          <span class="text-sm leading-none opacity-70">{{ item.icono }}</span>
+          {{ item.label }}
+        </a>
+      }
 
-      <!-- Grupo colapsable: Operación -->
-      <button
-        class="sidebar-link sidebar-grupo-toggle"
-        [class.activo]="operacionAbierto"
-        (click)="toggleOperacion()"
-      >
-        <span class="icono">◈</span>
-        Operación
-        <span class="sidebar-chevron" [class.abierto]="operacionAbierto">›</span>
-      </button>
+      @if (esAdmin) {
 
-      <div class="sidebar-subgrupo" [class.visible]="operacionAbierto">
-        @for (item of itemsOperacion; track item.ruta) {
-          <a
-            class="sidebar-link sidebar-sublink"
-            [routerLink]="item.ruta"
-            routerLinkActive="activo"
-          >
-            <span class="icono">{{ item.icono }}</span>
-            {{ item.label }}
-          </a>
-        }
-      </div>
+        <!-- Grupo Operación -->
+        <button class="nav-link w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 text-xs font-medium transition-all mt-2"
+                [class.activo]="operacionAbierto"
+                (click)="toggleOperacion()">
+          <span class="text-sm leading-none opacity-70">◈</span>
+          <span class="flex-1 text-left">Operación</span>
+          <span class="text-slate-600 text-xs transition-transform duration-200" [class.rotate-90]="operacionAbierto">›</span>
+        </button>
+        <div class="overflow-hidden transition-all duration-200" [style.max-height]="operacionAbierto ? '400px' : '0'">
+          <div class="pl-2 space-y-0.5 pt-0.5">
+            @for (item of itemsOperacion; track item.ruta) {
+              <a class="nav-link flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 text-xs font-medium transition-all no-underline"
+                 [routerLink]="item.ruta"
+                 routerLinkActive="activo">
+                <span class="text-sm leading-none opacity-60">{{ item.icono }}</span>
+                {{ item.label }}
+              </a>
+            }
+          </div>
+        </div>
 
-      <!-- Grupo colapsable: Administración -->
-      <button
-        class="sidebar-link sidebar-grupo-toggle"
-        [class.activo]="adminAbierto"
-        (click)="toggleAdmin()"
-      >
-        <span class="icono">⚙</span>
-        Administración
-        <span class="sidebar-chevron" [class.abierto]="adminAbierto">›</span>
-      </button>
+        <!-- Grupo Administración -->
+        <button class="nav-link w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 text-xs font-medium transition-all mt-1"
+                [class.activo]="adminAbierto"
+                (click)="toggleAdmin()">
+          <span class="text-sm leading-none opacity-70">⚙</span>
+          <span class="flex-1 text-left">Administración</span>
+          <span class="text-slate-600 text-xs transition-transform duration-200" [class.rotate-90]="adminAbierto">›</span>
+        </button>
+        <div class="overflow-hidden transition-all duration-200" [style.max-height]="adminAbierto ? '500px' : '0'">
+          <div class="pl-2 space-y-0.5 pt-0.5">
+            @for (item of itemsAdmin; track item.ruta) {
+              <a class="nav-link flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 text-xs font-medium transition-all no-underline"
+                 [routerLink]="item.ruta"
+                 routerLinkActive="activo">
+                <span class="text-sm leading-none opacity-60">{{ item.icono }}</span>
+                {{ item.label }}
+              </a>
+            }
+          </div>
+        </div>
 
-      <div class="sidebar-subgrupo" [class.visible]="adminAbierto">
-        @for (item of itemsAdmin; track item.ruta) {
-          <a
-            class="sidebar-link sidebar-sublink"
-            [routerLink]="item.ruta"
-            routerLinkActive="activo"
-          >
-            <span class="icono">{{ item.icono }}</span>
-            {{ item.label }}
-          </a>
-        }
-      </div>
+      }
+    </div>
 
-    }
-
-    <div class="sidebar-footer">
+    <!-- Footer usuario -->
+    <div class="border-t border-white/5 p-3 flex-shrink-0">
       @if (usuario) {
-        <div class="sidebar-usuario">
-          <div class="sidebar-avatar">{{ iniciales }}</div>
-          <div class="sidebar-usuario-info">
-            <div class="sidebar-usuario-nombre">{{ usuario.nombre }} {{ usuario.apellido }}</div>
-            <div class="sidebar-usuario-rol">{{ usuario.rol }}</div>
+        <div class="flex items-center gap-2.5 px-2 py-2 mb-1">
+          <div class="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            {{ iniciales }}
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-semibold text-white truncate leading-tight">{{ usuario.nombre }} {{ usuario.apellido }}</div>
+            <div class="text-[10px] text-slate-500 capitalize mt-0.5">{{ usuario.rol }}</div>
           </div>
         </div>
       }
-      <button class="sidebar-link sidebar-logout" (click)="logout()">
-        <span class="icono">→</span>
+      <button class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/5 text-xs font-medium transition-all"
+              (click)="logout()">
+        <span class="text-sm">→</span>
         Cerrar sesión
       </button>
     </div>
   </nav>
 
-  <main class="contenido">
+  <!-- ══ CONTENIDO PRINCIPAL ═══════════════════════════════════════════════ -->
+  <main class="flex-1 overflow-y-auto p-6 pb-12">
     <router-outlet />
   </main>
+
 </div>

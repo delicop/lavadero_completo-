@@ -1,4 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -9,20 +11,41 @@ import { LoginDto } from './dto/login.dto';
 import { CambiarPasswordDto } from './dto/cambiar-password.dto';
 import { RegistrarTenantDto } from './dto/registrar-tenant.dto';
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure:   process.env['NODE_ENV'] === 'production',
+  sameSite: 'strict' as const,
+  maxAge:   24 * 60 * 60 * 1000,
+  path:     '/',
+};
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const { accessToken, rol, config } = await this.authService.login(dto);
+    res.cookie('access_token', accessToken, COOKIE_OPTIONS);
+    // accessToken incluido en el body para compatibilidad con la app móvil
+    return { accessToken, rol, config };
   }
 
   @Post('registrar')
   @HttpCode(HttpStatus.CREATED)
-  registrar(@Body() dto: RegistrarTenantDto) {
-    return this.authService.registrar(dto);
+  @Throttle({ default: { ttl: 3_600_000, limit: 5 } })
+  async registrar(@Body() dto: RegistrarTenantDto, @Res({ passthrough: true }) res: Response) {
+    const { accessToken, rol } = await this.authService.registrar(dto);
+    res.cookie('access_token', accessToken, COOKIE_OPTIONS);
+    return { accessToken, rol };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('access_token', { path: '/' });
   }
 
   @Get('me')
@@ -52,6 +75,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RolUsuario.ADMIN)
   historial(@UsuarioActual() usuario: Usuario, @Query('limit') limit?: string) {
-    return this.authService.historialLogin(Number(limit) || 100, usuario.tenantId!);
+    return this.authService.historialLogin(Math.min(Number(limit) || 100, 500), usuario.tenantId!);
   }
 }

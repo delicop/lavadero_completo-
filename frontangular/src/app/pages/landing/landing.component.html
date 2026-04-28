@@ -1,110 +1,85 @@
-<!-- ══ NAVBAR ════════════════════════════════════════════════════════ -->
-<nav class="nav">
-  <a class="nav-marca" routerLink="/">
-    <div class="nav-marca-icono">🚗</div>
-    LavaderoApp
-  </a>
-  <div class="nav-acciones">
-    <a class="nav-link" routerLink="/login">Iniciar sesión</a>
-    <a class="nav-cta" routerLink="/registro">Empezar gratis →</a>
+<!-- ══ NAVBAR ══════════════════════════════════════════════════════════ -->
+<nav class="lp-nav">
+  <a routerLink="/" class="lp-logo">lava<span>.</span>app</a>
+  <div class="lp-nav-links">
+    <a href="#features">Funciones</a>
+    <a href="#como-funciona">Cómo funciona</a>
+    <a href="#precios">Precios</a>
+  </div>
+  <div class="lp-nav-actions">
+    <a routerLink="/login" class="lp-nav-login">Iniciar sesión</a>
+    <a routerLink="/registro" class="lp-btn-primary">Empezar gratis</a>
   </div>
 </nav>
 
-<!-- ══ HERO ═════════════════════════════════════════════════════════ -->
-<section class="hero">
-  <div class="hero-badge">
-    <span>🚀</span> Software para lavaderos — 100% en la nube
-  </div>
-  <h1 class="hero-titulo">
-    Gestioná tu lavadero<br>
-    <span>sin papeles, sin caos</span>
-  </h1>
-  <p class="hero-sub">
-    Turnos, caja, facturas, empleados y reportes en un solo lugar.
-    Más orden, más clientes, más tiempo libre.
-  </p>
-  <div class="hero-acciones">
-    <a class="btn-hero-primario" routerLink="/registro">
-      Crear mi cuenta gratis →
-    </a>
-    <a class="btn-hero-sec" routerLink="/login">
-      Ya tengo cuenta
-    </a>
-  </div>
-
-  <!-- Mock de la app -->
-  <div class="hero-demo">
-    <div class="demo-barra">
-      <div class="demo-dot" style="background:#ef4444"></div>
-      <div class="demo-dot" style="background:#f59e0b"></div>
-      <div class="demo-dot" style="background:#22c55e"></div>
-      <div class="demo-url">app.lavaderosaas.com/dashboard</div>
+<!-- ══ HERO ═══════════════════════════════════════════════════════════ -->
+<section class="lp-hero">
+  <div class="lp-hero-glow"></div>
+  <div class="lp-container">
+    <span class="lp-tag">Sistema para lavaderos 🇨🇴</span>
+    <h1 class="lp-hero-title">
+      Tu lavadero,<br><em>siempre organizado</em>
+    </h1>
+    <p class="lp-hero-sub">
+      Gestiona turnos, caja, personal y facturación desde un solo lugar.
+      Más orden, menos estrés, más plata.
+    </p>
+    <div class="lp-hero-ctas">
+      <a routerLink="/registro" class="lp-btn-primary lp-btn-lg">Pruébalo 14 días gratis</a>
+      <a href="#como-funciona" class="lp-btn-outline lp-btn-lg">Ver cómo funciona →</a>
     </div>
-    <div class="demo-cuerpo">
-      <!-- Sidebar falso -->
-      <div class="demo-sidebar">
-        <div class="demo-brand">
-          <div class="demo-brand-icon">🚗</div>
-          <span class="demo-brand-txt">Mi Lavadero</span>
+
+    <!-- mockup -->
+    <div class="lp-mockup">
+      <div class="lp-mockup-inner">
+        <div class="lp-mock-bar">
+          <span class="lp-dot lp-dot-r"></span>
+          <span class="lp-dot lp-dot-y"></span>
+          <span class="lp-dot lp-dot-g"></span>
         </div>
-        <div class="demo-nav-item activo">📊 Dashboard</div>
-        <div class="demo-nav-item">📋 Turnos</div>
-        <div class="demo-nav-item">💰 Caja</div>
-        <div class="demo-nav-item">🧾 Facturación</div>
-        <div class="demo-nav-item">👥 Clientes</div>
-        <div class="demo-nav-item">🔧 Servicios</div>
-        <div class="demo-nav-item">👷 Personal</div>
-      </div>
-      <!-- Contenido falso -->
-      <div class="demo-contenido">
-        <div class="demo-stats">
-          <div class="demo-stat">
-            <div class="demo-stat-lbl">En proceso</div>
-            <div class="demo-stat-val" style="color:#1d4ed8">4</div>
+        <div class="lp-mock-grid">
+          <div class="lp-mock-sidebar">
+            <div class="lp-mock-nav active">📋 Turnos</div>
+            <div class="lp-mock-nav">💰 Caja</div>
+            <div class="lp-mock-nav">👷 Personal</div>
+            <div class="lp-mock-nav">🧾 Facturas</div>
+            <div class="lp-mock-nav">📊 Reportes</div>
           </div>
-          <div class="demo-stat">
-            <div class="demo-stat-lbl">Pendientes</div>
-            <div class="demo-stat-val" style="color:#92400e">7</div>
-          </div>
-          <div class="demo-stat">
-            <div class="demo-stat-lbl">Completados</div>
-            <div class="demo-stat-val" style="color:#166534">12</div>
-          </div>
-          <div class="demo-stat">
-            <div class="demo-stat-lbl">Ingresos</div>
-            <div class="demo-stat-val" style="color:#0f172a">$487k</div>
-          </div>
-        </div>
-        <div class="demo-tabla-wrap">
-          <div class="demo-tabla-head">
-            <span>Cliente / Vehículo</span>
-            <span>Servicio</span>
-            <span>Empleado</span>
-            <span>Estado</span>
-          </div>
-          <div class="demo-tabla-row">
-            <span>Carlos M. · ABC123</span>
-            <span>Full Exterior</span>
-            <span>Juan P.</span>
-            <span><span class="demo-badge proceso">En proceso</span></span>
-          </div>
-          <div class="demo-tabla-row">
-            <span>Ana G. · XYZ789</span>
-            <span>Motor + Interior</span>
-            <span>Pedro R.</span>
-            <span><span class="demo-badge pendiente">Pendiente</span></span>
-          </div>
-          <div class="demo-tabla-row">
-            <span>Luis T. · KLM456</span>
-            <span>Lavado básico</span>
-            <span>Juan P.</span>
-            <span><span class="demo-badge listo">Listo ✓</span></span>
-          </div>
-          <div class="demo-tabla-row">
-            <span>María R. · PQR321</span>
-            <span>Full + Encerado</span>
-            <span>Carlos V.</span>
-            <span><span class="demo-badge proceso">En proceso</span></span>
+          <div class="lp-mock-main">
+            <div class="lp-mock-cards">
+              <div class="lp-mock-card">
+                <div class="lp-mock-card-label">Turnos hoy</div>
+                <div class="lp-mock-card-val">24</div>
+              </div>
+              <div class="lp-mock-card">
+                <div class="lp-mock-card-label">Ingresos</div>
+                <div class="lp-mock-card-val lp-green">$480k</div>
+              </div>
+              <div class="lp-mock-card">
+                <div class="lp-mock-card-label">En proceso</div>
+                <div class="lp-mock-card-val">3</div>
+              </div>
+            </div>
+            <div class="lp-mock-table">
+              <div class="lp-mock-thead">
+                <span>Cliente</span><span>Servicio</span><span>Estado</span><span>Valor</span>
+              </div>
+              <div class="lp-mock-trow">
+                <span>Carlos M.</span><span>Lavado completo</span>
+                <span><span class="lp-badge lp-badge-done">Listo</span></span>
+                <span>$35.000</span>
+              </div>
+              <div class="lp-mock-trow">
+                <span>Sandra R.</span><span>Lavado básico</span>
+                <span><span class="lp-badge lp-badge-proc">Proceso</span></span>
+                <span>$20.000</span>
+              </div>
+              <div class="lp-mock-trow">
+                <span>Juan P.</span><span>Polichado</span>
+                <span><span class="lp-badge lp-badge-pend">Pendiente</span></span>
+                <span>$80.000</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -112,190 +87,193 @@
   </div>
 </section>
 
-<!-- ══ FEATURES ══════════════════════════════════════════════════════ -->
-<section class="seccion seccion-center">
-  <div class="seccion-etiqueta">Todo lo que necesitás</div>
-  <h2 class="seccion-titulo">Un sistema hecho para lavaderos reales</h2>
-  <p class="seccion-sub">
-    No es una herramienta genérica adaptada. Fue construido pensando en cómo funciona
-    un lavadero de verdad, día a día.
-  </p>
-
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icono" style="background:#eff6ff">📋</div>
-      <div class="feature-titulo">Gestión de turnos</div>
-      <div class="feature-desc">
-        Creá órdenes de trabajo, asignales empleados y seguí el estado en tiempo real:
-        pendiente → en proceso → completado. Sin papeles, sin llamados internos.
-      </div>
+<!-- ══ SOCIAL PROOF ═════════════════════════════════════════════════════ -->
+<div class="lp-proof">
+  <div class="lp-container">
+    <p class="lp-proof-label">Usado por lavaderos en toda Colombia</p>
+    <div class="lp-proof-logos">
+      <span>Autobrillo</span><span>SpeedWash</span><span>Limpio Total</span>
+      <span>Brillo Express</span><span>LavaCar</span>
     </div>
+  </div>
+</div>
 
-    <div class="feature-card">
-      <div class="feature-icono" style="background:#f0fdf4">💰</div>
-      <div class="feature-titulo">Caja diaria</div>
-      <div class="feature-desc">
-        Abrí y cerrá la caja cada día. Registrá gastos, ingresos manuales y llevá
-        el control exacto de lo que entra y sale. El sistema calcula todo solo.
-      </div>
+<!-- ══ FEATURES ════════════════════════════════════════════════════════ -->
+<section id="features" class="lp-section">
+  <div class="lp-container">
+    <div class="lp-section-head">
+      <span class="lp-tag">Funciones</span>
+      <h2>Todo lo que tu lavadero necesita</h2>
+      <p>Sin complicaciones. Sin planillas en Excel. Todo en un lugar.</p>
     </div>
-
-    <div class="feature-card">
-      <div class="feature-icono" style="background:#fefce8">🧾</div>
-      <div class="feature-titulo">Facturación al instante</div>
-      <div class="feature-desc">
-        Cobrá con efectivo, transferencia, débito o crédito. La factura queda
-        registrada y podés imprimirla en el momento. Historial filtrable por fecha.
+    <div class="lp-features-grid">
+      <div class="lp-feat-card">
+        <div class="lp-feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <h3>Turnos en tiempo real</h3>
+        <p>Crea, actualiza y sigue el estado de cada turno al instante. Tus lavadores ven su trabajo desde el celular.</p>
       </div>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-icono" style="background:#fdf4ff">👷</div>
-      <div class="feature-titulo">Control de personal</div>
-      <div class="feature-desc">
-        Registrá a tus empleados, definí su comisión y calculá las liquidaciones
-        automáticamente. El sistema sabe cuánto le corresponde a cada uno.
+      <div class="lp-feat-card">
+        <div class="lp-feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <h3>Caja diaria</h3>
+        <p>Abre, registra ingresos y gastos, y cierra la caja al final del día. El sistema hace las cuentas solo.</p>
       </div>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-icono" style="background:#fff7ed">⚡</div>
-      <div class="feature-titulo">Actualizaciones en tiempo real</div>
-      <div class="feature-desc">
-        Cualquier cambio se ve en todos los dispositivos al instante sin recargar
-        la página. El empleado marca el auto como listo y el admin lo ve ya.
+      <div class="lp-feat-card">
+        <div class="lp-feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h3>Liquidaciones de personal</h3>
+        <p>Calcula automáticamente la comisión de cada empleado según los servicios que realizó en el período.</p>
       </div>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-icono" style="background:#f0fdf4">📊</div>
-      <div class="feature-titulo">Dashboard de gestión</div>
-      <div class="feature-desc">
-        Desde la pantalla principal ves todo: cuántos autos están en proceso,
-        cuánto facturaste hoy y el estado de la caja. Sin necesidad de buscar nada.
+      <div class="lp-feat-card">
+        <div class="lp-feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <h3>Facturación simple</h3>
+        <p>Genera facturas en segundos al completar un turno. Efectivo, transferencia, débito o crédito.</p>
+      </div>
+      <div class="lp-feat-card">
+        <div class="lp-feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Reportes y análisis</h3>
+        <p>Ve tus ingresos, servicios más vendidos y rendimiento del personal para tomar mejores decisiones.</p>
+      </div>
+      <div class="lp-feat-card">
+        <div class="lp-feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Multi-dispositivo</h3>
+        <p>Funciona en cualquier celular, tablet o computador. Sin instalar nada, solo con el navegador.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ MÓDULOS ════════════════════════════════════════════════════════ -->
-<section class="seccion seccion-alt seccion-center">
-  <div class="seccion-etiqueta">Módulos incluidos</div>
-  <h2 class="seccion-titulo">Todo viene activado desde el primer día</h2>
-  <p class="seccion-sub">
-    No necesitás pagar módulos por separado. Todo lo que necesita tu lavadero
-    está incluido en el plan.
-  </p>
-  <div class="modulos-grid">
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Dashboard operativo</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Gestión de turnos</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Clientes y vehículos</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Catálogo de servicios</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Facturación</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Caja diaria</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Personal y comisiones</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Liquidaciones</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Asistencia</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Historial de caja</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Tiempo real (WebSockets)</span>
-    <span class="modulo-chip"><span class="modulo-chip-dot"></span>Alertas WhatsApp</span>
+<!-- ══ MÓDULOS ══════════════════════════════════════════════════════════ -->
+<section class="lp-modules">
+  <div class="lp-container">
+    <div class="lp-section-head lp-center">
+      <span class="lp-tag">Módulos incluidos</span>
+      <h2>Todo activado desde el primer día</h2>
+      <p>No pagas módulos por separado. Todo lo que necesita tu lavadero está incluido.</p>
+    </div>
+    <div class="lp-pills">
+      @for (modulo of modulos; track modulo) {
+        <span class="lp-pill">{{ modulo }}</span>
+      }
+    </div>
   </div>
 </section>
 
-<!-- ══ CÓMO FUNCIONA ══════════════════════════════════════════════════ -->
-<section class="seccion seccion-center">
-  <div class="seccion-etiqueta">Simple de arrancar</div>
-  <h2 class="seccion-titulo">En 3 pasos ya estás operando</h2>
-  <p class="seccion-sub">
-    No hace falta instalar nada. Funciona desde el navegador en cualquier dispositivo.
-  </p>
-  <div class="pasos-grid">
-    <div class="paso">
-      <div class="paso-num">1</div>
-      <div class="paso-titulo">Creá tu cuenta</div>
-      <div class="paso-desc">
-        Registrá el nombre de tu lavadero y elegí un link único. Listo en menos de 2 minutos.
+<!-- ══ CÓMO FUNCIONA ════════════════════════════════════════════════════ -->
+<section id="como-funciona" class="lp-section lp-section-alt">
+  <div class="lp-container">
+    <div class="lp-section-head">
+      <span class="lp-tag">Cómo funciona</span>
+      <h2>Listo en minutos, no en días</h2>
+      <p>Sin instalaciones, sin servidores, sin complejidades técnicas.</p>
+    </div>
+    <div class="lp-steps">
+      @for (paso of pasos; track paso.num) {
+        <div class="lp-step">
+          <div class="lp-step-num">0{{ paso.num }}</div>
+          <h3>{{ paso.titulo }}</h3>
+          <p>{{ paso.desc }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ══ STATS ════════════════════════════════════════════════════════════ -->
+<section class="lp-stats">
+  <div class="lp-container">
+    <div class="lp-stats-grid">
+      <div class="lp-stat"><div class="lp-stat-num">+<span>120</span></div><div class="lp-stat-label">Lavaderos activos</div></div>
+      <div class="lp-stat"><div class="lp-stat-num"><span>98</span>%</div><div class="lp-stat-label">Satisfacción</div></div>
+      <div class="lp-stat"><div class="lp-stat-num">+<span>40k</span></div><div class="lp-stat-label">Turnos gestionados</div></div>
+      <div class="lp-stat"><div class="lp-stat-num"><span>14</span></div><div class="lp-stat-label">Días gratis</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PRECIOS ══════════════════════════════════════════════════════════ -->
+<section id="precios" class="lp-section lp-section-alt">
+  <div class="lp-container">
+    <div class="lp-section-head lp-center">
+      <span class="lp-tag">Precios</span>
+      <h2>Simple y sin sorpresas</h2>
+      <p>Sin letras pequeñas. Cancela cuando quieras.</p>
+    </div>
+    <div class="lp-pricing-grid">
+      <div class="lp-plan">
+        <div class="lp-plan-name">Básico</div>
+        <div class="lp-plan-price"><sup>$</sup>89k</div>
+        <div class="lp-plan-period">/ mes · COP</div>
+        <div class="lp-plan-divider"></div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> 1 sede</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Hasta 3 empleados</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Turnos ilimitados</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Caja y facturación</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Soporte por WhatsApp</div>
+        <a routerLink="/registro" class="lp-plan-cta">Empezar gratis</a>
+      </div>
+      <div class="lp-plan lp-plan-featured">
+        <div class="lp-plan-badge">Más popular</div>
+        <div class="lp-plan-name">Profesional</div>
+        <div class="lp-plan-price"><sup>$</sup>179k</div>
+        <div class="lp-plan-period">/ mes · COP</div>
+        <div class="lp-plan-divider"></div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Hasta 3 sedes</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Empleados ilimitados</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Liquidaciones automáticas</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Historial y reportes</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Alertas WhatsApp</div>
+        <div class="lp-plan-feat"><span class="lp-check">✓</span> Soporte prioritario</div>
+        <a routerLink="/registro" class="lp-plan-cta">Empezar gratis</a>
       </div>
     </div>
-    <div class="paso">
-      <div class="paso-num">2</div>
-      <div class="paso-titulo">Configurá tu negocio</div>
-      <div class="paso-desc">
-        Cargá tus servicios, precios y empleados. Definí las comisiones de cada uno.
+  </div>
+</section>
+
+<!-- ══ CTA FINAL ════════════════════════════════════════════════════════ -->
+<section class="lp-final-cta">
+  <div class="lp-container lp-center">
+    <h2>Empieza hoy.<br>Sin tarjeta de crédito.</h2>
+    <p>14 días gratis, sin compromisos. Cancela cuando quieras.</p>
+    <a routerLink="/registro" class="lp-btn-light">Crear cuenta gratis →</a>
+  </div>
+</section>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════════════════ -->
+<footer class="lp-footer">
+  <div class="lp-container">
+    <div class="lp-footer-top">
+      <div>
+        <div class="lp-logo">lava<span>.</span>app</div>
+        <p>Sistema de gestión para lavaderos de vehículos en Colombia.</p>
+      </div>
+      <div class="lp-footer-links">
+        <div>
+          <h4>Producto</h4>
+          <a href="#features">Funciones</a>
+          <a href="#precios">Precios</a>
+          <a href="#como-funciona">Cómo funciona</a>
+        </div>
+        <div>
+          <h4>Acceso</h4>
+          <a routerLink="/login">Iniciar sesión</a>
+          <a routerLink="/registro">Registrarse</a>
+        </div>
       </div>
     </div>
-    <div class="paso">
-      <div class="paso-num">3</div>
-      <div class="paso-titulo">Comenzá a operar</div>
-      <div class="paso-desc">
-        Abrí la caja, empezá a cargar órdenes y cobrá. Desde hoy tenés todo bajo control.
-      </div>
+    <div class="lp-footer-bottom">
+      <span>© 2026 lava.app · Hecho en Colombia 🇨🇴</span>
+      <span>Todos los derechos reservados</span>
     </div>
   </div>
-</section>
-
-<!-- ══ PRECIOS ════════════════════════════════════════════════════════ -->
-<section class="seccion seccion-alt seccion-center">
-  <div class="seccion-etiqueta">Planes</div>
-  <h2 class="seccion-titulo">Precio claro, sin sorpresas</h2>
-  <p class="seccion-sub">
-    Elegí el plan que mejor le calce a tu lavadero. Podés cambiar en cualquier momento.
-  </p>
-  <div class="precios-grid">
-    <div class="precio-card">
-      <div class="precio-plan-tag">Para empezar</div>
-      <div class="precio-plan-nombre">Básico</div>
-      <div class="precio-monto">$89k <span>COP / mes</span></div>
-      <div class="precio-desc">Ideal para lavaderos pequeños con hasta 3 empleados.</div>
-      <ul class="precio-lista">
-        <li>Hasta 3 empleados</li>
-        <li>Turnos ilimitados</li>
-        <li>Caja y facturación</li>
-        <li>Clientes y vehículos</li>
-        <li>Soporte por WhatsApp</li>
-      </ul>
-      <a class="btn-precio btn-precio-sec" routerLink="/registro">Empezar gratis →</a>
-    </div>
-
-    <div class="precio-card destacado">
-      <div class="precio-plan-tag">Más popular</div>
-      <div class="precio-plan-nombre">Profesional</div>
-      <div class="precio-monto">$179k <span>COP / mes</span></div>
-      <div class="precio-desc">Para lavaderos en crecimiento con equipo completo.</div>
-      <ul class="precio-lista">
-        <li>Empleados ilimitados</li>
-        <li>Todo el plan Básico</li>
-        <li>Liquidaciones automáticas</li>
-        <li>Historial y reportes</li>
-        <li>Alertas WhatsApp al cliente</li>
-        <li>Soporte prioritario</li>
-      </ul>
-      <a class="btn-precio btn-precio-pri" routerLink="/registro">Empezar gratis →</a>
-    </div>
-  </div>
-</section>
-
-<!-- ══ CTA FINAL ══════════════════════════════════════════════════════ -->
-<section class="cta-final">
-  <h2 class="cta-titulo">Empezá hoy, sin tarjeta de crédito</h2>
-  <p class="cta-sub">
-    Probá el sistema 14 días gratis. Sin compromiso.
-    Si no te convence, no cobramos nada.
-  </p>
-  <a class="btn-cta-blanco" routerLink="/registro">
-    Crear mi cuenta gratis
-  </a>
-</section>
-
-<!-- ══ FOOTER ════════════════════════════════════════════════════════ -->
-<footer class="footer">
-  <a class="footer-marca" routerLink="/">
-    <div class="footer-icono">🚗</div>
-    LavaderoApp
-  </a>
-  <div class="footer-links">
-    <a class="footer-link" routerLink="/login">Iniciar sesión</a>
-    <a class="footer-link" routerLink="/registro">Registrarse</a>
-  </div>
-  <div class="footer-copy">© 2026 LavaderoApp · Todos los derechos reservados</div>
 </footer>

@@ -8,16 +8,14 @@ export const authInterceptor: HttpInterceptorFn = (
   next: HttpHandlerFn,
 ) => {
   const router = inject(Router);
-  const token = localStorage.getItem('token');
 
-  const reqConToken = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
+  const reqConCreds = req.clone({ withCredentials: true });
 
-  return next(reqConToken).pipe(
+  return next(reqConCreds).pipe(
     catchError((err: unknown) => {
       if (err instanceof HttpErrorResponse && err.status === 401) {
-        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('rol');
         void router.navigate(['/login']);
       }
       return throwError(() => err);

@@ -71,9 +71,8 @@ export class CajaService {
     private readonly tenantsService: TenantsService,
   ) {}
 
-  // Cierra automáticamente todas las cajas abiertas a las 11pm de cada tenant.
-  // Se ejecuta cada minuto entre 23:00 y 23:59 para cubrir distintas zonas horarias.
-  @Cron('0 23 * * *', { timeZone: 'America/Bogota' })
+  // Corre cada hora. Cierra las cajas cuya fecha ya pasó en la zona horaria del tenant.
+  @Cron('0 * * * *')
   async cerrarCajasAutomaticamente(): Promise<void> {
     this.logger.log('Cron: cerrando cajas abiertas automáticamente...');
     const cajasAbiertas = await this.cajaDiaRepo.find({
@@ -81,8 +80,8 @@ export class CajaService {
     });
     for (const caja of cajasAbiertas) {
       if (!caja.tenantId) continue;
-      const hoy = await this.fechaHoy(caja.tenantId);
-      if (caja.fecha === hoy) {
+      const hoy = await this.tenantsService.fechaHoyParaTenant(caja.tenantId);
+      if (caja.fecha < hoy) {
         caja.estado = EstadoCajaDia.CERRADA;
         caja.usuarioCierreId = null;
         caja.fechaCierre = new Date();
@@ -92,34 +91,8 @@ export class CajaService {
     }
   }
 
-  private async fechaHoy(tenantId: string): Promise<string> {
-    const tenant = await this.tenantsService.buscarPorId(tenantId);
-    return new Intl.DateTimeFormat('en-CA', { timeZone: tenant.zonaHoraria }).format(new Date());
-  }
-
-  private async zonaHorariaTenant(tenantId: string): Promise<string> {
-    const tenant = await this.tenantsService.buscarPorId(tenantId);
-    return tenant.zonaHoraria;
-  }
-
-  private offsetDesdeZonaHoraria(zonaHoraria: string): string {
-    const fecha = new Date();
-    const partes = new Intl.DateTimeFormat('en-US', {
-      timeZone: zonaHoraria,
-      timeZoneName: 'shortOffset',
-    }).formatToParts(fecha);
-    const offsetStr = partes.find(p => p.type === 'timeZoneName')?.value ?? 'GMT+0';
-    // offsetStr es algo como "GMT-5" o "GMT+2"
-    const match = offsetStr.match(/GMT([+-]\d+)/);
-    if (!match) return '+00:00';
-    const horas = parseInt(match[1], 10);
-    const signo = horas >= 0 ? '+' : '-';
-    const absHoras = Math.abs(horas).toString().padStart(2, '0');
-    return `${signo}${absHoras}:00`;
-  }
-
   async obtenerEstado(tenantId: string): Promise<{ cajaHoy: CajaDia | null; cajaSinCerrar: CajaDia | null }> {
-    const hoy = await this.fechaHoy(tenantId);
+    const hoy = await this.tenantsService.fechaHoyParaTenant(tenantId);
     const [cajaHoy, cajaSinCerrar] = await Promise.all([
       this.cajaDiaRepo.findOne({ where: { fecha: hoy, tenantId } }),
       this.cajaDiaRepo.findOne({
@@ -131,7 +104,7 @@ export class CajaService {
   }
 
   async abrir(dto: AbrirCajaDto, usuarioId: string, tenantId: string): Promise<CajaDia> {
-    const hoy = await this.fechaHoy(tenantId);
+    const hoy = await this.tenantsService.fechaHoyParaTenant(tenantId);
 
     const existente = await this.cajaDiaRepo.findOne({ where: { fecha: hoy, tenantId } });
     if (existente) throw new ConflictException('Ya existe una caja para el día de hoy');
@@ -162,7 +135,7 @@ export class CajaService {
     if (!cajaDia) throw new NotFoundException('Caja no encontrada');
 
     const fecha = cajaDia.fecha;
-    const offset = this.offsetDesdeZonaHoraria(await this.zonaHorariaTenant(tenantId));
+    const offset = await this.tenantsService.offsetParaTenant(tenantId);
 
     const ventasEfectivo = Number(cajaDia.ventasEfectivo);
     const ventasTransferencia = Number(cajaDia.ventasTransferencia);
@@ -267,7 +240,7 @@ export class CajaService {
     const cajaDia = await this.cajaDiaRepo.findOne({ where: { id: cajaDiaId, tenantId } });
     if (!cajaDia) throw new NotFoundException('Caja no encontrada');
 
-    const offset = this.offsetDesdeZonaHoraria(await this.zonaHorariaTenant(tenantId));
+    const offset = await this.tenantsService.offsetParaTenant(tenantId);
 
     return this.facturaRepo
       .createQueryBuilder('f')
@@ -306,7 +279,7 @@ export class CajaService {
     }
 
     // Solo se puede reabrir la caja del día actual
-    const hoy = await this.fechaHoy(tenantId);
+    const hoy = await this.tenantsService.fechaHoyParaTenant(tenantId);
     if (caja.fecha !== hoy) {
       throw new BadRequestException('Solo se puede reabrir la caja del día de hoy');
     }
@@ -319,7 +292,7 @@ export class CajaService {
 
   async registrarGasto(dto: RegistrarGastoDto, usuarioId: string, tenantId: string): Promise<GastoCaja> {
     const cajaAbierta = await this.cajaDiaRepo.findOne({
-      where: { fecha: await this.fechaHoy(tenantId), estado: EstadoCajaDia.ABIERTA, tenantId },
+      where: { fecha: await this.tenantsService.fechaHoyParaTenant(tenantId), estado: EstadoCajaDia.ABIERTA, tenantId },
     });
     if (!cajaAbierta) throw new BadRequestException('No hay caja abierta para el día de hoy');
 
@@ -345,7 +318,7 @@ export class CajaService {
     tenantId: string,
   ): Promise<IngresoManualCaja> {
     const cajaAbierta = await this.cajaDiaRepo.findOne({
-      where: { fecha: await this.fechaHoy(tenantId), estado: EstadoCajaDia.ABIERTA, tenantId },
+      where: { fecha: await this.tenantsService.fechaHoyParaTenant(tenantId), estado: EstadoCajaDia.ABIERTA, tenantId },
     });
     if (!cajaAbierta) throw new BadRequestException('No hay caja abierta para el día de hoy');
 

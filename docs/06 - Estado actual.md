@@ -1,6 +1,22 @@
 # Estado actual del proyecto
 
-> Última actualización: abril 2026 — Capa 4 completada + mejoras de flujo operativo
+> Última actualización: abril 2026 — Capa 4 completada + auditoría de seguridad aplicada
+
+---
+
+## Seguridad — cambios aplicados en auditoría
+
+- [x] **JWT en httpOnly cookie** (web): el token viaja en cookie `access_token` con `httpOnly`, `secure` y `sameSite: strict`. El frontend nunca lo toca con JavaScript.
+- [x] **Bearer fallback para app móvil**: el `accessToken` también se devuelve en el body del login para que Flutter lo guarde en `FlutterSecureStorage` y lo mande como `Authorization: Bearer`.
+- [x] **Rate limiting global**: 60 req/min por IP vía `ThrottlerGuard`. Login: 10/min. Registro: 5/hora.
+- [x] **Helmet**: headers de seguridad HTTP (X-Frame-Options, X-Content-Type-Options, HSTS, etc.)
+- [x] **CORS restrictivo**: solo permite orígenes listados en `ALLOWED_ORIGINS` (variable de entorno).
+- [x] **Body limit**: máximo 100kb por request.
+- [x] **Validación de complejidad de contraseña**: mínimo 8 caracteres con mayúscula, minúscula, número y símbolo especial.
+- [x] **`FechaFiltroPipe`**: valida formato `YYYY-MM-DD` en todos los query params de fecha.
+- [x] **`AllExceptionsFilter` global**: captura todos los errores no manejados, loguea los 500+ en la BD, oculta stack traces en producción.
+- [x] **Logout real**: `POST /api/auth/logout` limpia la cookie del servidor.
+- [x] **JWT_SECRET rotado** en producción.
 
 ---
 

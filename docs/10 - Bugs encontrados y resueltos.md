@@ -209,11 +209,78 @@ Excluir `montoInicial` del cálculo de `ingresos.total` y `totalDia`. Se mantien
 
 ---
 
+### Bug 12 — Orden de rutas: `GET :id` capturaba `trabajador/:trabajadorId` en Turnos y `turno/:turnoId` en Facturación
+
+**Severidad:** Crítica (endpoints inaccesibles)
+**Archivos:** `backend/src/modules/turnos/turnos.controller.ts` · `backend/src/modules/facturacion/facturacion.controller.ts`
+
+**Problema:**
+Mismo patrón que Bug 6: `@Get(':id')` declarado antes que rutas específicas. En `TurnosController`, `GET /api/turnos/trabajador/:trabajadorId` nunca se alcanzaba. En `FacturacionController`, `GET /api/facturacion/turno/:turnoId` tampoco.
+
+**Fix:**
+Mover las rutas específicas antes del comodín `:id` en ambos controladores.
+
+---
+
+### Bug 13 — Zona horaria hardcodeada en TurnosService, FacturacionService y ReportesService
+
+**Severidad:** Alta (rompe para tenants fuera de Colombia)
+**Archivos:** `backend/src/modules/turnos/turnos.service.ts` · `backend/src/modules/facturacion/facturacion.service.ts` · `backend/src/modules/reportes/reportes.service.ts` · `backend/src/modules/reportes/reportes.controller.ts`
+
+**Problema:**
+Los filtros de fecha en `buscarTodos`, `buscarPorTrabajador` (Turnos), `buscarTodas` (Facturación) y `obtenerReporte` usaban `-05:00` fijo. El controller de reportes también usaba `America/Bogota` para calcular el día de hoy por defecto.
+
+**Fix:**
+1. Los helpers `offsetDesdeZonaHoraria` y `zonaHorariaTenant` que existían como privados en `CajaService` se promovieron a métodos públicos en `TenantsService` (`offsetDesdeZona`, `fechaDesdeZona`, `offsetParaTenant`, `fechaHoyParaTenant`).
+2. Se inyectó `TenantsModule` en `TurnosModule`, `FacturacionModule` y `ReportesModule`.
+3. Cada servicio ahora obtiene el offset dinámicamente desde la zona horaria del tenant.
+4. El cron de cierre automático de caja se cambió de `0 23 * * *` con timezone fija a `0 * * * *` (cada hora) sin timezone, y la condición pasó de `fecha === hoy` a `fecha < hoy` para que cierre cualquier caja de un día ya pasado en la zona del tenant.
+
+---
+
+### Bug 14 — Zona horaria hardcodeada en el frontend (`dashboard.component.ts`)
+
+**Severidad:** Alta (rompe para tenants fuera de Colombia)
+**Archivo:** `frontangular/src/app/pages/dashboard/dashboard.component.ts`
+
+**Problema:**
+`esHoy()`, `horaStr()`, `fmtDay`, `fmtDate` y el cálculo de hora para la gráfica diaria usaban `America/Bogota` o el offset UTC-5 fijo.
+
+**Fix:**
+Se inyectó `TenantService` en el componente. Se reemplazaron las funciones de módulo por métodos de instancia que leen `tenantSvc.configActual?.zonaHoraria` (ya populado por el layout antes de que el dashboard renderice). La gráfica de horas usa `Intl.DateTimeFormat` con la zona del tenant en lugar del cálculo manual de UTC-5.
+
+---
+
+### Bug 15 — Tipo `Cliente` en frontend incompleto (faltaba `cedula`)
+
+**Severidad:** Media
+**Archivo:** `frontangular/src/app/shared/types/index.ts`
+
+**Problema:**
+La interfaz `Cliente` no declaraba el campo `cedula`, aunque el backend lo devuelve.
+
+**Fix:**
+Agregar `cedula: string | null` a la interfaz.
+
+---
+
+### Bug 16 — Método `buscarPorTurno` faltaba en `FacturacionService` del frontend
+
+**Severidad:** Media
+**Archivo:** `frontangular/src/app/core/services/facturacion.service.ts`
+
+**Problema:**
+El backend expone `GET /api/facturacion/turno/:turnoId` pero el servicio Angular no tenía el método correspondiente.
+
+**Fix:**
+Agregar `buscarPorTurno(turnoId: string): Promise<Factura>`.
+
+---
+
 ## 📝 Deuda técnica relacionada
 
 - **JWT strategy**: agregar validación de `tenantId` del payload vs. el de la BD cuando se implemente login multi-tenant por slug/subdominio (Capa 3+).
 - **Transiciones de turno**: validar estados permitidos en el frontend antes de llamar al backend para mejorar UX.
-- **`console.log` de debug**: quitar los `[PERF]` del backend y `[CAJA] ngOnInit START` del frontend antes de producción (ya documentado en `06 - Estado actual.md`).
 
 ---
 

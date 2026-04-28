@@ -45,7 +45,7 @@
       </h2>
       <button class="btn btn-secundario btn-sm" (click)="cerrarDetalle()">Cerrar</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
       <div class="card" style="text-align:center;padding:14px">
         <div style="font-size:1.5rem;font-weight:700">{{ detalle.cantidadTurnos }}</div>
         <div style="color:var(--color-texto-suave);font-size:0.8rem">Turnos</div>
@@ -64,6 +64,7 @@
       </div>
     </div>
     @if (!cargandoDetalle) {
+      <div style="overflow-x:auto">
       <table class="tabla">
         <thead>
           <tr><th>Fecha</th><th>Cliente</th><th>Vehículo</th><th>Servicio</th><th>Precio</th><th>Comisión</th></tr>
@@ -81,6 +82,7 @@
           }
         </tbody>
       </table>
+      </div>
     }
   </div>
 }
@@ -91,6 +93,7 @@
   } @else if (liquidaciones.length === 0) {
     <p style="padding:24px;text-align:center;color:var(--color-texto-suave)">No hay liquidaciones generadas</p>
   } @else {
+    <div style="overflow-x:auto">
     <table class="tabla">
       <thead>
         <tr><th>Trabajador</th><th>Período</th><th>Turnos</th><th>Total servicios</th><th>Comisión</th><th>A pagar</th><th>Estado</th><th></th></tr>
@@ -119,5 +122,6 @@
         }
       </tbody>
     </table>
+    </div>
   }
 </div>

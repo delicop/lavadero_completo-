@@ -11,6 +11,7 @@ import { VehiculoService } from '../../core/services/vehiculo.service';
 import { ServicioService } from '../../core/services/servicio.service';
 import { CajaService } from '../../core/services/caja.service';
 import { FacturacionService } from '../../core/services/facturacion.service';
+import { TenantService } from '../../core/services/tenant.service';
 import { RealtimeService, UsuarioActualizadoEvent } from '../../core/services/realtime.service';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { FormsModule } from '@angular/forms';
@@ -24,21 +25,13 @@ const METODO_LABEL: Record<MetodoPago, string> = {
 };
 const METODOS: MetodoPago[] = ['efectivo', 'transferencia', 'debito', 'credito'];
 
-const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' });
-
-function esHoy(fechaIso: string): boolean {
-  return fmt.format(new Date(fechaIso)) === fmt.format(new Date());
-}
-
-function horaStr(fechaIso: string): string {
-  return new Date(fechaIso).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterLink, ModalComponent, FormsModule],
   templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private readonly sesion      = inject(SesionService);
@@ -51,12 +44,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly cajaService = inject(CajaService);
   private readonly facturaSvc  = inject(FacturacionService);
   private readonly realtime    = inject(RealtimeService);
+  private readonly tenantSvc   = inject(TenantService);
+
+  private get zona(): string {
+    return this.tenantSvc.configActual?.zonaHoraria ?? 'America/Bogota';
+  }
+
+  esHoy(fechaIso: string): boolean {
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: this.zona });
+    return fmt.format(new Date(fechaIso)) === fmt.format(new Date());
+  }
+
+  horaStr(fechaIso: string): string {
+    return new Date(fechaIso).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: this.zona });
+  }
 
   readonly formatPrecio = formatPrecio;
   readonly METODO_LABEL = METODO_LABEL;
   readonly METODOS      = METODOS;
-  readonly esHoy        = esHoy;
-  readonly horaStr      = horaStr;
 
   esAdmin  = false;
   usuario: Usuario | null = null;
@@ -157,18 +162,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.cargandoGrafico = true;
     try {
       const hoy      = new Date();
-      const fmtDay   = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+      const fmtDay   = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: this.zona });
       const diaHoy   = fmtDay(hoy);
-      const horaCol  = (iso: string) => {
-        // UTC-5 fijo (Colombia)
-        return Math.floor(((new Date(iso).getTime() / 1000) - 5 * 3600) / 3600) % 24;
+      const horaLocal = (iso: string) => {
+        const h = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: this.zona })
+          .format(new Date(iso));
+        return parseInt(h, 10) % 24;
       };
 
       if (this.periodoGrafico === 'diario') {
-        const horaActual = horaCol(new Date().toISOString());
+        const horaActual = horaLocal(new Date().toISOString());
         const porHora = new Array(horaActual + 1).fill(0);
         for (const f of this.facturasHoy) {
-          const h = horaCol(f.fechaEmision);
+          const h = horaLocal(f.fechaEmision);
           if (h >= 0 && h <= horaActual) porHora[h] += Number(f.total);
         }
         this.ingresosGrafico = porHora.map((total, h) => ({ label: `${h}h`, total }));
@@ -256,7 +262,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const hoy   = new Date();
     const lunes = new Date(hoy);
     lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
-    const fmtDate = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+    const fmtDate = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: this.zona });
     const periodoSemana = { fechaDesde: fmtDate(lunes), fechaHasta: fmtDate(hoy) };
 
     const [ep, pe, co, todasFacturas, usuarios, turnosSem] = await Promise.all([
@@ -270,7 +276,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.enProceso           = ep;
     this.pendientes          = pe;
-    this.completadosHoy      = cajaCerrada ? [] : co.filter(t => esHoy(t.fechaHora));
+    this.completadosHoy      = cajaCerrada ? [] : co.filter(t => this.esHoy(t.fechaHora));
     this.turnosFacturadosSet = new Set(todasFacturas.map(f => f.turnoId));
 
     // Ingresos del día = facturas de los turnos completados HOY (no por fecha de cobro)
@@ -289,7 +295,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (d > hoy) break;
       const key = fmtDate(d);
       const count = turnosSem.filter(t =>
-        new Date(t.fechaHora).toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }) === key
+        new Date(t.fechaHora).toLocaleDateString('en-CA', { timeZone: this.zona }) === key
       ).length;
       this.turnosSemana.push({ label: DIAS[i], count });
     }
@@ -318,7 +324,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const todos = await this.turnoSvc.listarPorTrabajador(this.usuario.id);
     this.misPendientes     = todos.filter(t => t.estado === 'pendiente');
     this.misEnProceso      = todos.filter(t => t.estado === 'en_proceso');
-    this.misCompletadosHoy = todos.filter(t => t.estado === 'completado' && esHoy(t.fechaHora));
+    this.misCompletadosHoy = todos.filter(t => t.estado === 'completado' && this.esHoy(t.fechaHora));
     const comision = this.usuario.comisionPorcentaje / 100;
     this.gananciaHoy = this.misCompletadosHoy.reduce(
       (s, t) => s + Number(t.servicio?.precio ?? 0) * comision, 0,
