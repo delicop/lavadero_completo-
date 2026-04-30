@@ -204,11 +204,14 @@ class _CobrarScreenState extends State<CobrarScreen> {
                                 const TextStyle(color: colorCancelado)),
                       ],
                       const Spacer(),
-                      BotonPrimario(
-                        texto: 'Confirmar cobro',
-                        icono: Icons.check,
-                        loading: _procesando,
-                        onPressed: _metodoPago != null ? _confirmar : null,
+                      SafeArea(
+                        top: false,
+                        child: BotonPrimario(
+                          texto: 'Confirmar cobro',
+                          icono: Icons.check,
+                          loading: _procesando,
+                          onPressed: _metodoPago != null ? _confirmar : null,
+                        ),
                       ),
                     ],
                   ),

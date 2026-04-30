@@ -66,12 +66,16 @@ class _AppLavaderoState extends State<AppLavadero> {
     super.initState();
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
       systemNavigationBarColor: colorSuperficie,
-      systemNavigationBarIconBrightness: Brightness.light,
+      systemNavigationBarIconBrightness: Brightness.dark,
     ));
     _tokenStorage = TokenStorage();
-    _apiClient = ApiClient(_tokenStorage);
+    _router = _buildRouter();
+    _apiClient = ApiClient(
+      _tokenStorage,
+      onUnauthorized: () => _router.go('/login'),
+    );
     _authService = AuthService(_apiClient);
     _turnoService = TurnoService(_apiClient);
     _clienteService = ClienteService(_apiClient);
@@ -80,9 +84,8 @@ class _AppLavaderoState extends State<AppLavadero> {
     _cajaService = CajaService(_apiClient);
     _facturacionService = FacturacionService(_apiClient);
     _tenantService = TenantService(_apiClient);
-    _realtimeService = RealtimeService();
+    _realtimeService = RealtimeService(_tokenStorage);
     _realtimeService.conectar();
-    _router = _buildRouter();
   }
 
   @override
@@ -269,16 +272,11 @@ class _FloatingNav extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: colorSuperficie,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: colorDivisor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.45),
-                blurRadius: 28,
-                offset: const Offset(0, 10),
-              ),
-              BoxShadow(
-                color: colorPrimario.withValues(alpha: 0.06),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -295,28 +293,24 @@ class _FloatingNav extends StatelessWidget {
                 onTap: () => onTap(i),
                 behavior: HitTestBehavior.opaque,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
                   padding: EdgeInsets.symmetric(
-                    horizontal: selected ? 18 : 12,
+                    horizontal: selected ? 16 : 12,
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     color: selected
-                        ? colorPrimario.withValues(alpha: 0.15)
+                        ? colorPrimario.withValues(alpha: 0.10)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(18),
-                    border: selected
-                        ? Border.all(
-                            color: colorPrimario.withValues(alpha: 0.3))
-                        : null,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         item.icon,
-                        size: 22,
+                        size: 20,
                         color: selected ? colorPrimario : colorSubtexto,
                       ),
                       if (selected) ...[
@@ -325,7 +319,7 @@ class _FloatingNav extends StatelessWidget {
                           item.label,
                           style: GoogleFonts.dmSans(
                             fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             color: colorPrimario,
                           ),
                         ),

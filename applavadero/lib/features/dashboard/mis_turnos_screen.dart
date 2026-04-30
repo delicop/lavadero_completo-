@@ -42,43 +42,41 @@ class _MisTurnosScreenState extends State<MisTurnosScreen> {
             onRefresh: () => provider.cargar(trabajadorId: usuario?.id),
             child: CustomScrollView(
               slivers: [
-                // ── Header personal ──────────────────────────────────
                 SliverToBoxAdapter(
                   child: Container(
+                    color: colorSuperficie,
                     padding: EdgeInsets.fromLTRB(
-                        16, MediaQuery.of(context).padding.top + 16, 16, 20),
-                    decoration: const BoxDecoration(
-                      color: colorSuperficie,
-                    ),
+                        20, MediaQuery.of(context).padding.top + 20, 20, 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'MIS TURNOS',
-                          style: GoogleFonts.barlowCondensed(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
-                            color: colorTexto,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
                         if (usuario != null)
                           Text(
                             usuario.nombreCompleto,
                             style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                              fontSize: 13,
                               color: colorSubtexto,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Mis Turnos',
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w700,
+                            color: colorTexto,
+                          ),
+                        ),
                         if (provider.turnos.isNotEmpty) ...[
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           Row(
                             children: [
                               Expanded(
                                 child: _StatTrabajador(
                                   label: 'Turnos',
                                   valor: provider.turnos.length.toString(),
-                                  icono: Icons.assignment_rounded,
+                                  icono: Icons.assignment_outlined,
                                   color: colorEnProceso,
                                 ),
                               ),
@@ -91,7 +89,7 @@ class _MisTurnosScreenState extends State<MisTurnosScreen> {
                                         (usuario?.comisionPorcentaje ?? 0) /
                                         100,
                                   ),
-                                  icono: Icons.monetization_on_rounded,
+                                  icono: Icons.monetization_on_outlined,
                                   color: colorCompletado,
                                 ),
                               ),
@@ -103,7 +101,6 @@ class _MisTurnosScreenState extends State<MisTurnosScreen> {
                   ),
                 ),
 
-                // ── Lista de turnos ───────────────────────────────────
                 if (provider.turnos.isEmpty && !provider.loading)
                   const SliverFillRemaining(
                     child: EmptyState(
@@ -113,8 +110,7 @@ class _MisTurnosScreenState extends State<MisTurnosScreen> {
                   )
                 else
                   SliverPadding(
-                    padding:
-                        const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (ctx, i) {
@@ -155,24 +151,32 @@ class _StatTrabajador extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        color: colorFondo,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorDivisor),
       ),
       child: Row(
         children: [
-          Icon(icono, color: color, size: 18),
-          const SizedBox(width: 10),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icono, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   valor,
-                  style: GoogleFonts.barlowCondensed(
-                    fontSize: 18,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: colorTexto,
                   ),

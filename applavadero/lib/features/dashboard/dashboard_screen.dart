@@ -40,43 +40,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onRefresh: provider.cargar,
             child: CustomScrollView(
               slivers: [
-                // ── Hero header ─────────────────────────────────────
                 SliverToBoxAdapter(
-                  child: _HeroHeader(
-                    nombre:  usuario?.nombre ?? '',
-                    negocio: negocio,
-                    totalTurnos: provider.turnos.length,
+                  child: _Header(
+                    nombre:        usuario?.nombre ?? '',
+                    negocio:       negocio,
+                    totalTurnos:   provider.turnos.length,
                     totalIngresos: provider.totalDia,
-                    onNuevoTurno: () => context.push('/turnos/nuevo'),
+                    onNuevoTurno:  () => context.push('/turnos/nuevo'),
                   ),
                 ),
 
-                // ── Error ────────────────────────────────────────────
                 if (provider.error != null)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: colorCancelado.withValues(alpha: 0.10),
+                          color: colorCancelado.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: colorCancelado.withValues(alpha: 0.35)),
+                              color: colorCancelado.withValues(alpha: 0.25)),
                         ),
                         child: Text(provider.error!,
-                            style: const TextStyle(color: colorCancelado)),
+                            style: const TextStyle(
+                                color: colorCancelado, fontSize: 13)),
                       ),
                     ),
                   ),
 
-                // ── En proceso ───────────────────────────────────────
                 if (provider.enProceso.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: _SeccionHeader(
                       label: 'En proceso',
                       color: colorEnProceso,
-                      icono: Icons.autorenew_rounded,
                     ),
                   ),
                   SliverPadding(
@@ -101,13 +98,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
 
-                // ── Pendientes ───────────────────────────────────────
                 if (provider.pendientes.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: _SeccionHeader(
                       label: 'Pendientes',
                       color: colorPendiente,
-                      icono: Icons.schedule_rounded,
                     ),
                   ),
                   SliverPadding(
@@ -129,12 +124,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
 
-                // ── Empty ────────────────────────────────────────────
                 if (provider.turnos.isEmpty && !provider.loading)
                   const SliverFillRemaining(
                     child: EmptyState(
                       mensaje: 'No hay turnos para hoy',
-                      icono: Icons.calendar_today_rounded,
+                      icono: Icons.calendar_today_outlined,
                     ),
                   ),
 
@@ -148,16 +142,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// ─── Hero header ──────────────────────────────────────────────────────────────
+// ─── Header ───────────────────────────────────────────────────────────────────
 
-class _HeroHeader extends StatelessWidget {
+class _Header extends StatelessWidget {
   final String nombre;
   final String? negocio;
   final int totalTurnos;
   final double totalIngresos;
   final VoidCallback onNuevoTurno;
 
-  const _HeroHeader({
+  const _Header({
     required this.nombre,
     required this.negocio,
     required this.totalTurnos,
@@ -168,27 +162,9 @@ class _HeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 56, 16, 8),
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorSuperficieAlta,
-            const Color(0xFF0A2828),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: colorPrimario.withValues(alpha: 0.22)),
-        boxShadow: [
-          BoxShadow(
-            color: colorPrimario.withValues(alpha: 0.10),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      color: colorSuperficie,
+      padding: EdgeInsets.fromLTRB(
+          20, MediaQuery.of(context).padding.top + 20, 20, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -197,84 +173,74 @@ class _HeroHeader extends StatelessWidget {
               if (negocio != null)
                 Expanded(
                   child: Text(
-                    negocio!.toUpperCase(),
-                    style: GoogleFonts.barlowCondensed(
-                      color: colorPrimario,
+                    negocio!,
+                    style: GoogleFonts.dmSans(
+                      color: colorSubtexto,
                       fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: colorSuperficieAlta,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: colorDivisor),
+                ),
+                child: Text(
+                  formatearFechaCorta(DateTime.now().toIso8601String()),
+                  style: GoogleFonts.dmSans(
+                    color: colorSubtexto,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
               GestureDetector(
                 onTap: onNuevoTurno,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF00D4BE), colorPrimario],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorPrimario.withValues(alpha: 0.38),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: colorPrimario,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.add_rounded,
-                          color: colorFondo, size: 16),
+                          color: Colors.white, size: 16),
                       const SizedBox(width: 5),
                       Text(
-                        'NUEVO',
-                        style: GoogleFonts.barlowCondensed(
-                          color: colorFondo,
+                        'Nuevo',
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white,
                           fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorPrimario.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: colorPrimario.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  formatearFechaCorta(DateTime.now().toIso8601String()),
-                  style: GoogleFonts.dmSans(
-                    color: colorPrimario,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 18),
           Text(
             'Hola, $nombre',
-            style: GoogleFonts.barlowCondensed(
-              fontSize: 32,
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 30,
               fontWeight: FontWeight.w700,
               color: colorTexto,
-              letterSpacing: 0.2,
             ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Resumen del día',
+            style: GoogleFonts.dmSans(fontSize: 14, color: colorSubtexto),
           ),
           const SizedBox(height: 20),
           Row(
@@ -283,7 +249,7 @@ class _HeroHeader extends StatelessWidget {
                 child: _StatBox(
                   valor: totalTurnos.toString(),
                   label: 'Turnos hoy',
-                  icono: Icons.assignment_rounded,
+                  icono: Icons.assignment_outlined,
                   color: colorEnProceso,
                 ),
               ),
@@ -320,35 +286,46 @@ class _StatBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        color: colorFondo,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorDivisor),
       ),
       child: Row(
         children: [
-          Icon(icono, color: color, size: 18),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                valor,
-                style: GoogleFonts.barlowCondensed(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: colorTexto,
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icono, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  valor,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: colorTexto,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Text(
-                label,
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
-                  color: colorSubtexto,
+                Text(
+                  label,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 11,
+                    color: colorSubtexto,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -361,38 +338,30 @@ class _StatBox extends StatelessWidget {
 class _SeccionHeader extends StatelessWidget {
   final String label;
   final Color color;
-  final IconData icono;
 
-  const _SeccionHeader({
-    required this.label,
-    required this.color,
-    required this.icono,
-  });
+  const _SeccionHeader({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Row(
         children: [
           Container(
-            width: 4,
-            height: 18,
+            width: 3,
+            height: 16,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(width: 10),
-          Icon(icono, size: 15, color: color),
-          const SizedBox(width: 6),
           Text(
-            label.toUpperCase(),
-            style: GoogleFonts.barlowCondensed(
-              color: color,
-              fontSize: 13,
+            label,
+            style: GoogleFonts.dmSans(
+              color: colorTexto,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
             ),
           ),
         ],
@@ -400,4 +369,3 @@ class _SeccionHeader extends StatelessWidget {
     );
   }
 }
-

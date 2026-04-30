@@ -4,16 +4,11 @@ import '../theme/colores.dart';
 
 String _labelEstado(String estado) {
   switch (estado) {
-    case 'pendiente':
-      return 'Pendiente';
-    case 'en_proceso':
-      return 'En proceso';
-    case 'completado':
-      return 'Completado';
-    case 'cancelado':
-      return 'Cancelado';
-    default:
-      return estado;
+    case 'pendiente':  return 'Pendiente';
+    case 'en_proceso': return 'En proceso';
+    case 'completado': return 'Completado';
+    case 'cancelado':  return 'Cancelado';
+    default:           return estado;
   }
 }
 
@@ -25,18 +20,18 @@ class EstadoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = colorEstado(estado);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 6,
-            height: 6,
+            width: 5,
+            height: 5,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
@@ -45,8 +40,7 @@ class EstadoChip extends StatelessWidget {
             style: GoogleFonts.dmSans(
               color: color,
               fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

@@ -625,14 +625,14 @@ El sistema no envía ningún email. Para recuperar contraseña y para mejorar la
 
 El app Flutter cubre el flujo básico (login, mis turnos, crear turno). Estas pantallas y mejoras faltan:
 
-| Ítem | Prioridad | Descripción |
-|------|-----------|-------------|
-| Reportes | Media | Pantalla de resumen: ingresos, turnos del período, top servicios |
-| Facturación | Media | Ver facturas emitidas y detalle de cobro |
-| Gastos | Baja | Registrar gasto rápido desde el celular |
-| Perfil completo | Media | Cambiar contraseña y ver comisión desde la app |
-| Error handling en `nuevo_turno` | Alta | Ver sección "Bugs conocidos" — pantalla queda en blanco al fallar |
-| Modo offline mínimo | Baja | Cache local de los últimos turnos para verlos sin conexión |
+| Ítem                            | Prioridad | Descripción                                                       |
+| ------------------------------- | --------- | ----------------------------------------------------------------- |
+| Reportes                        | Media     | Pantalla de resumen: ingresos, turnos del período, top servicios  |
+| Facturación                     | Media     | Ver facturas emitidas y detalle de cobro                          |
+| Gastos                          | Baja      | Registrar gasto rápido desde el celular                           |
+| Perfil completo                 | Media     | Cambiar contraseña y ver comisión desde la app                    |
+| Error handling en `nuevo_turno` | Alta      | Ver sección "Bugs conocidos" — pantalla queda en blanco al fallar |
+| Modo offline mínimo             | Baja      | Cache local de los últimos turnos para verlos sin conexión        |
 
 ---
 

@@ -328,14 +328,17 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
                   style: TextStyle(color: colorSubtexto)),
             ),
         ],
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: BotonPrimario(
-            texto: 'Siguiente',
-            onPressed: _clienteSeleccionado != null &&
-                    _vehiculoSeleccionado != null
-                ? () => setState(() => _paso = 1)
-                : null,
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: BotonPrimario(
+              texto: 'Siguiente',
+              onPressed: _clienteSeleccionado != null &&
+                      _vehiculoSeleccionado != null
+                  ? () => setState(() => _paso = 1)
+                  : null,
+            ),
           ),
         ),
       ],
@@ -391,13 +394,16 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
             },
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: BotonPrimario(
-            texto: 'Siguiente',
-            onPressed: _servicioSeleccionado != null
-                ? () => setState(() => _paso = 2)
-                : null,
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: BotonPrimario(
+              texto: 'Siguiente',
+              onPressed: _servicioSeleccionado != null
+                  ? () => setState(() => _paso = 2)
+                  : null,
+            ),
           ),
         ),
       ],
@@ -406,7 +412,7 @@ class _NuevoTurnoScreenState extends State<NuevoTurnoScreen> {
 
   Widget _buildPaso3() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

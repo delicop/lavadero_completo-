@@ -1,37 +1,32 @@
 import 'package:flutter/material.dart';
 
 // Backgrounds
-const colorFondo        = Color(0xFF0E1116);
-const colorSuperficie   = Color(0xFF161B24);
-const colorSuperficieAlta = Color(0xFF1E2635);
+const colorFondo          = Color(0xFFF7F7F5);
+const colorSuperficie     = Color(0xFFFFFFFF);
+const colorSuperficieAlta = Color(0xFFF0F0EE);
 
-// Brand
-const colorPrimario = Color(0xFF00CEB8);
+// Brand — índigo profundo
+const colorPrimario = Color(0xFF2B3A8C);
 
 // Text
-const colorTexto    = Color(0xFFE8ECF4);
-const colorSubtexto = Color(0xFF6B7A9A);
+const colorTexto    = Color(0xFF1A1A2E);
+const colorSubtexto = Color(0xFF6B7280);
 
 // Structure
-const colorDivisor = Color(0xFF252D3E);
+const colorDivisor = Color(0xFFE5E5E3);
 
-// Status
-const colorPendiente  = Color(0xFFFFBD3C);
-const colorEnProceso  = Color(0xFF3B9EFF);
-const colorCompletado = Color(0xFF2EDD9A);
-const colorCancelado  = Color(0xFFFF4560);
+// Status — desaturados, elegantes
+const colorPendiente  = Color(0xFFD97706);
+const colorEnProceso  = Color(0xFF2563EB);
+const colorCompletado = Color(0xFF059669);
+const colorCancelado  = Color(0xFFDC2626);
 
 Color colorEstado(String estado) {
   switch (estado) {
-    case 'pendiente':
-      return colorPendiente;
-    case 'en_proceso':
-      return colorEnProceso;
-    case 'completado':
-      return colorCompletado;
-    case 'cancelado':
-      return colorCancelado;
-    default:
-      return colorSubtexto;
+    case 'pendiente':  return colorPendiente;
+    case 'en_proceso': return colorEnProceso;
+    case 'completado': return colorCompletado;
+    case 'cancelado':  return colorCancelado;
+    default:           return colorSubtexto;
   }
 }

@@ -22,18 +22,18 @@ ThemeData buildTema({
 
   return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
-    colorScheme: ColorScheme.dark(
+    brightness: Brightness.light,
+    colorScheme: ColorScheme.light(
       primary: primary,
       surface: superficie,
       onSurface: colorTexto,
-      onPrimary: colorFondo,
+      onPrimary: Colors.white,
       surfaceContainerHighest: colorSuperficieAlta,
       outline: colorDivisor,
     ),
     scaffoldBackgroundColor: fondo,
     cardTheme: CardThemeData(
-      color: superficie,
+      color: colorSuperficie,
       elevation: 0,
       clipBehavior: Clip.hardEdge,
       shape: RoundedRectangleBorder(
@@ -41,6 +41,7 @@ ThemeData buildTema({
         side: const BorderSide(color: colorDivisor),
       ),
       margin: const EdgeInsets.symmetric(vertical: 5),
+      shadowColor: Colors.transparent,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -55,7 +56,7 @@ ThemeData buildTema({
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: primary, width: 2),
+        borderSide: BorderSide(color: primary, width: 1.5),
       ),
       labelStyle: const TextStyle(color: colorSubtexto),
       hintStyle: const TextStyle(color: colorSubtexto),
@@ -63,51 +64,46 @@ ThemeData buildTema({
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primary,
-        foregroundColor: colorFondo,
+        foregroundColor: Colors.white,
+        elevation: 0,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: GoogleFonts.barlowCondensed(
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
+        textStyle: GoogleFonts.dmSans(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.3,
         ),
       ),
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: superficie,
+      backgroundColor: colorSuperficie,
       elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
-      titleTextStyle: GoogleFonts.barlowCondensed(
+      titleTextStyle: GoogleFonts.playfairDisplay(
         color: colorTexto,
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.4,
       ),
       iconTheme: const IconThemeData(color: colorTexto),
     ),
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: superficie,
-      selectedItemColor: primary,
-      unselectedItemColor: colorSubtexto,
-      type: BottomNavigationBarType.fixed,
-    ),
     dividerColor: colorDivisor,
     textTheme: TextTheme(
-      displayLarge:  GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w700),
-      displayMedium: GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w700),
-      displaySmall:  GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w700),
-      headlineLarge:  GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w700),
-      headlineMedium: GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w700),
-      headlineSmall:  GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w600),
-      titleLarge:  GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w700, fontSize: 22),
-      titleMedium: GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w600, fontSize: 18),
-      titleSmall:  GoogleFonts.barlowCondensed(color: colorTexto, fontWeight: FontWeight.w600, fontSize: 15),
-      bodyLarge:  GoogleFonts.dmSans(color: colorTexto, fontSize: 16),
-      bodyMedium: GoogleFonts.dmSans(color: colorTexto, fontSize: 14),
-      bodySmall:  GoogleFonts.dmSans(color: colorSubtexto, fontSize: 12),
-      labelLarge:  GoogleFonts.dmSans(color: colorTexto, fontWeight: FontWeight.w600, fontSize: 14),
-      labelMedium: GoogleFonts.dmSans(color: colorSubtexto, fontSize: 12),
-      labelSmall:  GoogleFonts.dmSans(color: colorSubtexto, fontSize: 11),
+      displayLarge:   GoogleFonts.playfairDisplay(color: colorTexto, fontWeight: FontWeight.w700),
+      displayMedium:  GoogleFonts.playfairDisplay(color: colorTexto, fontWeight: FontWeight.w700),
+      displaySmall:   GoogleFonts.playfairDisplay(color: colorTexto, fontWeight: FontWeight.w700),
+      headlineLarge:  GoogleFonts.playfairDisplay(color: colorTexto, fontWeight: FontWeight.w700),
+      headlineMedium: GoogleFonts.playfairDisplay(color: colorTexto, fontWeight: FontWeight.w700),
+      headlineSmall:  GoogleFonts.playfairDisplay(color: colorTexto, fontWeight: FontWeight.w600),
+      titleLarge:     GoogleFonts.playfairDisplay(color: colorTexto, fontWeight: FontWeight.w700, fontSize: 22),
+      titleMedium:    GoogleFonts.dmSans(color: colorTexto, fontWeight: FontWeight.w600, fontSize: 16),
+      titleSmall:     GoogleFonts.dmSans(color: colorTexto, fontWeight: FontWeight.w600, fontSize: 14),
+      bodyLarge:      GoogleFonts.dmSans(color: colorTexto, fontSize: 16),
+      bodyMedium:     GoogleFonts.dmSans(color: colorTexto, fontSize: 14),
+      bodySmall:      GoogleFonts.dmSans(color: colorSubtexto, fontSize: 12),
+      labelLarge:     GoogleFonts.dmSans(color: colorTexto, fontWeight: FontWeight.w600, fontSize: 14),
+      labelMedium:    GoogleFonts.dmSans(color: colorSubtexto, fontSize: 12),
+      labelSmall:     GoogleFonts.dmSans(color: colorSubtexto, fontSize: 11),
     ),
   );
 }

@@ -30,12 +30,11 @@ class InputField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          label,
           style: GoogleFonts.dmSans(
-            color: colorSubtexto,
-            fontSize: 11,
+            color: colorTexto,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.8,
           ),
         ),
         const SizedBox(height: 8),

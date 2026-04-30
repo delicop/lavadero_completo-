@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/colores.dart';
 
 class EmptyState extends StatelessWidget {
@@ -16,23 +17,30 @@ class EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 68,
+              height: 68,
               decoration: BoxDecoration(
-                color: colorSuperficieAlta,
-                borderRadius: BorderRadius.circular(20),
+                color: colorSuperficie,
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: colorDivisor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Icon(
                 icono ?? Icons.inbox_outlined,
-                size: 36,
+                size: 32,
                 color: colorSubtexto,
               ),
             ),
             const SizedBox(height: 20),
             Text(
               mensaje,
-              style: const TextStyle(
+              style: GoogleFonts.dmSans(
                 color: colorSubtexto,
                 fontSize: 15,
                 height: 1.5,

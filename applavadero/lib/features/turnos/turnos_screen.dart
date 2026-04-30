@@ -34,7 +34,7 @@ class _TurnosScreenState extends State<TurnosScreen> {
       lastDate: DateTime.now().add(const Duration(days: 30)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
+          colorScheme: const ColorScheme.light(
             primary: colorPrimario,
             surface: colorSuperficie,
             onSurface: colorTexto,
@@ -67,12 +67,11 @@ class _TurnosScreenState extends State<TurnosScreen> {
                   Row(
                     children: [
                       Text(
-                        'TURNOS',
-                        style: GoogleFonts.barlowCondensed(
-                          fontSize: 26,
+                        'Turnos',
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 28,
                           fontWeight: FontWeight.w700,
                           color: colorTexto,
-                          letterSpacing: 1.5,
                         ),
                       ),
                       const Spacer(),
@@ -82,33 +81,21 @@ class _TurnosScreenState extends State<TurnosScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 10),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF00D4BE), colorPrimario],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: colorPrimario.withValues(alpha: 0.38),
-                                blurRadius: 14,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            color: colorPrimario,
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.add_rounded,
-                                  color: colorFondo, size: 18),
+                                  color: Colors.white, size: 16),
                               const SizedBox(width: 6),
                               Text(
-                                'NUEVO',
-                                style: GoogleFonts.barlowCondensed(
-                                  color: colorFondo,
+                                'Nuevo',
+                                style: GoogleFonts.dmSans(
+                                  color: Colors.white,
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.2,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
@@ -117,7 +104,7 @@ class _TurnosScreenState extends State<TurnosScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
                   // Selector de fecha
                   GestureDetector(
@@ -127,13 +114,13 @@ class _TurnosScreenState extends State<TurnosScreen> {
                           horizontal: 14, vertical: 11),
                       decoration: BoxDecoration(
                         color: colorSuperficieAlta,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: colorDivisor),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today_rounded,
-                              size: 16, color: colorPrimario),
+                          const Icon(Icons.calendar_today_outlined,
+                              size: 15, color: colorPrimario),
                           const SizedBox(width: 10),
                           Text(
                             formatearFechaCorta(
@@ -152,7 +139,7 @@ class _TurnosScreenState extends State<TurnosScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // Filtros de estado
                   SingleChildScrollView(
@@ -204,13 +191,13 @@ class _TurnosScreenState extends State<TurnosScreen> {
             if (caja.vista != VistaCaja.abierta)
               Container(
                 width: double.infinity,
-                color: colorPendiente.withValues(alpha: 0.10),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color: colorPendiente.withValues(alpha: 0.08),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded,
-                        color: colorPendiente, size: 16),
+                    const Icon(Icons.warning_amber_outlined,
+                        color: colorPendiente, size: 15),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -228,8 +215,7 @@ class _TurnosScreenState extends State<TurnosScreen> {
             // ── Lista ─────────────────────────────────────────────────
             Expanded(
               child: LoadingOverlay(
-                loading:
-                    provider.loading && provider.turnos.isEmpty,
+                loading: provider.loading && provider.turnos.isEmpty,
                 child: RefreshIndicator(
                   color: colorPrimario,
                   backgroundColor: colorSuperficie,
@@ -287,17 +273,18 @@ class _FiltroBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: const Duration(milliseconds: 160),
         margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
           color: seleccionado
-              ? color.withValues(alpha: 0.15)
+              ? color.withValues(alpha: 0.10)
               : colorSuperficieAlta,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: seleccionado
-                ? color.withValues(alpha: 0.5)
+                ? color.withValues(alpha: 0.4)
                 : colorDivisor,
           ),
         ),
@@ -305,7 +292,8 @@ class _FiltroBtn extends StatelessWidget {
           label,
           style: GoogleFonts.dmSans(
             fontSize: 12,
-            fontWeight: seleccionado ? FontWeight.w700 : FontWeight.w500,
+            fontWeight:
+                seleccionado ? FontWeight.w700 : FontWeight.w500,
             color: seleccionado ? color : colorSubtexto,
           ),
         ),

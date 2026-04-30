@@ -21,124 +21,123 @@ class CardTurno extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = colorEstado(turno.estado);
 
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      decoration: BoxDecoration(
+        color: colorSuperficie,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorDivisor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
             children: [
-              // Franja lateral de estado
-              Container(width: 4, color: statusColor),
-              // Contenido
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+              // Barra superior de estado
+              Container(height: 3, color: statusColor),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                turno.vehiculo?.descripcion ??
+                                    'Vehículo #${turno.vehiculoId}',
+                                style: GoogleFonts.playfairDisplay(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 17,
+                                  color: colorTexto,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                turno.cliente?.nombreCompleto ??
+                                    'Cliente #${turno.clienteId}',
+                                style: GoogleFonts.dmSans(
+                                  color: colorSubtexto,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        EstadoChip(estado: turno.estado),
+                      ],
+                    ),
+                    if (turno.servicio != null) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        height: 1,
+                        color: colorDivisor,
+                      ),
+                      const SizedBox(height: 10),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.directions_car_rounded,
-                                      size: 14,
-                                      color: colorSubtexto,
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Expanded(
-                                      child: Text(
-                                        turno.vehiculo?.descripcion ??
-                                            'Vehículo #${turno.vehiculoId}',
-                                        style: GoogleFonts.barlowCondensed(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 17,
-                                          color: colorTexto,
-                                          letterSpacing: 0.3,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  turno.cliente?.nombreCompleto ??
-                                      'Cliente #${turno.clienteId}',
-                                  style: const TextStyle(
-                                    color: colorSubtexto,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            turno.servicio!.nombre,
+                            style: GoogleFonts.dmSans(
+                              color: colorSubtexto,
+                              fontSize: 13,
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          EstadoChip(estado: turno.estado),
+                          const Spacer(),
+                          Text(
+                            formatearPesos(turno.servicio!.precio),
+                            style: GoogleFonts.dmSans(
+                              color: colorPrimario,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ],
                       ),
-                      if (turno.servicio != null) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Text(
-                              turno.servicio!.nombre,
-                              style: const TextStyle(
-                                color: colorSubtexto,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const Text(
-                              '  ·  ',
-                              style: TextStyle(color: colorSubtexto, fontSize: 13),
-                            ),
-                            Text(
-                              formatearPesos(turno.servicio!.precio),
-                              style: const TextStyle(
-                                color: colorPrimario,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      if (turno.trabajador != null) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.person_rounded,
-                              size: 13,
-                              color: colorSubtexto,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              turno.trabajador!.nombreCompleto,
-                              style: const TextStyle(
-                                color: colorSubtexto,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      if (onAvanzar != null && turno.estado != 'cancelado') ...[
-                        const SizedBox(height: 12),
-                        _BotonAvanzar(
-                          estado: turno.estado,
-                          onPressed: onAvanzar!,
-                        ),
-                      ],
                     ],
-                  ),
+                    if (turno.trabajador != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.person_outline_rounded,
+                            size: 13,
+                            color: colorSubtexto,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            turno.trabajador!.nombreCompleto,
+                            style: GoogleFonts.dmSans(
+                              color: colorSubtexto,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (onAvanzar != null && turno.estado != 'cancelado') ...[
+                      const SizedBox(height: 12),
+                      _BotonAvanzar(
+                        estado: turno.estado,
+                        onPressed: onAvanzar!,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -161,10 +160,10 @@ class _BotonAvanzar extends StatelessWidget {
     Color color;
 
     if (estado == 'pendiente') {
-      label = 'INICIAR TURNO';
+      label = 'Iniciar turno';
       color = colorEnProceso;
     } else if (estado == 'en_proceso') {
-      label = 'MARCAR COMPLETADO';
+      label = 'Marcar completado';
       color = colorCompletado;
     } else {
       return const SizedBox.shrink();
@@ -175,17 +174,19 @@ class _BotonAvanzar extends StatelessWidget {
       child: TextButton(
         style: TextButton.styleFrom(
           foregroundColor: color,
-          backgroundColor: color.withValues(alpha: 0.12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          backgroundColor: color.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: color.withValues(alpha: 0.3)),
+          ),
           padding: const EdgeInsets.symmetric(vertical: 10),
         ),
         onPressed: onPressed,
         child: Text(
           label,
-          style: GoogleFonts.barlowCondensed(
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-            letterSpacing: 1.0,
+          style: GoogleFonts.dmSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
             color: color,
           ),
         ),
